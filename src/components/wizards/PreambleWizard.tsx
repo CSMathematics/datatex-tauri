@@ -7,7 +7,7 @@ import {
 } from '@mantine/core';
 import { 
   Check, Trash, Plus, FileText, Layout, Package, Palette, 
-  Code as CodeIcon, Eye, RefreshCw
+  Code as CodeIcon, Eye, RefreshCw, Info
 } from 'lucide-react';
 
 interface PreambleWizardProps {
@@ -24,21 +24,53 @@ const CM_TO_PX = PAGE_WIDTH_PX / A4_WIDTH_CM;
 const LANGUAGES = [
   { value: 'english', label: 'English' },
   { value: 'greek', label: 'Greek (Ελληνικά)' },
-  { value: 'german', label: 'German' },
-  { value: 'french', label: 'French' },
-  { value: 'spanish', label: 'Spanish' },
-  { value: 'italian', label: 'Italian' },
-  { value: 'russian', label: 'Russian' },
-  { value: 'chinese', label: 'Chinese' },
-  { value: 'arabic', label: 'Arabic' },
+  { value: 'german', label: 'German (Deutsch)' },
+  { value: 'french', label: 'French (Français)' },
+  { value: 'spanish', label: 'Spanish (Español)' },
+  { value: 'italian', label: 'Italian (Italiano)' },
+  { value: 'portuguese', label: 'Portuguese (Português)' },
+  { value: 'dutch', label: 'Dutch (Nederlands)' },
+  { value: 'russian', label: 'Russian (Русский)' },
+  { value: 'polish', label: 'Polish (Polski)' },
+  { value: 'czech', label: 'Czech (Čeština)' },
+  { value: 'turkish', label: 'Turkish (Türkçe)' },
+  { value: 'swedish', label: 'Swedish (Svenska)' },
+  { value: 'danish', label: 'Danish (Dansk)' },
+  { value: 'norwegian', label: 'Norwegian (Norsk)' },
+  { value: 'finnish', label: 'Finnish (Suomi)' },
+  { value: 'hungarian', label: 'Hungarian (Magyar)' },
+  { value: 'romanian', label: 'Romanian (Română)' },
+  { value: 'bulgarian', label: 'Bulgarian (Български)' },
+  { value: 'ukrainian', label: 'Ukrainian (Українська)' },
+  { value: 'hebrew', label: 'Hebrew (עִבְרִית)' },
+  { value: 'arabic', label: 'Arabic (العربية)' },
+  { value: 'chinese', label: 'Chinese (中文)' },
+  { value: 'japanese', label: 'Japanese (日本語)' },
+  { value: 'korean', label: 'Korean (한국어)' },
+  { value: 'latin', label: 'Latin' },
 ];
 
 const COLOR_MODELS = [
   { value: 'HTML', label: 'HTML (Hex)' },
   { value: 'rgb', label: 'rgb (0-1)' },
   { value: 'RGB', label: 'RGB (0-255)' },
+  { value: 'cmy', label: 'cmy (0-1)' },
   { value: 'cmyk', label: 'cmyk (0-1)' },
+  { value: 'hsb', label: 'hsb (0-1)' },
+  { value: 'HSB', label: 'HSB (0-255)' },
   { value: 'gray', label: 'gray (0-1)' },
+  { value: 'Gray', label: 'Gray (0-15)' },
+];
+
+const PAPER_SIZES = [
+  { value: 'a4paper', label: 'A4' },
+  { value: 'letterpaper', label: 'Letter' },
+  { value: 'a5paper', label: 'A5' },
+  { value: 'b5paper', label: 'B5' },
+  { value: 'executivepaper', label: 'Executive' },
+  { value: 'legalpaper', label: 'Legal' },
+  { value: 'a3paper', label: 'A3' },
+  { value: 'b4paper', label: 'B4' },
 ];
 
 interface CustomColorDef {
@@ -51,44 +83,51 @@ interface CustomColorDef {
 
 // --- Helper: Color Conversion Logic ---
 const hexToModelValue = (hex: string, model: string): string => {
-  // Remove hash
   hex = hex.replace('#', '');
-  
-  // Parse RGB
   const bigint = parseInt(hex, 16);
   const r = (bigint >> 16) & 255;
   const g = (bigint >> 8) & 255;
   const b = bigint & 255;
-
   const rNorm = r / 255;
   const gNorm = g / 255;
   const bNorm = b / 255;
 
+  const rgbToHsv = (r: number, g: number, b: number) => {
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const d = max - min;
+    const s = max === 0 ? 0 : d / max;
+    const v = max;
+    let h = 0;
+    if (max !== min) {
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+    return { h, s, v };
+  };
+
   switch (model) {
-    case 'HTML':
-      return hex.toUpperCase();
-    
-    case 'RGB':
-      return `${r},${g},${b}`;
-    
-    case 'rgb':
-      return `${rNorm.toFixed(3)},${gNorm.toFixed(3)},${bNorm.toFixed(3)}`;
-    
-    case 'gray':
-      // Standard luminance formula
-      const gray = 0.299 * rNorm + 0.587 * gNorm + 0.114 * bNorm;
-      return gray.toFixed(3);
-    
+    case 'HTML': return hex.toUpperCase();
+    case 'RGB': return `${r},${g},${b}`;
+    case 'rgb': return `${rNorm.toFixed(3)},${gNorm.toFixed(3)},${bNorm.toFixed(3)}`;
+    case 'gray': return (0.299 * rNorm + 0.587 * gNorm + 0.114 * bNorm).toFixed(3);
+    case 'Gray': return Math.round((0.299 * rNorm + 0.587 * gNorm + 0.114 * bNorm) * 15).toString();
+    case 'cmy': return `${(1 - rNorm).toFixed(3)},${(1 - gNorm).toFixed(3)},${(1 - bNorm).toFixed(3)}`;
     case 'cmyk':
       const k = 1 - Math.max(rNorm, gNorm, bNorm);
       if (k === 1) return '0,0,0,1';
-      const c = (1 - rNorm - k) / (1 - k);
-      const m = (1 - gNorm - k) / (1 - k);
-      const y = (1 - bNorm - k) / (1 - k);
-      return `${c.toFixed(3)},${m.toFixed(3)},${y.toFixed(3)},${k.toFixed(3)}`;
-      
-    default:
-      return hex;
+      return `${((1 - rNorm - k) / (1 - k)).toFixed(3)},${((1 - gNorm - k) / (1 - k)).toFixed(3)},${((1 - bNorm - k) / (1 - k)).toFixed(3)},${k.toFixed(3)}`;
+    case 'hsb':
+      const hsb = rgbToHsv(rNorm, gNorm, bNorm);
+      return `${hsb.h.toFixed(3)},${hsb.s.toFixed(3)},${hsb.v.toFixed(3)}`;
+    case 'HSB':
+      const HSB = rgbToHsv(rNorm, gNorm, bNorm);
+      return `${Math.round(HSB.h * 255)},${Math.round(HSB.s * 255)},${Math.round(HSB.v * 255)}`;
+    default: return hex;
   }
 };
 
@@ -107,6 +146,8 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
     title: '',
     author: '',
     date: true,
+    
+    // Geometry
     pkgGeometry: true,
     marginTop: 2.5,
     marginBottom: 2.5,
@@ -119,12 +160,19 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
     marginSep: 0.5,
     marginWidth: 3.0,
     includeMp: false,
+    
+    // Advanced Geometry (Added)
     headHeight: 0,
     headSep: 0,
     footSkip: 0,
     bindingOffset: 0,
+    hOffset: 0, // NEW
+    vOffset: 0, // NEW
+    
     includeHead: false,
     includeFoot: false,
+    
+    // Packages
     pkgAmsmath: true,
     pkgGraphicx: true,
     pkgHyperref: true,
@@ -138,18 +186,15 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
 
   // --- Custom Colors State ---
   const [customColors, setCustomColors] = useState<CustomColorDef[]>([]);
-  
-  // New Color Form State
   const [newColorName, setNewColorName] = useState('');
   const [newColorModel, setNewColorModel] = useState('HTML');
-  const [pickerColor, setPickerColor] = useState('#1971C2'); // Source of truth for color
-  const [newColorValue, setNewColorValue] = useState(''); // Calculated value string
+  const [pickerColor, setPickerColor] = useState('#1971C2');
+  const [newColorValue, setNewColorValue] = useState('');
 
   const handleChange = (key: string, val: any) => {
     setConfig(prev => ({ ...prev, [key]: val }));
   };
 
-  // --- EFFECT: Auto-Calculate Value when Picker or Model changes ---
   useEffect(() => {
     const val = hexToModelValue(pickerColor, newColorModel);
     setNewColorValue(val);
@@ -160,7 +205,7 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
     const v = config;
     let code = '';
 
-    // Class & Basic Packages
+    // Class Options
     let classOpts: string[] = [`${v.fontSize}pt`, v.paperSize];
     if (v.columns === 'two') classOpts.push('twocolumn');
     if (v.sidedness === 'twoside') classOpts.push('twoside');
@@ -174,19 +219,29 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
     code += `\\usepackage[${babelOpts.join(',')}]{babel}\n`;
     if (v.mainLang === 'greek') code += `\\usepackage{alphabeta}\n`;
 
-    // Geometry
+    // Geometry Generation
     if (v.pkgGeometry) {
       let gOpts: string[] = [];
+      // Basic
       gOpts.push(`top=${v.marginTop}cm`, `bottom=${v.marginBottom}cm`, `left=${v.marginLeft}cm`, `right=${v.marginRight}cm`);
+      
+      // Columns
       if (v.columns === 'two') gOpts.push(`columnsep=${v.columnSep}cm`);
+      
+      // Margins
       if (v.marginNotes) {
         gOpts.push(`marginparsep=${v.marginSep}cm`, `marginparwidth=${v.marginWidth}cm`);
         if (v.includeMp) gOpts.push(`includemp`);
       }
+      
+      // Header/Footer/Offsets
       if (v.headHeight > 0) gOpts.push(`headheight=${v.headHeight}cm`);
       if (v.headSep > 0) gOpts.push(`headsep=${v.headSep}cm`);
       if (v.footSkip > 0) gOpts.push(`footskip=${v.footSkip}cm`);
       if (v.bindingOffset > 0) gOpts.push(`bindingoffset=${v.bindingOffset}cm`);
+      if (v.hOffset !== 0) gOpts.push(`hoffset=${v.hOffset}cm`); // NEW
+      if (v.vOffset !== 0) gOpts.push(`voffset=${v.vOffset}cm`); // NEW
+      
       if (v.includeHead) gOpts.push(`includehead`);
       if (v.includeFoot) gOpts.push(`includefoot`);
       if (v.sidedness === 'asymmetric') gOpts.push(`asymmetric`);
@@ -194,17 +249,14 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
       code += `\\usepackage[${gOpts.join(', ')}]{geometry}\n`;
     }
 
-    // Packages
     code += `\n% --- Packages ---\n`;
     if (v.pkgAmsmath) code += `\\usepackage{amsmath, amsfonts, amssymb}\n`;
     if (v.pkgGraphicx) code += `\\usepackage{graphicx}\n`;
     
-    // XColor Logic
     if (v.pkgXcolor || customColors.length > 0) {
         code += `\\usepackage[dvipsnames, table]{xcolor}\n`;
     }
 
-    // Custom Colors Definitions
     if (customColors.length > 0) {
         code += `\n% --- Custom Colors ---\n`;
         customColors.forEach(c => {
@@ -219,7 +271,6 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
     if (v.pkgFancyhdr) code += `\\usepackage{fancyhdr}\n\\pagestyle{fancy}\n`;
     if (v.pkgHyperref) code += `\\usepackage{hyperref}\n\\hypersetup{colorlinks=true, linkcolor=blue}\n`;
 
-    // Metadata
     code += `\n% --- Metadata ---\n`;
     code += `\\title{${v.title || 'Untitled'}}\n`;
     code += `\\author{${v.author || ''}}\n`;
@@ -229,7 +280,6 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
     setGeneratedCode(code);
   }, [config, customColors]);
 
-  // --- Handlers ---
   const addColor = () => {
     if (newColorName && newColorValue) {
       const sanitizedName = newColorName.replace(/[^a-zA-Z0-9]/g, '');
@@ -240,35 +290,43 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
               name: sanitizedName, 
               model: newColorModel, 
               value: newColorValue,
-              previewHex: pickerColor // Always store the picker hex for UI preview
+              previewHex: pickerColor 
           }
       ]);
       setNewColorName('');
-      // We keep the picker color and model as is for easy variations
     }
   };
 
-  // --- Visualization Helpers ---
   const geometryStyles = useMemo(() => {
     const headerHeightPx = config.pkgGeometry ? config.headHeight * CM_TO_PX : 0;
     const headerSepPx = config.pkgGeometry ? config.headSep * CM_TO_PX : 0;
     
+    // Adjust top based on vOffset (simplified visualization)
+    const vOffsetPx = config.pkgGeometry ? config.vOffset * CM_TO_PX : 0;
+    const hOffsetPx = config.pkgGeometry ? config.hOffset * CM_TO_PX : 0;
+
     const bodyTopPx = config.pkgGeometry 
-        ? config.marginTop * CM_TO_PX + (config.includeHead ? 0 : headerHeightPx + headerSepPx)
+        ? config.marginTop * CM_TO_PX + (config.includeHead ? 0 : headerHeightPx + headerSepPx) + vOffsetPx
         : 30;
     
     const bodyBottomMarginPx = config.pkgGeometry ? config.marginBottom * CM_TO_PX : 30;
-    const bodyBottomPx = PAGE_HEIGHT_PX - bodyBottomMarginPx;
-    const bodyRightEdgePx = PAGE_WIDTH_PX - (config.marginRight * CM_TO_PX);
+    const bodyBottomPx = PAGE_HEIGHT_PX - bodyBottomMarginPx + vOffsetPx;
+
+    const bodyRightEdgePx = PAGE_WIDTH_PX - (config.marginRight * CM_TO_PX) + hOffsetPx;
     const marginNotesStartPx = bodyRightEdgePx + (config.marginSep * CM_TO_PX);
     const marginNotesWidthCapPx = config.marginWidth * CM_TO_PX;
 
-    return { headerHeightPx, headerSepPx, bodyTopPx, bodyBottomPx, bodyBottomMarginPx, marginNotesStartPx, marginNotesWidthCapPx };
+    // Shift whole content wrapper by hOffset for visualization
+    const containerStyle = {
+        transform: `translate(${hOffsetPx}px, ${vOffsetPx}px)`,
+        transition: 'transform 0.3s ease'
+    };
+
+    return { headerHeightPx, headerSepPx, bodyTopPx, bodyBottomPx, bodyBottomMarginPx, marginNotesStartPx, marginNotesWidthCapPx, containerStyle };
   }, [config]);
 
   return (
     <Grid h="100%" gutter={0}>
-      {/* LEFT COLUMN: Settings */}
       <Grid.Col span={7} h="100%">
         <ScrollArea h="100%">
           <Stack gap="md" p="md">
@@ -285,8 +343,13 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
               <Tabs.Panel value="general" pt="md">
                 <SimpleGrid cols={2} spacing="md">
                   <Select label="Document Class" data={['article', 'report', 'book', 'beamer']} value={config.docClass} onChange={(v) => handleChange('docClass', v)} />
-                  <Select label="Font Size" data={['10', '11', '12']} value={config.fontSize} onChange={(v) => handleChange('fontSize', v)} />
-                  <Select label="Paper Size" data={['a4paper', 'letterpaper', 'b5paper']} value={config.paperSize} onChange={(v) => handleChange('paperSize', v)} />
+                  <Select 
+                    label="Font Size (pt)" // FIX: Renamed label instead of suffix
+                    data={['10', '11', '12']} 
+                    value={config.fontSize} 
+                    onChange={(v) => handleChange('fontSize', v)} 
+                  />
+                  <Select label="Paper Size" data={PAPER_SIZES} value={config.paperSize} onChange={(v) => handleChange('paperSize', v)} />
                   <Select label="Language" data={LANGUAGES} value={config.mainLang} onChange={(v) => handleChange('mainLang', v)} searchable />
                 </SimpleGrid>
                 <Divider my="md" />
@@ -331,14 +394,19 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
                         <NumberInput label="Right" value={config.marginRight} onChange={(v) => handleChange('marginRight', v)} step={0.1} min={0} />
                      </SimpleGrid>
                      <Divider />
-                     <Text size="sm" fw={500} c="dimmed">HEADER & FOOTER (cm)</Text>
+                     <Text size="sm" fw={500} c="dimmed">HEADER & FOOTER & OFFSETS (cm)</Text>
                      <SimpleGrid cols={3}>
                         <NumberInput label="Head Height" value={config.headHeight} onChange={(v) => handleChange('headHeight', v)} step={0.1} min={0} />
                         <NumberInput label="Head Sep" value={config.headSep} onChange={(v) => handleChange('headSep', v)} step={0.1} min={0} />
                         <Checkbox label="Include Head" checked={config.includeHead} onChange={(e) => handleChange('includeHead', e.currentTarget.checked)} mt={28} />
+                        
                         <NumberInput label="Foot Skip" value={config.footSkip} onChange={(v) => handleChange('footSkip', v)} step={0.1} min={0} />
                         <NumberInput label="Binding Offset" value={config.bindingOffset} onChange={(v) => handleChange('bindingOffset', v)} step={0.1} min={0} />
                         <Checkbox label="Include Foot" checked={config.includeFoot} onChange={(e) => handleChange('includeFoot', e.currentTarget.checked)} mt={28} />
+
+                        {/* NEW OFFSET INPUTS */}
+                        <NumberInput label="H Offset" value={config.hOffset} onChange={(v) => handleChange('hOffset', v)} step={0.1} />
+                        <NumberInput label="V Offset" value={config.vOffset} onChange={(v) => handleChange('vOffset', v)} step={0.1} />
                      </SimpleGrid>
                      <Divider />
                      <Group>
@@ -355,6 +423,7 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
                  )}
               </Tabs.Panel>
 
+              {/* PACKAGES TAB (Same) */}
               <Tabs.Panel value="packages" pt="md">
                 <SimpleGrid cols={2} spacing="lg">
                     <Stack gap="xs">
@@ -377,7 +446,7 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
                 </SimpleGrid>
               </Tabs.Panel>
 
-              {/* 4. COLORS TAB (ENHANCED) */}
+              {/* COLORS TAB (Same) */}
               <Tabs.Panel value="colors" pt="md">
                 <Checkbox label="Enable Xcolor Package" checked={config.pkgXcolor} onChange={(e) => handleChange('pkgXcolor', e.currentTarget.checked)} mb="md" />
                 
@@ -397,7 +466,6 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
                                 value={newColorModel} 
                                 onChange={(v) => setNewColorModel(v || 'HTML')}
                             />
-                             {/* THE PICKER IS ALWAYS VISIBLE NOW */}
                              <ColorInput 
                                 label="Pick Color"
                                 value={pickerColor} 
@@ -412,7 +480,7 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
                                 value={newColorValue}
                                 onChange={(e) => setNewColorValue(e.currentTarget.value)}
                                 style={{ flex: 1 }}
-                                rightSection={<Tooltip label="Auto-calculated from picker. You can edit manually."><RefreshCw size={14}/></Tooltip>}
+                                rightSection={<Tooltip label="Auto-calculated."><RefreshCw size={14}/></Tooltip>}
                             />
                             <Button onClick={addColor} leftSection={<Plus size={16}/>}>Add</Button>
                         </Group>
@@ -423,7 +491,6 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
                     {customColors.map(c => (
                         <Group key={c.id} justify="space-between" bg="dark.6" p="xs" style={{ borderRadius: 4 }}>
                             <Group>
-                                {/* PREVIEW ALWAYS USES THE STORED HEX */}
                                 <Tooltip label={`Preview based on: ${c.previewHex}`}>
                                     <div style={{ width: 24, height: 24, borderRadius: 4, backgroundColor: c.previewHex, border: '1px solid white' }} />
                                 </Tooltip>
@@ -448,51 +515,35 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
         </ScrollArea>
       </Grid.Col>
 
-      {/* RIGHT COLUMN: Preview (Remains same) */}
+      {/* RIGHT COLUMN: Preview */}
       <Grid.Col span={5} bg="dark.8" h="100%" style={{ borderLeft: '1px solid var(--mantine-color-dark-6)', display: 'flex', flexDirection: 'column' }}>
         <Group p="xs" justify="center" bg="dark.7">
              <Button.Group>
-                <Button 
-                    size="xs" 
-                    variant={previewMode === 'code' ? 'filled' : 'default'} 
-                    leftSection={<CodeIcon size={14}/>}
-                    onClick={() => setPreviewMode('code')}
-                >
-                    Code
-                </Button>
-                <Button 
-                    size="xs" 
-                    variant={previewMode === 'visual' ? 'filled' : 'default'} 
-                    leftSection={<Eye size={14}/>}
-                    onClick={() => setPreviewMode('visual')}
-                >
-                    Visual
-                </Button>
+                <Button size="xs" variant={previewMode === 'code' ? 'filled' : 'default'} leftSection={<CodeIcon size={14}/>} onClick={() => setPreviewMode('code')}>Code</Button>
+                <Button size="xs" variant={previewMode === 'visual' ? 'filled' : 'default'} leftSection={<Eye size={14}/>} onClick={() => setPreviewMode('visual')}>Visual</Button>
              </Button.Group>
         </Group>
 
         <Box style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
             {previewMode === 'code' ? (
                 <ScrollArea h="100%">
-                    <Code block style={{ whiteSpace: 'pre-wrap', backgroundColor: 'transparent', minHeight: '100%' }}>
-                        {generatedCode}
-                    </Code>
+                    <Code block style={{ whiteSpace: 'pre-wrap', backgroundColor: 'transparent', minHeight: '100%' }}>{generatedCode}</Code>
                 </ScrollArea>
             ) : (
                 <Box h="100%" bg="dark.9" style={{ display: 'flex', justifyContent: 'center', overflow: 'auto', padding: 20 }}>
-                    {/* --- VISUALIZER --- */}
+                    {/* VISUALIZER */}
                     <div style={{
                         width: PAGE_WIDTH_PX,
                         height: PAGE_HEIGHT_PX,
                         backgroundColor: 'white',
                         position: 'relative',
                         boxShadow: '0 0 20px rgba(0,0,0,0.5)',
-                        transition: 'all 0.3s ease',
                         color: 'black',
                         fontSize: 10,
-                        overflow: 'hidden'
+                        overflow: 'hidden',
+                        ...geometryStyles.containerStyle // Apply offset visual
                     }}>
-                        {/* Header Area */}
+                        {/* Header */}
                         {config.pkgGeometry && geometryStyles.headerHeightPx > 0 && (
                             <div style={{
                                 position: 'absolute',
@@ -508,8 +559,7 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
                                 HEADER
                             </div>
                         )}
-
-                        {/* Body Content Area (Margins) */}
+                        {/* Body Content */}
                         <div style={{
                             position: 'absolute',
                             top: geometryStyles.bodyTopPx,
@@ -530,7 +580,6 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
                                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Body Text</div>
                              )}
                         </div>
-
                         {/* Margin Notes */}
                         {config.pkgGeometry && config.marginNotes && (
                             <div style={{
@@ -548,8 +597,7 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
                                 Notes
                             </div>
                         )}
-
-                        {/* Footer Area */}
+                        {/* Footer */}
                         {config.pkgGeometry && config.footSkip > 0 && (
                             <div style={{
                                 position: 'absolute',
@@ -567,11 +615,8 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
                 </Box>
             )}
         </Box>
-
         <Box p="md" bg="dark.7" style={{ borderTop: '1px solid var(--mantine-color-dark-6)' }}>
-             <Button fullWidth leftSection={<Check size={16}/>} onClick={() => onInsert(generatedCode)}>
-                Create Document
-             </Button>
+             <Button fullWidth leftSection={<Check size={16}/>} onClick={() => onInsert(generatedCode)}>Create Document</Button>
         </Box>
       </Grid.Col>
     </Grid>
