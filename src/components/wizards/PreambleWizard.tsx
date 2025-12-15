@@ -7,7 +7,7 @@ import {
 } from '@mantine/core';
 import { 
   Check, Trash, Plus, FileText, Layout, Package, Palette, 
-  Code as CodeIcon, Eye, RefreshCw, Info
+  Code as CodeIcon, Eye, RefreshCw, Info, List as ListIcon
 } from 'lucide-react';
 
 interface PreambleWizardProps {
@@ -79,6 +79,13 @@ interface CustomColorDef {
   model: string;
   value: string;
   previewHex: string; // Used strictly for UI preview
+}
+
+interface CustomListDef {
+  id: number;
+  name: string;
+  baseType: 'itemize' | 'enumerate' | 'description';
+  label: string;
 }
 
 // --- Helper: Color Conversion Logic ---
@@ -161,13 +168,12 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
     marginWidth: 3.0,
     includeMp: false,
     
-    // Advanced Geometry (Added)
     headHeight: 0,
     headSep: 0,
     footSkip: 0,
     bindingOffset: 0,
-    hOffset: 0, // NEW
-    vOffset: 0, // NEW
+    hOffset: 0,
+    vOffset: 0,
     
     includeHead: false,
     includeFoot: false,
@@ -182,6 +188,12 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
     pkgFloat: false,
     pkgFancyhdr: false,
     pkgXcolor: true,
+
+    // Lists (Enumitem)
+    pkgEnumitem: false,
+    enumitemSep: 'default', // default, nosep, half
+    enumitemItemize: 'default', // default, dash, asterisk
+    enumitemEnumerate: 'default', // default, alph, roman
   });
 
   // --- Custom Colors State ---
@@ -190,6 +202,12 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
   const [newColorModel, setNewColorModel] = useState('HTML');
   const [pickerColor, setPickerColor] = useState('#1971C2');
   const [newColorValue, setNewColorValue] = useState('');
+
+  // --- Custom Lists State ---
+  const [customLists, setCustomLists] = useState<CustomListDef[]>([]);
+  const [newListName, setNewListName] = useState('');
+  const [newListType, setNewListType] = useState<string>('enumerate');
+  const [newListLabel, setNewListLabel] = useState('');
 
   const handleChange = (key: string, val: any) => {
     setConfig(prev => ({ ...prev, [key]: val }));
@@ -239,8 +257,8 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
       if (v.headSep > 0) gOpts.push(`headsep=${v.headSep}cm`);
       if (v.footSkip > 0) gOpts.push(`footskip=${v.footSkip}cm`);
       if (v.bindingOffset > 0) gOpts.push(`bindingoffset=${v.bindingOffset}cm`);
-      if (v.hOffset !== 0) gOpts.push(`hoffset=${v.hOffset}cm`); // NEW
-      if (v.vOffset !== 0) gOpts.push(`voffset=${v.vOffset}cm`); // NEW
+      if (v.hOffset !== 0) gOpts.push(`hoffset=${v.hOffset}cm`); 
+      if (v.vOffset !== 0) gOpts.push(`voffset=${v.vOffset}cm`);
       
       if (v.includeHead) gOpts.push(`includehead`);
       if (v.includeFoot) gOpts.push(`includefoot`);
@@ -264,6 +282,46 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
         });
     }
 
+    // Enumitem Configuration
+    if (v.pkgEnumitem) {
+        code += `\\usepackage{enumitem}\n`;
+        
+        // Global Spacing
+        if (v.enumitemSep === 'nosep') code += `\\setlist{nosep}\n`;
+        else if (v.enumitemSep === 'half') code += `\\setlist{itemsep=0.5ex}\n`;
+
+        // Itemize Settings
+        if (v.enumitemItemize !== 'default') {
+            let label = '';
+            if (v.enumitemItemize === 'dash') label = 'label={--}';
+            else if (v.enumitemItemize === 'asterisk') label = 'label={*}';
+            else if (v.enumitemItemize === 'bullet') label = 'label=\\textbullet';
+            if (label) code += `\\setlist[itemize]{${label}}\n`;
+        }
+
+        // Enumerate Settings
+        if (v.enumitemEnumerate !== 'default') {
+            let label = '';
+            if (v.enumitemEnumerate === 'alph') label = 'label=\\alph*), ref=\\alph*)';
+            else if (v.enumitemEnumerate === 'Alph') label = 'label=\\Alph*., ref=\\Alph*';
+            else if (v.enumitemEnumerate === 'roman') label = 'label=\\roman*), ref=\\roman*)';
+            else if (v.enumitemEnumerate === 'Roman') label = 'label=\\Roman*., ref=\\Roman*';
+            else if (v.enumitemEnumerate === 'arabic_paren') label = 'label=(\\arabic*), ref=(\\arabic*)';
+            if (label) code += `\\setlist[enumerate]{${label}}\n`;
+        }
+
+        // Custom Lists
+        if (customLists.length > 0) {
+            code += `\n% --- Custom Lists ---\n`;
+            customLists.forEach(l => {
+                code += `\\newlist{${l.name}}{${l.baseType}}{3}\n`;
+                if (l.label) {
+                    code += `\\setlist[${l.name}]{label=${l.label}}\n`;
+                }
+            });
+        }
+    }
+
     if (v.pkgBooktabs) code += `\\usepackage{booktabs}\n`;
     if (v.pkgFloat) code += `\\usepackage{float}\n`;
     if (v.pkgTikz) code += `\\usepackage{tikz}\n`;
@@ -278,7 +336,7 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
 
     code += `\n\\begin{document}\n\n\\maketitle\n\n\\section{Introduction}\n% Content here\n\n\\end{document}`;
     setGeneratedCode(code);
-  }, [config, customColors]);
+  }, [config, customColors, customLists]);
 
   const addColor = () => {
     if (newColorName && newColorValue) {
@@ -297,11 +355,24 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
     }
   };
 
+  const addList = () => {
+    if (newListName && newListType) {
+       const sanitizedName = newListName.replace(/[^a-zA-Z0-9]/g, '');
+       setCustomLists([...customLists, {
+          id: Date.now(),
+          name: sanitizedName,
+          baseType: newListType as any,
+          label: newListLabel
+       }]);
+       setNewListName('');
+       setNewListLabel('');
+    }
+  };
+
   const geometryStyles = useMemo(() => {
     const headerHeightPx = config.pkgGeometry ? config.headHeight * CM_TO_PX : 0;
     const headerSepPx = config.pkgGeometry ? config.headSep * CM_TO_PX : 0;
     
-    // Adjust top based on vOffset (simplified visualization)
     const vOffsetPx = config.pkgGeometry ? config.vOffset * CM_TO_PX : 0;
     const hOffsetPx = config.pkgGeometry ? config.hOffset * CM_TO_PX : 0;
 
@@ -316,7 +387,6 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
     const marginNotesStartPx = bodyRightEdgePx + (config.marginSep * CM_TO_PX);
     const marginNotesWidthCapPx = config.marginWidth * CM_TO_PX;
 
-    // Shift whole content wrapper by hOffset for visualization
     const containerStyle = {
         transform: `translate(${hOffsetPx}px, ${vOffsetPx}px)`,
         transition: 'transform 0.3s ease'
@@ -336,6 +406,7 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
                 <Tabs.Tab value="general" leftSection={<FileText size={16}/>}>General</Tabs.Tab>
                 <Tabs.Tab value="layout" leftSection={<Layout size={16}/>}>Layout</Tabs.Tab>
                 <Tabs.Tab value="packages" leftSection={<Package size={16}/>}>Packages</Tabs.Tab>
+                <Tabs.Tab value="lists" leftSection={<ListIcon size={16}/>}>Lists</Tabs.Tab>
                 <Tabs.Tab value="colors" leftSection={<Palette size={16}/>}>Colors</Tabs.Tab>
               </Tabs.List>
 
@@ -343,12 +414,7 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
               <Tabs.Panel value="general" pt="md">
                 <SimpleGrid cols={2} spacing="md">
                   <Select label="Document Class" data={['article', 'report', 'book', 'beamer']} value={config.docClass} onChange={(v) => handleChange('docClass', v)} />
-                  <Select 
-                    label="Font Size (pt)" // FIX: Renamed label instead of suffix
-                    data={['10', '11', '12']} 
-                    value={config.fontSize} 
-                    onChange={(v) => handleChange('fontSize', v)} 
-                  />
+                  <Select label="Font Size (pt)" data={['10', '11', '12']} value={config.fontSize} onChange={(v) => handleChange('fontSize', v)} />
                   <Select label="Paper Size" data={PAPER_SIZES} value={config.paperSize} onChange={(v) => handleChange('paperSize', v)} />
                   <Select label="Language" data={LANGUAGES} value={config.mainLang} onChange={(v) => handleChange('mainLang', v)} searchable />
                 </SimpleGrid>
@@ -399,12 +465,9 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
                         <NumberInput label="Head Height" value={config.headHeight} onChange={(v) => handleChange('headHeight', v)} step={0.1} min={0} />
                         <NumberInput label="Head Sep" value={config.headSep} onChange={(v) => handleChange('headSep', v)} step={0.1} min={0} />
                         <Checkbox label="Include Head" checked={config.includeHead} onChange={(e) => handleChange('includeHead', e.currentTarget.checked)} mt={28} />
-                        
                         <NumberInput label="Foot Skip" value={config.footSkip} onChange={(v) => handleChange('footSkip', v)} step={0.1} min={0} />
                         <NumberInput label="Binding Offset" value={config.bindingOffset} onChange={(v) => handleChange('bindingOffset', v)} step={0.1} min={0} />
                         <Checkbox label="Include Foot" checked={config.includeFoot} onChange={(e) => handleChange('includeFoot', e.currentTarget.checked)} mt={28} />
-
-                        {/* NEW OFFSET INPUTS */}
                         <NumberInput label="H Offset" value={config.hOffset} onChange={(v) => handleChange('hOffset', v)} step={0.1} />
                         <NumberInput label="V Offset" value={config.vOffset} onChange={(v) => handleChange('vOffset', v)} step={0.1} />
                      </SimpleGrid>
@@ -423,7 +486,6 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
                  )}
               </Tabs.Panel>
 
-              {/* PACKAGES TAB (Same) */}
               <Tabs.Panel value="packages" pt="md">
                 <SimpleGrid cols={2} spacing="lg">
                     <Stack gap="xs">
@@ -446,7 +508,90 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
                 </SimpleGrid>
               </Tabs.Panel>
 
-              {/* COLORS TAB (Same) */}
+              {/* LISTS TAB (UPDATED) */}
+              <Tabs.Panel value="lists" pt="md">
+                <Card withBorder p="sm" bg="dark.7" mb="md">
+                   <Group justify="space-between">
+                     <Text fw={500}>Enumitem Package</Text>
+                     <Switch checked={config.pkgEnumitem} onChange={(e) => handleChange('pkgEnumitem', e.currentTarget.checked)} />
+                   </Group>
+                </Card>
+
+                {config.pkgEnumitem && (
+                    <Stack gap="md">
+                        <Select 
+                            label="Global Spacing" 
+                            description="Sets the vertical spacing for all lists."
+                            data={[
+                                { value: 'default', label: 'Default' },
+                                { value: 'nosep', label: 'No Separation (nosep)' },
+                                { value: 'half', label: 'Half Spacing' }
+                            ]}
+                            value={config.enumitemSep}
+                            onChange={(v) => handleChange('enumitemSep', v)}
+                        />
+                        
+                        <Divider label="Itemize Settings" labelPosition="left" />
+                        <Select 
+                            label="Default Bullet Label"
+                            data={[
+                                { value: 'default', label: 'Default' },
+                                { value: 'bullet', label: 'Bullet (•)' },
+                                { value: 'dash', label: 'Dash (–)' },
+                                { value: 'asterisk', label: 'Asterisk (*)' },
+                            ]}
+                            value={config.enumitemItemize}
+                            onChange={(v) => handleChange('enumitemItemize', v)}
+                        />
+
+                        <Divider label="Enumerate Settings" labelPosition="left" />
+                        <Select 
+                            label="Default Numbering"
+                            data={[
+                                { value: 'default', label: 'Default (1.)' },
+                                { value: 'arabic_paren', label: 'Parenthesis (1)' },
+                                { value: 'alph', label: 'Small Alpha a)' },
+                                { value: 'Alph', label: 'Big Alpha A.' },
+                                { value: 'roman', label: 'Small Roman i)' },
+                                { value: 'Roman', label: 'Big Roman I.' },
+                            ]}
+                            value={config.enumitemEnumerate}
+                            onChange={(v) => handleChange('enumitemEnumerate', v)}
+                        />
+
+                        <Divider my="sm" />
+                        <Text size="sm" fw={700} mb="xs">Custom Lists</Text>
+                        <Card withBorder p="sm" bg="dark.7">
+                           <Stack gap="sm">
+                              <Group grow>
+                                 <TextInput label="Name" placeholder="e.g. questions" value={newListName} onChange={(e) => setNewListName(e.currentTarget.value)} />
+                                 <Select label="Base Type" data={['enumerate', 'itemize', 'description']} value={newListType} onChange={(v) => setNewListType(v || 'enumerate')} />
+                              </Group>
+                              <Group align="flex-end">
+                                 <TextInput label="Label Pattern" placeholder="e.g. \arabic*." value={newListLabel} onChange={(e) => setNewListLabel(e.currentTarget.value)} style={{ flex: 1 }} />
+                                 <Button onClick={addList} leftSection={<Plus size={16}/>}>Add</Button>
+                              </Group>
+                           </Stack>
+                        </Card>
+
+                        <Stack gap="xs" mt="sm">
+                           {customLists.map(l => (
+                              <Group key={l.id} justify="space-between" bg="dark.6" p="xs" style={{ borderRadius: 4 }}>
+                                 <Stack gap={0}>
+                                    <Text size="sm" fw={500}>{l.name}</Text>
+                                    <Text size="xs" c="dimmed">Type: {l.baseType} | Label: {l.label || 'Default'}</Text>
+                                 </Stack>
+                                 <ActionIcon color="red" variant="subtle" onClick={() => setCustomLists(customLists.filter(x => x.id !== l.id))}>
+                                    <Trash size={16} />
+                                 </ActionIcon>
+                              </Group>
+                           ))}
+                        </Stack>
+                    </Stack>
+                )}
+              </Tabs.Panel>
+
+              {/* COLORS TAB */}
               <Tabs.Panel value="colors" pt="md">
                 <Checkbox label="Enable Xcolor Package" checked={config.pkgXcolor} onChange={(e) => handleChange('pkgXcolor', e.currentTarget.checked)} mb="md" />
                 
