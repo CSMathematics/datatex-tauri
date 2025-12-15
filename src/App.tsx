@@ -18,15 +18,12 @@ import {
   Loader
 } from "@mantine/core";
 
-// Editor Import
-import Editor, { OnMount } from "@monaco-editor/react";
+// --- [ΑΛΛΑΓΗ 1: Προσθήκη του πραγματικού Editor] ---
+// Βεβαιώσου ότι έκανες: npm install @monaco-editor/react
+import Editor from "@monaco-editor/react";
 
-// Imports Components
-import { PreambleWizard } from "./components/wizards/PreambleWizard";
-import { TableWizard } from "./components/wizards/TableWizard";
-import { TikzWizard } from "./components/wizards/TikzWizard";
-// Βεβαιώσου ότι έχεις δημιουργήσει αυτό το αρχείο από το προηγούμενο βήμα
-import { TableDataView } from "./components/database/TableDataView";
+import { open } from "@tauri-apps/plugin-dialog";
+import { readDir, DirEntry } from "@tauri-apps/plugin-fs";
 
 import { latexLanguage, latexConfiguration } from "./languages/latex";
 import { dataTexDarkTheme } from "./themes/monaco-theme";
@@ -47,13 +44,7 @@ import {
   Maximize2,
   MoreVertical,
   ChevronRight,
-  ArrowLeft,
-  Save,
   FolderOpen,
-  FilePlus,
-  Folder,
-  Code2,
-  Plug
 } from "lucide-react";
 
 // --- Theme Configuration ---
@@ -86,13 +77,11 @@ interface AppTab {
   tableName?: string;
 }
 
-interface FileSystemNode {
-  id: string;
-  name: string;
-  type: 'file' | 'folder';
-  path: string;
-  children?: FileSystemNode[];
-}
+const MOCK_TABLES = [
+  { name: "exercises_algebra", count: 150 },
+  { name: "geometry_theorems", count: 45 },
+  { name: "physics_problems", count: 89 },
+];
 
 const INITIAL_CODE = `\\documentclass{article}
 \\usepackage{amsmath}
@@ -150,37 +139,26 @@ const SidebarContent = ({
   onConnectDB: () => void;
   onOpenTable: (tableName: string) => void;
 }) => {
-  
-  // File Tree Item Component (Inline recursion)
-  const FileTreeItem = ({ node, depth }: { node: FileSystemNode, depth: number }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    return (
-      <Box>
-        <Group 
-          gap={4} py={2} px={8} 
-          style={{ paddingLeft: depth * 12 + 8, cursor: 'pointer', userSelect: 'none' }}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (node.type === 'folder') setIsOpen(!isOpen);
-            else onOpenFileNode(node);
-          }}
-          c="gray.4"
-        >
-          <Box style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.1s', opacity: node.type === 'folder' ? 1 : 0 }}>
-             <ChevronRight size={12} />
-          </Box>
-          {node.type === 'folder' ? (isOpen ? <FolderOpen size={14} color="#EADFA5" /> : <Folder size={14} color="#EADFA5" />) : <FileCode size={14} color={node.name.endsWith('.tex') ? "#4dabf7" : "#A6A7AB"} />}
-          <Text size="sm" truncate>{node.name}</Text>
-        </Group>
-        {node.type === 'folder' && node.children && (
-          <Collapse in={isOpen}>
-            <Stack gap={0}>
-              {node.children.map(child => <FileTreeItem key={child.id} node={child} depth={depth + 1} />)}
-            </Stack>
-          </Collapse>
-        )}
-      </Box>
-    );
+  const [files, setFiles] = useState<DirEntry[]>([]);
+  const [currentPath, setCurrentPath] = useState<string | null>(null);
+
+  const handleOpenFolder = async () => {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+      });
+
+      if (selected && typeof selected === "string") {
+        const entries = await readDir(selected);
+        // Φιλτράρουμε για να δείχνουμε φακέλους και αρχεία .tex, .bib, .sty κτλ.
+        // Για αρχή δείχνουμε τα πάντα.
+        setFiles(entries);
+        setCurrentPath(selected);
+      }
+    } catch (err) {
+      console.error("Error opening folder:", err);
+    }
   };
 
   return (
@@ -197,32 +175,58 @@ const SidebarContent = ({
       <ScrollArea style={{ flex: 1 }}>
         {/* SECTION: FILES */}
         {activeSection === "files" && (
-          <Stack gap={0}>
-            {openTabs.length > 0 && (
+          <Stack gap={2} p="xs">
+            {!currentPath ? (
+              <Button
+                variant="light"
+                leftSection={<FolderOpen size={16} />}
+                onClick={handleOpenFolder}
+              >
+                Open Folder
+              </Button>
+            ) : (
               <>
-                <Group gap={4} py={4} px={6} bg="dark.6"><ChevronDown size={14} /><Text size="xs" fw={700} tt="uppercase">Open Editors</Text></Group>
-                <Stack gap={1} p={4} mb="md">
-                  {openTabs.map((t) => (
+                <Group
+                  gap={4}
+                  py={4}
+                  px={6}
+                  style={{ cursor: "pointer", borderRadius: 4 }}
+                  bg="dark.6"
+                  onClick={handleOpenFolder} // Ξανα-ανοίγει το dialog για αλλαγή φακέλου
+                >
+                  <ChevronDown size={14} />
+                  <Text size="xs" fw={700} truncate>
+                    {currentPath.split(/[/\\]/).pop()}
+                  </Text>
+                </Group>
+                {files
+                  .sort((a, b) => {
+                    // Folders first
+                    if (a.isDirectory && !b.isDirectory) return -1;
+                    if (!a.isDirectory && b.isDirectory) return 1;
+                    return a.name.localeCompare(b.name);
+                  })
+                  .map((f) => (
                     <Group
-                      key={t.id} gap={8} pl={16} py={4}
-                      style={{ cursor: "pointer", borderRadius: 4, backgroundColor: t.id === activeTabId ? 'var(--mantine-color-blue-9)' : 'transparent' }}
-                      onClick={() => onTabSelect(t.id)}
+                      key={f.name}
+                      gap={8}
+                      pl={24}
+                      py={4}
+                      style={{ cursor: "pointer", borderRadius: 4 }}
                     >
-                      {t.type === 'editor' ? <FileCode size={14} color="#4dabf7" /> : <Table2 size={14} color="#69db7c" />}
-                      <Text size="sm" c={t.id === activeTabId ? "white" : "gray.4"} truncate>{t.title}</Text>
-                      {t.isDirty && <Box w={6} h={6} bg="white" style={{borderRadius:'50%'}} />}
+                      {f.isDirectory ? (
+                         <FolderOpen size={14} color="#ffd43b" />
+                      ) : (
+                        <FileCode size={14} color="#4dabf7" />
+                      )}
+
+                      <Text size="sm" c="gray.3" truncate>
+                        {f.name}
+                      </Text>
                     </Group>
                   ))}
-                </Stack>
               </>
             )}
-            <Group gap={4} py={4} px={6} bg="dark.6"><ChevronDown size={14} /><Text size="xs" fw={700} tt="uppercase">Project</Text></Group>
-            {loadingFiles ? <Group justify="center" p="md"><Loader size="sm" /></Group> : projectData.length === 0 ? (
-              <Box p="md" ta="center">
-                <Text size="xs" c="dimmed" mb="sm">Δεν έχει ανοίξει φάκελος</Text>
-                <Button size="xs" variant="light" onClick={onOpenFolder}>Άνοιγμα Φακέλου</Button>
-              </Box>
-            ) : <Box>{projectData.map(node => <FileTreeItem key={node.id} node={node} depth={0} />)}</Box>}
           </Stack>
         )}
 
@@ -266,24 +270,8 @@ const SidebarContent = ({
   );
 };
 
-// --- MAIN EDITOR AREA ---
-const EditorArea = ({ 
-  files, 
-  activeFileId, 
-  onFileSelect, 
-  onFileClose,
-  onContentChange,
-  onMount 
-}: { 
-  files: AppTab[], 
-  activeFileId: string, 
-  onFileSelect: (id: string) => void,
-  onFileClose: (id: string, e: React.MouseEvent) => void,
-  onContentChange: (id: string, content: string) => void,
-  onMount: OnMount 
-}) => {
-  
-  const activeFile = files.find(f => f.id === activeFileId);
+// 3. Main Editor Area
+const EditorArea = () => {
 
   return (
     <Stack gap={0} h="100%" w="100%">
@@ -356,32 +344,19 @@ const EditorArea = ({
       {/* Main Content (Editor or Table View) */}
       <Group gap={0} style={{ flex: 1, overflow: "hidden", alignItems: "stretch" }}>
         <Box style={{ flex: 1, position: "relative" }}>
-          {activeFile?.type === 'editor' ? (
-            <Editor
-              path={activeFile.id} 
-              height="100%"
-              defaultLanguage="my-latex"
-              defaultValue={activeFile.content}
-              value={activeFile.content}
-              onMount={onMount}
-              onChange={(value) => onContentChange(activeFile.id, value || '')}
-              options={{
-                minimap: { enabled: true, scale: 0.75 },
-                fontSize: 14,
-                fontFamily: "Consolas, monospace",
-                scrollBeyondLastLine: false,
-                automaticLayout: true,
-                theme: "data-tex-dark",
-              }}
-            />
-          ) : activeFile?.type === 'table' ? (
-             <TableDataView tableName={activeFile.tableName || ''} />
-          ) : (
-             <Box h="100%" style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
-                <Code2 size={48} color="#373A40" />
-                <Text c="dimmed" mt="md">Select a file to start editing</Text>
-             </Box>
-          )}
+          <Editor
+            height="100%"
+            defaultLanguage="my-latex" // ΠΡΟΣΟΧΗ: Πρέπει να είναι ίδιο με το id στο register
+            defaultValue={INITIAL_CODE}
+            onMount={handleEditorDidMount} // Αυτό είναι το κλειδί για να τρέξουν τα παραπάνω
+            options={{
+              minimap: { enabled: true, scale: 0.75 },
+              fontSize: 14,
+              fontFamily: "Consolas, monospace",
+              scrollBeyondLastLine: false,
+              automaticLayout: true,
+            }}
+          />
         </Box>
 
         {/* PDF Preview (Only for Editor) */}
@@ -418,7 +393,18 @@ const StatusBar = ({ activeFile }: { activeFile?: AppTab }) => (
   </Group>
 );
 
-// --- MAIN APP COMPONENT ---
+const handleEditorDidMount = (_editor: any, monaco: any) => {
+  // 1. Καταχώρηση της γλώσσας LaTeX
+  monaco.languages.register({ id: "my-latex" });
+  monaco.languages.setMonarchTokensProvider("my-latex", latexLanguage);
+  monaco.languages.setLanguageConfiguration("my-latex", latexConfiguration);
+
+  // 2. Καταχώρηση και εφαρμογή του Θέματος
+  monaco.editor.defineTheme("data-tex-dark", dataTexDarkTheme);
+  monaco.editor.setTheme("data-tex-dark");
+};
+
+// --- Main App ---
 
 export default function App() {
   const [activeActivity, setActiveActivity] = useState<SidebarSection>("files");
