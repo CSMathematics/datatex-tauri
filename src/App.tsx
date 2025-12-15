@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   AppShell,
   Group,
@@ -17,7 +17,10 @@ import {
 
 // --- [ΑΛΛΑΓΗ 1: Προσθήκη του πραγματικού Editor] ---
 // Βεβαιώσου ότι έκανες: npm install @monaco-editor/react
-import Editor, { useMonaco } from "@monaco-editor/react";
+import Editor from "@monaco-editor/react";
+
+import { open } from "@tauri-apps/plugin-dialog";
+import { readDir, DirEntry } from "@tauri-apps/plugin-fs";
 
 import { latexLanguage, latexConfiguration } from "./languages/latex";
 import { dataTexDarkTheme } from "./themes/monaco-theme";
@@ -34,11 +37,11 @@ import {
   Columns,
   X,
   ChevronDown,
-  LayoutTemplate,
   TerminalSquare,
   Maximize2,
   MoreVertical,
   ChevronRight,
+  FolderOpen,
 } from "lucide-react";
 
 // --- Theme Configuration (Mantine) ---
@@ -64,12 +67,6 @@ const theme = createTheme({
 
 // --- Mock Data ---
 type SidebarSection = "files" | "search" | "database" | "wizards";
-
-const MOCK_FILES = [
-  { name: "document.tex", type: "tex" },
-  { name: "preamble.sty", type: "sty" },
-  { name: "bibliography.bib", type: "bib" },
-];
 
 const MOCK_TABLES = [
   { name: "exercises_algebra", count: 150 },
@@ -160,6 +157,28 @@ const SidebarContent = ({
 }: {
   activeSection: SidebarSection;
 }) => {
+  const [files, setFiles] = useState<DirEntry[]>([]);
+  const [currentPath, setCurrentPath] = useState<string | null>(null);
+
+  const handleOpenFolder = async () => {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+      });
+
+      if (selected && typeof selected === "string") {
+        const entries = await readDir(selected);
+        // Φιλτράρουμε για να δείχνουμε φακέλους και αρχεία .tex, .bib, .sty κτλ.
+        // Για αρχή δείχνουμε τα πάντα.
+        setFiles(entries);
+        setCurrentPath(selected);
+      }
+    } catch (err) {
+      console.error("Error opening folder:", err);
+    }
+  };
+
   return (
     <Stack gap={0} h="100%" bg="dark.7">
       <Group
@@ -182,32 +201,57 @@ const SidebarContent = ({
       <ScrollArea style={{ flex: 1 }}>
         {activeSection === "files" && (
           <Stack gap={2} p="xs">
-            <Group
-              gap={4}
-              py={4}
-              px={6}
-              style={{ cursor: "pointer", borderRadius: 4 }}
-              bg="dark.6"
-            >
-              <ChevronDown size={14} />
-              <Text size="xs" fw={700}>
-                PROJECT ROOT
-              </Text>
-            </Group>
-            {MOCK_FILES.map((f) => (
-              <Group
-                key={f.name}
-                gap={8}
-                pl={24}
-                py={4}
-                style={{ cursor: "pointer", borderRadius: 4 }}
+            {!currentPath ? (
+              <Button
+                variant="light"
+                leftSection={<FolderOpen size={16} />}
+                onClick={handleOpenFolder}
               >
-                <FileCode size={14} color="#4dabf7" />
-                <Text size="sm" c="gray.3">
-                  {f.name}
-                </Text>
-              </Group>
-            ))}
+                Open Folder
+              </Button>
+            ) : (
+              <>
+                <Group
+                  gap={4}
+                  py={4}
+                  px={6}
+                  style={{ cursor: "pointer", borderRadius: 4 }}
+                  bg="dark.6"
+                  onClick={handleOpenFolder} // Ξανα-ανοίγει το dialog για αλλαγή φακέλου
+                >
+                  <ChevronDown size={14} />
+                  <Text size="xs" fw={700} truncate>
+                    {currentPath.split(/[/\\]/).pop()}
+                  </Text>
+                </Group>
+                {files
+                  .sort((a, b) => {
+                    // Folders first
+                    if (a.isDirectory && !b.isDirectory) return -1;
+                    if (!a.isDirectory && b.isDirectory) return 1;
+                    return a.name.localeCompare(b.name);
+                  })
+                  .map((f) => (
+                    <Group
+                      key={f.name}
+                      gap={8}
+                      pl={24}
+                      py={4}
+                      style={{ cursor: "pointer", borderRadius: 4 }}
+                    >
+                      {f.isDirectory ? (
+                         <FolderOpen size={14} color="#ffd43b" />
+                      ) : (
+                        <FileCode size={14} color="#4dabf7" />
+                      )}
+
+                      <Text size="sm" c="gray.3" truncate>
+                        {f.name}
+                      </Text>
+                    </Group>
+                  ))}
+              </>
+            )}
           </Stack>
         )}
 
@@ -255,26 +299,6 @@ const SidebarContent = ({
 
 // 3. Main Editor Area
 const EditorArea = () => {
-  // --- [ΑΛΛΑΓΗ 2: Ρυθμίσεις Monaco Editor] ---
-  // Εδώ ορίζουμε το Minimap και το γενικό look
-  const editorOptions = {
-    minimap: {
-      enabled: true, // Ενεργοποίηση της δεξιάς στήλης (minimap)
-      scale: 0.75, // Μέγεθος minimap
-      renderCharacters: false,
-    },
-    fontSize: 14,
-    fontFamily: 'Consolas, "Courier New", monospace',
-    scrollBeyondLastLine: false,
-    automaticLayout: true,
-    wordWrap: "on" as const,
-    theme: "vs-dark", // Χρησιμοποιούμε το built-in dark theme
-    padding: { top: 16 },
-  };
-
-  const handleEditorChange = (value: string | undefined) => {
-    console.log("Code changed:", value);
-  };
 
   return (
     <Stack gap={0} h="100%" w="100%">
@@ -366,7 +390,7 @@ const EditorArea = () => {
         <Box style={{ flex: 1, position: "relative" }}>
           <Editor
             height="100%"
-            defaultLanguage="latex" // ΠΡΟΣΟΧΗ: Πρέπει να είναι ίδιο με το id στο register
+            defaultLanguage="my-latex" // ΠΡΟΣΟΧΗ: Πρέπει να είναι ίδιο με το id στο register
             defaultValue={INITIAL_CODE}
             onMount={handleEditorDidMount} // Αυτό είναι το κλειδί για να τρέξουν τα παραπάνω
             options={{
@@ -483,7 +507,7 @@ const StatusBar = () => (
   </Group>
 );
 
-const handleEditorDidMount = (editor: any, monaco: any) => {
+const handleEditorDidMount = (_editor: any, monaco: any) => {
   // 1. Καταχώρηση της γλώσσας LaTeX
   monaco.languages.register({ id: "my-latex" });
   monaco.languages.setMonarchTokensProvider("my-latex", latexLanguage);
