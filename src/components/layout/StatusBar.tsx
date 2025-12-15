@@ -1,34 +1,42 @@
-import React from 'react'
-import { Layout } from 'antd'
-import { CodeOutlined } from '@ant-design/icons'
-
-const { Footer } = Layout
+import React from 'react';
+import { Group, Text } from '@mantine/core';
+import { TerminalSquare, Database } from 'lucide-react';
+import { AppTab } from './Sidebar'; // Import τύπου από το Sidebar ή από ένα κοινό types file
 
 interface StatusBarProps {
-  text: string
+  activeFile?: AppTab;
+  dbConnected?: boolean;
 }
 
-const StatusBar: React.FC<StatusBarProps> = ({ text }) => {
+export const StatusBar: React.FC<StatusBarProps> = ({ activeFile, dbConnected = true }) => {
   return (
-    <Footer
-      style={{
-        height: 25,
-        background: '#007acc',
-        color: '#fff',
-        display: 'flex',
-        alignItems: 'center',
-        fontSize: 11,
-        padding: '0 10px',
-        lineHeight: '25px'
-      }}
+    <Group 
+      h={24} 
+      px="xs" 
+      justify="space-between" 
+      bg="blue.8" 
+      c="white" 
+      style={{ fontSize: "11px", userSelect: "none" }}
     >
-      <div style={{ marginRight: 20 }}>
-        <CodeOutlined /> Latex Mode
-      </div>
-      <div style={{ flex: 1 }}>{text}</div>
-      <div style={{ marginRight: 20 }}>UTF-8</div>
-    </Footer>
-  )
-}
-
-export default StatusBar
+      <Group gap="lg">
+        <Group gap={4}>
+          <TerminalSquare size={12} />
+          <Text size="xs" inherit>Ready</Text>
+        </Group>
+      </Group>
+      
+      <Group gap="lg">
+        <Text size="xs" inherit>
+          {activeFile?.language === 'latex' ? 'LaTeX' : activeFile?.language || 'Plain Text'}
+        </Text>
+        <Text size="xs" inherit>UTF-8</Text>
+        <Group gap={4}>
+          <Database size={10} color={dbConnected ? 'white' : '#ff8787'} />
+          <Text size="xs" inherit>
+            DataTex DB: {dbConnected ? 'Connected' : 'Disconnected'}
+          </Text>
+        </Group>
+      </Group>
+    </Group>
+  );
+};

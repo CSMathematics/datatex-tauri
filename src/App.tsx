@@ -9,42 +9,46 @@ import {
   Button,
   ScrollArea,
   TextInput,
-  Badge,
   MantineProvider,
   createTheme,
   Box,
   Menu,
-  Collapse,
-  Loader
+  rem
 } from "@mantine/core";
 
-// --- [ΑΛΛΑΓΗ 1: Προσθήκη του πραγματικού Editor] ---
-// Βεβαιώσου ότι έκανες: npm install @monaco-editor/react
-import Editor from "@monaco-editor/react";
+// Editor Import
+import Editor, { OnMount } from "@monaco-editor/react";
 
-import { open } from "@tauri-apps/plugin-dialog";
-import { readDir, DirEntry } from "@tauri-apps/plugin-fs";
+// Imports Components
+import { PreambleWizard } from "./components/wizards/PreambleWizard";
+import { TableWizard } from "./components/wizards/TableWizard";
+import { TikzWizard } from "./components/wizards/TikzWizard";
+import { TableDataView } from "./components/database/TableDataView";
+import { Sidebar, SidebarSection, ViewType, AppTab, FileSystemNode } from "./components/layout/Sidebar";
+import { StatusBar } from "./components/layout/StatusBar"; // Νέο Import
 
 import { latexLanguage, latexConfiguration } from "./languages/latex";
 import { dataTexDarkTheme } from "./themes/monaco-theme";
 
 import {
-  Files,
   Database,
   Search,
   Settings,
-  Wand2,
   Play,
   FileCode,
   Table2,
-  Columns,
   X,
-  ChevronDown,
-  TerminalSquare,
   Maximize2,
-  MoreVertical,
   ChevronRight,
+  Save,
   FolderOpen,
+  FilePlus,
+  Code2,
+  FileText, 
+  BookOpen, 
+  Image as ImageIcon, 
+  FileCog, 
+  File 
 } from "lucide-react";
 
 // --- Theme Configuration ---
@@ -58,30 +62,39 @@ const theme = createTheme({
       "#2C2E33", "#25262b", "#1A1B1E", "#141517", "#101113",
     ],
   },
+  components: {
+    Switch: {
+      defaultProps: {
+        thumbIcon: null 
+      },
+      styles: {
+        root: { display: 'flex', alignItems: 'center' },
+        track: {
+          border: '1px solid #4A4B50', 
+          backgroundColor: '#2C2E33', 
+          cursor: 'pointer',
+          height: rem(22),
+          minWidth: rem(42), 
+          padding: 2, 
+          transition: 'background-color 0.2s, border-color 0.2s',
+          '&[data-checked]': { 
+            backgroundColor: 'var(--mantine-color-blue-6)',
+            borderColor: 'var(--mantine-color-blue-6)',
+          },
+        },
+        thumb: {
+          height: rem(16), 
+          width: rem(16),
+          backgroundColor: '#fff', 
+          borderRadius: '50%',
+          border: 'none',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.3)',
+        },
+        label: { paddingLeft: 10, fontWeight: 500, color: '#C1C2C5' }
+      }
+    }
+  }
 });
-
-// --- Types ---
-type SidebarSection = "files" | "search" | "database" | "wizards";
-type ViewType = "editor" | "wizard-preamble" | "wizard-table" | "wizard-tikz";
-
-// --- Unified Tab Interface ---
-interface AppTab {
-  id: string;
-  title: string;
-  type: 'editor' | 'table';
-  // Editor properties
-  content?: string;
-  language?: string;
-  isDirty?: boolean;
-  // Table properties
-  tableName?: string;
-}
-
-const MOCK_TABLES = [
-  { name: "exercises_algebra", count: 150 },
-  { name: "geometry_theorems", count: 45 },
-  { name: "physics_problems", count: 89 },
-];
 
 const INITIAL_CODE = `\\documentclass{article}
 \\usepackage{amsmath}
@@ -108,170 +121,37 @@ const ResizerHandle = ({ onMouseDown, isResizing }: { onMouseDown: (e: React.Mou
   />
 );
 
-// --- SIDEBAR CONTENT COMPONENT ---
-// Αυτό το component περιέχει όλη τη λογική εμφάνισης για Files, DB, Wizards
-const SidebarContent = ({
-  activeSection,
-  onNavigate,
-  openTabs,
-  activeTabId,
-  onTabSelect,
-  projectData,
-  onOpenFolder,
-  onOpenFileNode,
-  loadingFiles,
-  dbConnected,
-  dbTables,
-  onConnectDB,
-  onOpenTable
-}: {
-  activeSection: SidebarSection;
-  onNavigate: (view: ViewType) => void;
-  openTabs: AppTab[];
-  activeTabId: string;
-  onTabSelect: (id: string) => void;
-  projectData: FileSystemNode[];
-  onOpenFolder: () => void;
-  onOpenFileNode: (node: FileSystemNode) => void;
-  loadingFiles: boolean;
-  dbConnected: boolean;
-  dbTables: string[];
-  onConnectDB: () => void;
-  onOpenTable: (tableName: string) => void;
+// --- 3. MAIN EDITOR AREA COMPONENT ---
+const EditorArea = ({ 
+  files, 
+  activeFileId, 
+  onFileSelect, 
+  onFileClose,
+  onContentChange,
+  onMount 
+}: { 
+  files: AppTab[], 
+  activeFileId: string, 
+  onFileSelect: (id: string) => void,
+  onFileClose: (id: string, e: React.MouseEvent) => void,
+  onContentChange: (id: string, content: string) => void,
+  onMount: OnMount 
 }) => {
-  const [files, setFiles] = useState<DirEntry[]>([]);
-  const [currentPath, setCurrentPath] = useState<string | null>(null);
+  
+  const activeFile = files.find(f => f.id === activeFileId);
 
-  const handleOpenFolder = async () => {
-    try {
-      const selected = await open({
-        directory: true,
-        multiple: false,
-      });
-
-      if (selected && typeof selected === "string") {
-        const entries = await readDir(selected);
-        // Φιλτράρουμε για να δείχνουμε φακέλους και αρχεία .tex, .bib, .sty κτλ.
-        // Για αρχή δείχνουμε τα πάντα.
-        setFiles(entries);
-        setCurrentPath(selected);
-      }
-    } catch (err) {
-      console.error("Error opening folder:", err);
+  const getFileIcon = (name: string) => {
+    const ext = name.split('.').pop()?.toLowerCase();
+    switch(ext) {
+        case 'tex': return <FileCode size={14} color="#4dabf7" />;
+        case 'bib': return <BookOpen size={14} color="#fab005" />;
+        case 'sty': return <FileCog size={14} color="#be4bdb" />;
+        case 'pdf': return <FileText size={14} color="#fa5252" />;
+        case 'png':
+        case 'jpg': return <ImageIcon size={14} color="#40c057" />;
+        default: return <File size={14} color="#868e96" />;
     }
   };
-
-  return (
-    <Stack gap={0} h="100%" bg="dark.7">
-      <Group justify="space-between" px="xs" h={36} style={{ borderBottom: "1px solid var(--mantine-color-dark-6)" }}>
-        <Text size="xs" fw={700} tt="uppercase" c="dimmed">
-          {activeSection === "files" && "Explorer"}
-          {activeSection === "database" && "DataTex DB"}
-          {activeSection === "wizards" && "Wizards"}
-        </Text>
-        <MoreVertical size={14} color="gray" />
-      </Group>
-
-      <ScrollArea style={{ flex: 1 }}>
-        {/* SECTION: FILES */}
-        {activeSection === "files" && (
-          <Stack gap={2} p="xs">
-            {!currentPath ? (
-              <Button
-                variant="light"
-                leftSection={<FolderOpen size={16} />}
-                onClick={handleOpenFolder}
-              >
-                Open Folder
-              </Button>
-            ) : (
-              <>
-                <Group
-                  gap={4}
-                  py={4}
-                  px={6}
-                  style={{ cursor: "pointer", borderRadius: 4 }}
-                  bg="dark.6"
-                  onClick={handleOpenFolder} // Ξανα-ανοίγει το dialog για αλλαγή φακέλου
-                >
-                  <ChevronDown size={14} />
-                  <Text size="xs" fw={700} truncate>
-                    {currentPath.split(/[/\\]/).pop()}
-                  </Text>
-                </Group>
-                {files
-                  .sort((a, b) => {
-                    // Folders first
-                    if (a.isDirectory && !b.isDirectory) return -1;
-                    if (!a.isDirectory && b.isDirectory) return 1;
-                    return a.name.localeCompare(b.name);
-                  })
-                  .map((f) => (
-                    <Group
-                      key={f.name}
-                      gap={8}
-                      pl={24}
-                      py={4}
-                      style={{ cursor: "pointer", borderRadius: 4 }}
-                    >
-                      {f.isDirectory ? (
-                         <FolderOpen size={14} color="#ffd43b" />
-                      ) : (
-                        <FileCode size={14} color="#4dabf7" />
-                      )}
-
-                      <Text size="sm" c="gray.3" truncate>
-                        {f.name}
-                      </Text>
-                    </Group>
-                  ))}
-              </>
-            )}
-          </Stack>
-        )}
-
-        {/* SECTION: WIZARDS */}
-        {activeSection === "wizards" && (
-          <Stack gap="xs" p="xs">
-            <Button variant="light" color="violet" justify="start" leftSection={<FileCode size={16} />} onClick={() => onNavigate("wizard-preamble")}>Preamble Wizard</Button>
-            <Button variant="light" color="green" justify="start" leftSection={<Table2 size={16} />} onClick={() => onNavigate("wizard-table")}>Table Generator</Button>
-            <Button variant="light" color="orange" justify="start" leftSection={<Wand2 size={16} />} onClick={() => onNavigate("wizard-tikz")}>TikZ Builder</Button>
-          </Stack>
-        )}
-        
-        {/* SECTION: DATABASE */}
-        {activeSection === "database" && (
-          <Stack gap="md" p="xs">
-            {!dbConnected ? (
-               <Box ta="center" mt="xl">
-                  <Database size={48} color="#373A40" style={{marginBottom: 16}} />
-                  <Text size="sm" c="dimmed" mb="md">No Database Connected</Text>
-                  <Button size="xs" leftSection={<Plug size={14} />} fullWidth variant="light" onClick={onConnectDB}>
-                    Connect SQLite (.db)
-                  </Button>
-               </Box>
-            ) : (
-                <Box>
-                    <Group justify="space-between" mb="sm">
-                        <Text size="xs" fw={700} c="dimmed">TABLES ({dbTables.length})</Text>
-                        <ActionIcon size="xs" variant="subtle" color="red" onClick={onConnectDB}><X size={12}/></ActionIcon>
-                    </Group>
-                    {dbTables.map((t) => (
-                        <Group key={t} justify="space-between" mb={4} p={4} style={{ cursor: "pointer", borderRadius: 4 }} onClick={() => onOpenTable(t)}>
-                            <Group gap={6}><Table2 size={14} color="#69db7c" /><Text size="sm" truncate>{t}</Text></Group>
-                        </Group>
-                    ))}
-                </Box>
-            )}
-          </Stack>
-        )}
-      </ScrollArea>
-    </Stack>
-  );
-};
-
-// 3. Main Editor Area
-const EditorArea = () => {
 
   return (
     <Stack gap={0} h="100%" w="100%">
@@ -295,7 +175,7 @@ const EditorArea = () => {
               onClick={() => onFileSelect(file.id)}
             >
               <Group gap={8} wrap="nowrap">
-                {file.type === 'editor' ? <FileCode size={14} color="#4dabf7" /> : <Table2 size={14} color="#69db7c" />}
+                {file.type === 'editor' ? getFileIcon(file.title) : <Table2 size={14} color="#69db7c" />}
                 <Text size="xs" c={file.id === activeFileId ? "white" : "dimmed"}>
                   {file.title}
                 </Text>
@@ -344,19 +224,32 @@ const EditorArea = () => {
       {/* Main Content (Editor or Table View) */}
       <Group gap={0} style={{ flex: 1, overflow: "hidden", alignItems: "stretch" }}>
         <Box style={{ flex: 1, position: "relative" }}>
-          <Editor
-            height="100%"
-            defaultLanguage="my-latex" // ΠΡΟΣΟΧΗ: Πρέπει να είναι ίδιο με το id στο register
-            defaultValue={INITIAL_CODE}
-            onMount={handleEditorDidMount} // Αυτό είναι το κλειδί για να τρέξουν τα παραπάνω
-            options={{
-              minimap: { enabled: true, scale: 0.75 },
-              fontSize: 14,
-              fontFamily: "Consolas, monospace",
-              scrollBeyondLastLine: false,
-              automaticLayout: true,
-            }}
-          />
+          {activeFile?.type === 'editor' ? (
+            <Editor
+              path={activeFile.id} 
+              height="100%"
+              defaultLanguage="my-latex"
+              defaultValue={activeFile.content}
+              value={activeFile.content}
+              onMount={onMount}
+              onChange={(value) => onContentChange(activeFile.id, value || '')}
+              options={{
+                minimap: { enabled: true, scale: 0.75 },
+                fontSize: 14,
+                fontFamily: "Consolas, monospace",
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                theme: "data-tex-dark",
+              }}
+            />
+          ) : activeFile?.type === 'table' ? (
+             <TableDataView tableName={activeFile.tableName || ''} />
+          ) : (
+             <Box h="100%" style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
+                <Code2 size={48} color="#373A40" />
+                <Text c="dimmed" mt="md">Select a file to start editing</Text>
+             </Box>
+          )}
         </Box>
 
         {/* PDF Preview (Only for Editor) */}
@@ -379,32 +272,7 @@ const EditorArea = () => {
   );
 };
 
-// 4. Status Bar
-const StatusBar = ({ activeFile }: { activeFile?: AppTab }) => (
-  <Group h={24} px="xs" justify="space-between" bg="blue.8" c="white" style={{ fontSize: "11px", userSelect: "none" }}>
-    <Group gap="lg">
-      <Group gap={4}><TerminalSquare size={12} /><Text size="xs" inherit>Ready</Text></Group>
-    </Group>
-    <Group gap="lg">
-      <Text size="xs" inherit>{activeFile?.language || 'Plain Text'}</Text>
-      <Text size="xs" inherit>UTF-8</Text>
-      <Group gap={4}><Database size={10} /><Text size="xs" inherit>DataTex DB: Connected</Text></Group>
-    </Group>
-  </Group>
-);
-
-const handleEditorDidMount = (_editor: any, monaco: any) => {
-  // 1. Καταχώρηση της γλώσσας LaTeX
-  monaco.languages.register({ id: "my-latex" });
-  monaco.languages.setMonarchTokensProvider("my-latex", latexLanguage);
-  monaco.languages.setLanguageConfiguration("my-latex", latexConfiguration);
-
-  // 2. Καταχώρηση και εφαρμογή του Θέματος
-  monaco.editor.defineTheme("data-tex-dark", dataTexDarkTheme);
-  monaco.editor.setTheme("data-tex-dark");
-};
-
-// --- Main App ---
+// --- MAIN APP COMPONENT ---
 
 export default function App() {
   const [activeActivity, setActiveActivity] = useState<SidebarSection>("files");
@@ -636,40 +504,27 @@ export default function App() {
           )}
           <Group gap={0} h="100%" align="stretch" style={{ flex: 1, overflow: "hidden" }}>
             
-            {/* 1. ACTIVITY BAR (LEFT MOST) */}
-            <Stack w={50} h="100%" align="center" gap="md" py="md" bg="dark.8" style={{ borderRight: "1px solid var(--mantine-color-dark-6)", flexShrink: 0 }}>
-              {[
-                { icon: Files, label: "Αρχεία", id: "files" },
-                { icon: Search, label: "Αναζήτηση", id: "search" },
-                { icon: Database, label: "Βάση Δεδομένων", id: "database" },
-                { icon: Wand2, label: "Wizards", id: "wizards" },
-              ].map((item) => (
-                <Tooltip key={item.id} label={item.label} position="right" withArrow>
-                  <ActionIcon 
-                    variant={activeActivity === item.id ? "filled" : "subtle"} 
-                    color={activeActivity === item.id ? "blue" : "gray"} 
-                    size="lg" 
-                    onClick={() => setActiveActivity(item.id as SidebarSection)}
-                  >
-                    <item.icon size={22} strokeWidth={1.5} />
-                  </ActionIcon>
-                </Tooltip>
-              ))}
-              <Box style={{ marginTop: "auto" }}><ActionIcon variant="subtle" color="gray" size="lg"><Settings size={22} /></ActionIcon></Box>
-            </Stack>
-
-            {/* 2. SIDEBAR CONTENT */}
-            <Box w={sidebarWidth} h="100%" style={{ borderRight: "1px solid var(--mantine-color-dark-6)", flexShrink: 0 }}>
-              <SidebarContent 
-                activeSection={activeActivity} onNavigate={setActiveView} 
-                openTabs={tabs} activeTabId={activeTabId} onTabSelect={setActiveTabId}
-                projectData={projectData} onOpenFolder={handleOpenFolder} onOpenFileNode={handleOpenFileNode} loadingFiles={loadingFiles}
-                dbConnected={dbConnected} dbTables={dbTables} onConnectDB={handleConnectDB} onOpenTable={handleOpenTable}
-              />
-            </Box>
-            <ResizerHandle onMouseDown={startResizeSidebar} isResizing={isResizingSidebar} />
+            {/* Using the separated Sidebar component */}
+            <Sidebar 
+                width={sidebarWidth}
+                onResizeStart={startResizeSidebar}
+                activeSection={activeActivity}
+                setActiveSection={setActiveActivity}
+                onNavigate={setActiveView}
+                openTabs={tabs}
+                activeTabId={activeTabId}
+                onTabSelect={setActiveTabId}
+                projectData={projectData}
+                onOpenFolder={handleOpenFolder}
+                onOpenFileNode={handleOpenFileNode}
+                loadingFiles={loadingFiles}
+                dbConnected={dbConnected}
+                dbTables={dbTables}
+                onConnectDB={handleConnectDB}
+                onOpenTable={handleOpenTable}
+            />
             
-            {/* 3. MAIN EDITOR/WIZARD SPLIT */}
+            {/* 3. MAIN AREA */}
             <Box style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>
               <Box style={{ flex: 1, minWidth: 200, height: '100%' }}>
                 <EditorArea files={tabs} activeFileId={activeTabId} onFileSelect={setActiveTabId} onFileClose={handleCloseTab} onContentChange={handleEditorChange} onMount={handleEditorDidMount} />
@@ -687,7 +542,7 @@ export default function App() {
             </Box>
           </Group>
         </AppShell.Main>
-        <AppShell.Footer withBorder={false} p={0}><StatusBar activeFile={tabs.find(f => f.id === activeTabId)} /></AppShell.Footer>
+        <AppShell.Footer withBorder={false} p={0}><StatusBar activeFile={tabs.find(f => f.id === activeTabId)} dbConnected={dbConnected} /></AppShell.Footer>
       </AppShell>
     </MantineProvider>
   );

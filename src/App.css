@@ -5,23 +5,24 @@
   font-weight: 400;
 
   /* Ορισμός μεταβλητών */
-  --bg-color: #1A1B1E;
-  --text-color: #C1C2C5; 
+  --bg-color: #1a1b1e;
+  --text-color: #c1c2c5;
 }
 
 /* Εφαρμογή σε body και root για σιγουριά */
-body, #root {
+body,
+#root {
   margin: 0;
   padding: 0;
   width: 100vw;
   height: 100vh;
-  
+
   /* Χρήση των χρωμάτων */
   background-color: var(--bg-color);
   color: var(--text-color);
-  
+
   /* Overflow handling για το AppShell */
-  overflow: hidden; 
+  overflow: hidden;
 }
 
 /* Γενικά inputs/selects που δεν είναι Mantine components */
@@ -33,7 +34,7 @@ select {
   font-size: inherit;
   background-color: #25262b;
   color: var(--text-color);
-  border: 1px solid #373A40;
+  border: 1px solid #373a40;
 }
 
 /* Links */
@@ -52,12 +53,12 @@ a:hover {
   height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #1A1B1E; 
+  background: #1a1b1e;
 }
 ::-webkit-scrollbar-thumb {
-  background: #373A40; 
+  background: #373a40;
   border-radius: 5px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #5c5f66; 
+  background: #5c5f66;
 }
