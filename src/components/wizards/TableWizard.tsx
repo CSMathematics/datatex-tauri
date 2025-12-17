@@ -2,11 +2,11 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   Grid, Button, TextInput, Switch, ActionIcon, 
   Group, Stack, Text, ScrollArea, Divider, Code, Tooltip, Box, 
-  Select, ColorPicker, Popover, Menu, NumberInput
+  Select, ColorPicker, Popover, NumberInput
 } from '@mantine/core';
 import { 
-  Plus, Trash, AlignLeft, AlignCenter, AlignRight, 
-  Table as TableIcon, Check, Copy, 
+  AlignLeft, AlignCenter, AlignRight,
+  Check, Copy,
   Bold, Italic, PaintBucket, Minimize2, Maximize2, Eraser, GripHorizontal, Settings
 } from 'lucide-react';
 
@@ -246,7 +246,7 @@ export const TableWizard: React.FC<TableWizardProps> = ({ onInsert }) => {
     if (label) code += `  \\label{${label}}\n`;
 
     // Column Specification Logic
-    const colSpecChar = useBooktabs ? 'c' : '|c';
+    // const colSpecChar = useBooktabs ? 'c' : '|c';
     let colSpec = '';
     // If vertical lines are enabled, we force lines. If booktabs, we warn or mix (user choice)
     const vert = verticalLines ? '|' : '';
