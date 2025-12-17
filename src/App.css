@@ -4,12 +4,9 @@
   line-height: 1.5;
   font-weight: 400;
 
-  /* Ορισμός μεταβλητών Dark Theme (Mantine Colors) */
-  --bg-color: #1a1b1e;       /* mantine-dark-9 */
-  --panel-bg: #25262b;       /* mantine-dark-8 */
-  --border-color: #373a40;   /* mantine-dark-4 */
-  --text-color: #c1c2c5;     /* mantine-gray-4 */
-  --accent-color: #339af0;   /* mantine-blue-5 */
+  /* Ορισμός μεταβλητών */
+  --bg-color: #1a1b1e;
+  --text-color: #c1c2c5;
 }
 
 /* Εφαρμογή σε body και root για σιγουριά */
@@ -19,18 +16,25 @@ body,
   padding: 0;
   width: 100vw;
   height: 100vh;
+
+  /* Χρήση των χρωμάτων */
   background-color: var(--bg-color);
   color: var(--text-color);
-  overflow: hidden; /* Κρύβουμε το scroll του παραθύρου */
+
+  /* Overflow handling για το AppShell */
+  overflow: hidden;
 }
 
 /* Γενικά inputs/selects που δεν είναι Mantine components */
-input, button, textarea, select {
+input,
+button,
+textarea,
+select {
   font-family: inherit;
   font-size: inherit;
-  background-color: var(--panel-bg);
+  background-color: #25262b;
   color: var(--text-color);
-  border: 1px solid var(--border-color);
+  border: 1px solid #373a40;
 }
 
 /* Links */
@@ -43,63 +47,41 @@ a:hover {
   color: #535bf2;
 }
 
-/* --- CUSTOM SCROLLBARS (VSCode Style) --- */
+/* Scrollbars */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-color);
+  background: #1a1b1e;
 }
 ::-webkit-scrollbar-thumb {
   background: #373a40;
-  border-radius: 2px;
+  border-radius: 5px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #5c5f66;
 }
-::-webkit-scrollbar-corner {
-  background: var(--bg-color);
+
+/* --- TIKZ WIZARD EDITOR FIX --- */
+/* Αυτή η κλάση εξαναγκάζει το textarea να πιάνει όλο τον κάθετο χώρο */
+.tikz-code-editor {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0; /* Σημαντικό για να λειτουργεί το flex μέσα σε grid/flex parents */
 }
 
-/* --- REACT PDF VIEWER DARK THEME OVERRIDES --- */
-/* Αυτά τα styles "βάφουν" τον viewer ώστε να μοιάζει native */
-
-/* Κυρίως Περιοχή Viewer */
-.rpv-core__viewer--dark {
-  background-color: #1a1b1e !important; /* Ταίριασμα με το background του editor */
+.tikz-code-editor .mantine-Textarea-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
-/* Toolbar (η μπάρα εργαλείων του PDF) */
-.rpv-default-layout__toolbar {
-  background-color: #25262b !important; /* Ταίριασμα με τα Headers */
-  border-bottom: 1px solid var(--border-color) !important;
-}
-
-/* Sidebar (αν ανοίξεις τα thumbnails) */
-.rpv-default-layout__sidebar {
-  background-color: #25262b !important;
-  border-right: 1px solid var(--border-color) !important;
-}
-
-/* Κείμενο και Εικονίδια στο Toolbar */
-.rpv-core__minimal-button {
-  color: #c1c2c5 !important;
-}
-.rpv-core__minimal-button:hover {
-  background-color: #373a40 !important;
-}
-
-/* Search Popover */
-.rpv-search__popover {
-  background-color: #25262b !important;
-  border: 1px solid var(--border-color) !important;
-  color: var(--text-color) !important;
-}
-
-/* Tooltips */
-.rpv-core__tooltip-body {
-  background-color: #101113 !important;
-  color: #fff !important;
-  border: 1px solid #373a40 !important;
+.tikz-code-editor textarea {
+  height: 100% !important; /* Override inline styles */
+  flex: 1;
+  resize: none; /* Απενεργοποίηση χειροκίνητου resize */
+  box-sizing: border-box;
 }
