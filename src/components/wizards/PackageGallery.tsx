@@ -1,18 +1,21 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Grid, Card, Text, Group, Badge, Button, TextInput, 
-  ScrollArea, Stack, ThemeIcon, Box, NavLink, Divider, 
-  Code, ActionIcon, Tooltip, Select, NumberInput, Switch, Textarea, SegmentedControl, MultiSelect
+  Grid, Text, Group, Button, TextInput,
+  ScrollArea, Stack, ThemeIcon, Box, NavLink,
+  Code, ActionIcon, Tooltip, Select, Switch, Textarea, SegmentedControl
 } from '@mantine/core';
 import { 
-  Search, Calculator, Type, Image as ImageIcon, 
+  Search, Calculator, Image as ImageIcon,
   Table as TableIcon, Layout, Code as CodeIcon, Package, 
-  Check, Copy, Info, ChevronRight, Sigma, Hash, FileCode, Plus, Settings, Palette
+  Check, Copy, Info, ChevronRight, Sigma, FileCode, Settings
 } from 'lucide-react';
 import { ViewType } from '../layout/Sidebar';
 
 // IMPORT SHARED DATA
 import { LANGUAGES_DB, MINTED_STYLES } from './preamble/LanguageDb';
+
+import { TikzWizard } from './TikzWizard';
+import { TableWizard } from './TableWizard';
 
 interface PackageGalleryProps {
   onInsert: (code: string) => void;
@@ -194,7 +197,7 @@ const GraphicxConfig = ({ onChange }: { onChange: (code: string) => void }) => {
 
 // --- MAIN COMPONENT ---
 
-export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onClose, onOpenWizard }) => {
+export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onOpenWizard }) => {
   const [selectedPkgId, setSelectedPkgId] = useState<string>('amsmath');
   const [searchQuery, setSearchQuery] = useState('');
   const [generatedCode, setGeneratedCode] = useState('');
@@ -220,17 +223,15 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onClos
 
   const handleConfigure = (pkg: LatexPackage) => {
     if (pkg.hasWizard) {
-        if (pkg.id === 'tikz' || pkg.id === 'pgfplots') {
-            onOpenWizard('wizard-tikz');
-        } else if (pkg.id === 'booktabs' || pkg.id === 'multirow') {
-            onOpenWizard('wizard-table');
-        } else if (pkg.id === 'geometry') {
+        if (pkg.id === 'geometry') {
             onOpenWizard('wizard-preamble'); 
-        } else {
+        } else if (!['tikz', 'pgfplots', 'booktabs', 'multirow'].includes(pkg.id)) {
             alert(`Opening specialized wizard for ${pkg.name}...`);
         }
     }
   };
+
+  const isEmbeddedWizard = ['tikz', 'pgfplots', 'booktabs', 'multirow'].includes(selectedPkgId);
 
   return (
     <Grid h="100%" gutter={0}>
@@ -295,7 +296,7 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onClos
                         </Stack>
                     </Group>
                     <Group>
-                        {activePackage?.hasWizard && (
+                        {activePackage?.hasWizard && !isEmbeddedWizard && (
                             <Button 
                                 variant="light" 
                                 color="teal" 
@@ -314,53 +315,66 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onClos
             </Box>
 
             {/* Dynamic Configurator Area */}
-            <ScrollArea style={{ flex: 1 }} p="md">
-                {selectedPkgId === 'amsmath' && <AmsMathConfig onChange={setGeneratedCode} />}
-                
-                {/* Unified Code Wizard for Listings AND Minted */}
-                {(selectedPkgId === 'listings' || selectedPkgId === 'minted') && (
-                    <CodeWizard engine={selectedPkgId as 'listings' | 'minted'} onChange={setGeneratedCode} />
-                )}
-                
-                {selectedPkgId === 'graphicx' && <GraphicxConfig onChange={setGeneratedCode} />}
-                {selectedPkgId === 'tabularx' && <Text c="dimmed">Tabularx settings would appear here.</Text>}
-                
-                {activePackage?.hasWizard && !['amsmath', 'listings', 'minted', 'graphicx'].includes(selectedPkgId) && (
-                    <Stack align="center" mt="xl">
-                        <Text>This package has a dedicated Full Wizard.</Text>
-                        <Button onClick={() => activePackage && handleConfigure(activePackage)}>Launch Wizard</Button>
-                    </Stack>
-                )}
-            </ScrollArea>
+            {isEmbeddedWizard ? (
+                <Box style={{ flex: 1, overflow: 'hidden' }}>
+                    {(selectedPkgId === 'tikz' || selectedPkgId === 'pgfplots') && (
+                        <TikzWizard onInsert={onInsert} />
+                    )}
+                    {(selectedPkgId === 'booktabs' || selectedPkgId === 'multirow') && (
+                        <TableWizard onInsert={onInsert} />
+                    )}
+                </Box>
+            ) : (
+                <ScrollArea style={{ flex: 1 }} p="md">
+                    {selectedPkgId === 'amsmath' && <AmsMathConfig onChange={setGeneratedCode} />}
+
+                    {/* Unified Code Wizard for Listings AND Minted */}
+                    {(selectedPkgId === 'listings' || selectedPkgId === 'minted') && (
+                        <CodeWizard engine={selectedPkgId as 'listings' | 'minted'} onChange={setGeneratedCode} />
+                    )}
+
+                    {selectedPkgId === 'graphicx' && <GraphicxConfig onChange={setGeneratedCode} />}
+                    {selectedPkgId === 'tabularx' && <Text c="dimmed">Tabularx settings would appear here.</Text>}
+
+                    {activePackage?.hasWizard && !['amsmath', 'listings', 'minted', 'graphicx'].includes(selectedPkgId) && (
+                        <Stack align="center" mt="xl">
+                            <Text>This package has a dedicated Full Wizard.</Text>
+                            <Button onClick={() => activePackage && handleConfigure(activePackage)}>Launch Wizard</Button>
+                        </Stack>
+                    )}
+                </ScrollArea>
+            )}
 
             {/* Footer: Preview & Insert */}
-            <Stack gap={0} p="md" bg="dark.9" style={{ borderTop: '1px solid var(--mantine-color-dark-6)' }}>
-                <Group justify="space-between" mb="xs">
-                    <Text size="xs" fw={700} c="dimmed">GENERATED CODE</Text>
-                    <Group gap="xs">
-                        {activePackage?.command && (
-                             <Button 
-                                variant="default" 
-                                size="compact-xs" 
-                                onClick={() => onInsert(activePackage.command! + '\n')}
-                             >
-                                Add \usepackage
-                             </Button>
-                        )}
-                        <ActionIcon size="xs" variant="subtle" onClick={() => navigator.clipboard.writeText(generatedCode)}>
-                            <Copy size={12}/>
-                        </ActionIcon>
+            {!isEmbeddedWizard && (
+                <Stack gap={0} p="md" bg="dark.9" style={{ borderTop: '1px solid var(--mantine-color-dark-6)' }}>
+                    <Group justify="space-between" mb="xs">
+                        <Text size="xs" fw={700} c="dimmed">GENERATED CODE</Text>
+                        <Group gap="xs">
+                            {activePackage?.command && (
+                                <Button
+                                    variant="default"
+                                    size="compact-xs"
+                                    onClick={() => onInsert(activePackage.command! + '\n')}
+                                >
+                                    Add \usepackage
+                                </Button>
+                            )}
+                            <ActionIcon size="xs" variant="subtle" onClick={() => navigator.clipboard.writeText(generatedCode)}>
+                                <Copy size={12}/>
+                            </ActionIcon>
+                        </Group>
                     </Group>
-                </Group>
-                <ScrollArea h={80} mb="md" type="auto" style={{ border: '1px solid var(--mantine-color-dark-6)', borderRadius: 4 }} bg="dark.8">
-                    <Code block style={{ background: 'transparent', fontSize: 11 }}>
-                        {generatedCode}
-                    </Code>
-                </ScrollArea>
-                <Button fullWidth leftSection={<Check size={16}/>} onClick={() => onInsert(generatedCode)}>
-                    Insert into Document
-                </Button>
-            </Stack>
+                    <ScrollArea h={80} mb="md" type="auto" style={{ border: '1px solid var(--mantine-color-dark-6)', borderRadius: 4 }} bg="dark.8">
+                        <Code block style={{ background: 'transparent', fontSize: 11 }}>
+                            {generatedCode}
+                        </Code>
+                    </ScrollArea>
+                    <Button fullWidth leftSection={<Check size={16}/>} onClick={() => onInsert(generatedCode)}>
+                        Insert into Document
+                    </Button>
+                </Stack>
+            )}
 
         </Grid.Col>
     </Grid>

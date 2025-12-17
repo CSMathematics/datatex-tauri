@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Stack, Text, Group, Tabs, TextInput, NumberInput, 
   ColorInput, Slider, Button, ScrollArea,
-  Select, Box, Divider, Switch, ActionIcon, Grid, Badge, Textarea, Menu, Popover, ColorPicker, Paper
+  Select, Box, Divider, ActionIcon, Badge, Textarea, Menu, Popover, ColorPicker, Paper
 } from '@mantine/core';
 import { 
   Square, TrendingUp, Plus, Type, Layers, Trash2, LayoutTemplate, 
@@ -75,8 +75,8 @@ export function TikzWizard({ onInsert }: TikzWizardProps) {
   const [functionStr, setFunctionStr] = useState('sin(x)');
   const [xMin, setXMin] = useState(-5);
   const [xMax, setXMax] = useState(5);
-  const [samples, setSamples] = useState(100);
-  const [showAxis, setShowAxis] = useState(true);
+  const [samples] = useState(100);
+  const [showAxis] = useState(true);
 
   // --- Text (Node) State ---
   const [textContent, setTextContent] = useState('Label');
