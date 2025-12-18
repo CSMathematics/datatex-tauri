@@ -1,10 +1,12 @@
 import React from 'react';
 import { Stack, ScrollArea, Group, Box, Text, ActionIcon, Tooltip } from "@mantine/core";
 import Editor, { OnMount } from "@monaco-editor/react";
-import { 
-    FileCode, BookOpen, FileCog, FileText, Image as ImageIcon, File,
-    X, Play, PanelRight, Code2, Puzzle, Square, Home, ChevronRight 
-} from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faFileCode, faBookOpen, faCog, faImage, faFile,
+  faTimes, faPlay, faColumns, faCode, faPuzzlePiece, faStop, faHome, faChevronRight,
+  faFilePdf
+} from "@fortawesome/free-solid-svg-icons";
 import { TableDataView } from "../database/TableDataView";
 import { AppTab } from "./Sidebar"; 
 import { StartPage } from "./StartPage"; // Import StartPage
@@ -42,16 +44,16 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
   const activeFile = files.find(f => f.id === activeFileId);
 
   const getFileIcon = (name: string, type: string) => {
-    if (type === 'start-page') return <Home size={14} color="#fab005" />;
+    if (type === 'start-page') return <FontAwesomeIcon icon={faHome} style={{ width: 14, height: 14, color: "#fab005" }} />;
     const ext = name.split('.').pop()?.toLowerCase();
     switch(ext) {
-        case 'tex': return <FileCode size={14} color="#4dabf7" />;
-        case 'bib': return <BookOpen size={14} color="#fab005" />;
-        case 'sty': return <FileCog size={14} color="#be4bdb" />;
-        case 'pdf': return <FileText size={14} color="#fa5252" />;
+        case 'tex': return <FontAwesomeIcon icon={faFileCode} style={{ width: 14, height: 14, color: "#4dabf7" }} />;
+        case 'bib': return <FontAwesomeIcon icon={faBookOpen} style={{ width: 14, height: 14, color: "#fab005" }} />;
+        case 'sty': return <FontAwesomeIcon icon={faCog} style={{ width: 14, height: 14, color: "#be4bdb" }} />;
+        case 'pdf': return <FontAwesomeIcon icon={faFilePdf} style={{ width: 14, height: 14, color: "#fa5252" }} />;
         case 'png':
-        case 'jpg': return <ImageIcon size={14} color="#40c057" />;
-        default: return <File size={14} color="#868e96" />;
+        case 'jpg': return <FontAwesomeIcon icon={faImage} style={{ width: 14, height: 14, color: "#40c057" }} />;
+        default: return <FontAwesomeIcon icon={faFile} style={{ width: 14, height: 14, color: "#868e96" }} />;
     }
   };
 
@@ -77,7 +79,7 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
                 {getFileIcon(file.title, file.type)}
                 <Text size="xs" c={file.id === activeFileId ? "white" : "dimmed"}>{file.title}</Text>
                 <ActionIcon size="xs" variant="transparent" color="gray" className="close-tab" onClick={(e) => onFileClose(file.id, e)} style={{ opacity: file.id === activeFileId ? 1 : 0.5 }}>
-                  <X size={12} />
+                  <FontAwesomeIcon icon={faTimes} style={{ width: 12, height: 12 }} />
                 </ActionIcon>
               </Group>
             </Box>
@@ -90,13 +92,13 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
           <Group h={32} px="md" bg="dark.7" justify="space-between" style={{ borderBottom: "1px solid var(--mantine-color-dark-6)", flexShrink: 0 }}>
               <Group gap={4}>
                 <Text size="xs" c="dimmed">DataTex</Text>
-                {activeFile && <><ChevronRight size={12} color="gray" /><Text size="xs" c="white" truncate>{activeFile.title}</Text></>}
+                {activeFile && <><FontAwesomeIcon icon={faChevronRight} style={{ width: 12, height: 12, color: "gray" }} /><Text size="xs" c="white" truncate>{activeFile.title}</Text></>}
               </Group>
               <Group gap="xs">
-                 {isCompiling && <Tooltip label="Stop"><ActionIcon size="sm" variant="subtle" color="red" onClick={onStopCompile}><Square size={14} fill="currentColor" /></ActionIcon></Tooltip>}
-                 <Tooltip label="Compile"><ActionIcon size="sm" variant="subtle" color="green" onClick={onCompile} loading={isCompiling} disabled={!isTexFile || isCompiling}>{!isCompiling && <Play size={14} />}</ActionIcon></Tooltip>
-                 {activeFile?.type === 'editor' && isTexFile && <Tooltip label="Package Gallery"><ActionIcon size="sm" variant="subtle" color="blue" onClick={onOpenGallery}><Puzzle size={14} /></ActionIcon></Tooltip>}
-                 {activeFile?.type === 'editor' && isTexFile && <Tooltip label="PDF"><ActionIcon size="sm" variant="subtle" color="blue" onClick={onTogglePdf}><PanelRight size={14} /></ActionIcon></Tooltip>}
+                 {isCompiling && <Tooltip label="Stop"><ActionIcon size="sm" variant="subtle" color="red" onClick={onStopCompile}><FontAwesomeIcon icon={faStop} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>}
+                 <Tooltip label="Compile"><ActionIcon size="sm" variant="subtle" color="green" onClick={onCompile} loading={isCompiling} disabled={!isTexFile || isCompiling}>{!isCompiling && <FontAwesomeIcon icon={faPlay} style={{ width: 14, height: 14 }} />}</ActionIcon></Tooltip>
+                 {activeFile?.type === 'editor' && isTexFile && <Tooltip label="Package Gallery"><ActionIcon size="sm" variant="subtle" color="blue" onClick={onOpenGallery}><FontAwesomeIcon icon={faPuzzlePiece} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>}
+                 {activeFile?.type === 'editor' && isTexFile && <Tooltip label="PDF"><ActionIcon size="sm" variant="subtle" color="blue" onClick={onTogglePdf}><FontAwesomeIcon icon={faColumns} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>}
               </Group>
           </Group>
       )}
@@ -117,7 +119,7 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
              />
           ) : (
              <Box h="100%" style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
-                <Code2 size={48} color="#373A40" />
+                <FontAwesomeIcon icon={faCode} style={{ width: 48, height: 48, color: "#373A40" }} />
                 <Text c="dimmed" mt="md">Select a file</Text>
              </Box>
           )}

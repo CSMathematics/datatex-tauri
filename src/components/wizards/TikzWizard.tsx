@@ -4,10 +4,11 @@ import {
   ColorInput, Slider, Button, ScrollArea,
   Select, Box, Divider, ActionIcon, Badge, Textarea, Menu, Popover, ColorPicker, Paper
 } from '@mantine/core';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  Square, TrendingUp, Plus, Type, Layers, Trash2, LayoutTemplate, 
-  Pencil, MousePointer2, Repeat, ArrowRight, Palette, ChevronDown, GripHorizontal, GripVertical
-} from 'lucide-react';
+  faSquare, faChartLine, faPlus, faFont, faLayerGroup, faTrash, faColumns,
+  faPencilAlt, faMousePointer, faRedo, faArrowRight, faPalette, faChevronDown, faGripLines, faGripLinesVertical
+} from '@fortawesome/free-solid-svg-icons';
 import { TIKZ_TEMPLATES } from './tikzTemplates';
 
 interface TikzWizardProps {
@@ -417,16 +418,15 @@ export function TikzWizard({ onInsert }: TikzWizardProps) {
             // SVG path arc: A rx ry x-axis-rotation large-arc-flag sweep-flag x y
             // We need to convert start/end angles to points.
             const startRad = (p.startAngle * Math.PI) / 180;
-            const endRad = (p.endAngle * Math.PI) / 180;
             // Arc starts at startAngle relative to center (p.x, p.y)
-            const xStart = p.x + p.radius * Math.cos(startRad);
-            const yStart = p.y + p.radius * Math.sin(startRad);
-            const xEnd = p.x + p.radius * Math.cos(endRad);
-            const yEnd = p.y + p.radius * Math.sin(endRad);
+            // const xStart = p.x + p.radius * Math.cos(startRad);
+            // const yStart = p.y + p.radius * Math.sin(startRad);
+            // const xEnd = p.x + p.radius * Math.cos(endRad);
+            // const yEnd = p.y + p.radius * Math.sin(endRad);
 
             // Flags
-            const largeArc = Math.abs(p.endAngle - p.startAngle) > 180 ? 1 : 0;
-            const sweep = p.endAngle > p.startAngle ? 0 : 1; // Actually in TikZ positive is CCW. SVG y is flipped.
+            // const largeArc = Math.abs(p.endAngle - p.startAngle) > 180 ? 1 : 0;
+            // const sweep = p.endAngle > p.startAngle ? 0 : 1; // Actually in TikZ positive is CCW. SVG y is flipped.
             // SVG coordinate system: y increases downwards. TikZ: y increases upwards.
             // So +angle in TikZ (CCW) is -angle in SVG (CCW visually but logic differs).
             // Let's rely on simple point calculation.
@@ -446,8 +446,8 @@ export function TikzWizard({ onInsert }: TikzWizardProps) {
             const cx = p.x - p.radius * Math.cos(startRad);
             const cy = p.y - p.radius * Math.sin(startRad);
 
-            const xEndP = cx + p.radius * Math.cos(endRad);
-            const yEndP = cy + p.radius * Math.sin(endRad);
+            // const xEndP = cx + p.radius * Math.cos(endRad);
+            // const yEndP = cy + p.radius * Math.sin(endRad);
 
             // SVG Path: M startX startY A r r 0 largeArc sweep endX endY
             // We need to flip Y for SVG
@@ -507,11 +507,11 @@ export function TikzWizard({ onInsert }: TikzWizardProps) {
       <Box style={{ width: `${leftColWidth}%`, borderRight: '1px solid var(--mantine-color-dark-4)', display: 'flex', flexDirection: 'column', height: '100%', minWidth: 200 }}>
         <Tabs value={activeTab} onChange={(v) => v && setActiveTab(v)} variant="pills" radius="sm" p="xs">
             <Tabs.List grow>
-                <Tabs.Tab value="shapes" leftSection={<Square size={14} />}>Shapes</Tabs.Tab>
-                <Tabs.Tab value="text" leftSection={<Type size={14} />}>Text</Tabs.Tab>
-                <Tabs.Tab value="coordinates" leftSection={<MousePointer2 size={14} />}>Coords</Tabs.Tab>
-                <Tabs.Tab value="plots" leftSection={<TrendingUp size={14} />}>Plots</Tabs.Tab>
-                <Tabs.Tab value="templates" leftSection={<LayoutTemplate size={14} />}>Templates</Tabs.Tab>
+                <Tabs.Tab value="shapes" leftSection={<FontAwesomeIcon icon={faSquare} style={{ width: 14, height: 14 }} />}>Shapes</Tabs.Tab>
+                <Tabs.Tab value="text" leftSection={<FontAwesomeIcon icon={faFont} style={{ width: 14, height: 14 }} />}>Text</Tabs.Tab>
+                <Tabs.Tab value="coordinates" leftSection={<FontAwesomeIcon icon={faMousePointer} style={{ width: 14, height: 14 }} />}>Coords</Tabs.Tab>
+                <Tabs.Tab value="plots" leftSection={<FontAwesomeIcon icon={faChartLine} style={{ width: 14, height: 14 }} />}>Plots</Tabs.Tab>
+                <Tabs.Tab value="templates" leftSection={<FontAwesomeIcon icon={faColumns} style={{ width: 14, height: 14 }} />}>Templates</Tabs.Tab>
             </Tabs.List>
         </Tabs>
 
@@ -522,7 +522,7 @@ export function TikzWizard({ onInsert }: TikzWizardProps) {
                         <Paper key={idx} p="xs" withBorder bg="dark.7" style={{ cursor: 'pointer', transition: '0.2s' }} onClick={() => { shouldSkipUpdate.current = true; setCodeValue(tmpl.code); }}>
                             <Group justify="space-between" mb={4}>
                                 <Text size="sm" fw={700}>{tmpl.label}</Text>
-                                <ArrowRight size={14} color="gray"/>
+                                <FontAwesomeIcon icon={faArrowRight} style={{ width: 14, height: 14, color: "gray" }} />
                             </Group>
                             <Text size="xs" c="dimmed" lineClamp={2}>{tmpl.description}</Text>
                         </Paper>
@@ -606,7 +606,7 @@ export function TikzWizard({ onInsert }: TikzWizardProps) {
 
         {activeTab !== 'templates' && (
             <Box p="xs" style={{ borderTop: '1px solid var(--mantine-color-dark-4)' }}>
-                <Button fullWidth leftSection={<Plus size={16} />} onClick={handleAddElement} color="teal" variant="light">
+                <Button fullWidth leftSection={<FontAwesomeIcon icon={faPlus} style={{ width: 16, height: 16 }} />} onClick={handleAddElement} color="teal" variant="light">
                     Add to Scene
                 </Button>
             </Box>
@@ -626,7 +626,7 @@ export function TikzWizard({ onInsert }: TikzWizardProps) {
             justifyContent: 'center'
         }}
       >
-        <GripVertical size={12} color="gray" style={{ opacity: 0.5 }} />
+        <FontAwesomeIcon icon={faGripLinesVertical} style={{ width: 12, height: 12, opacity: 0.5, color: "gray" }} />
       </Box>
 
       {/* --- COLUMN 2: PREVIEW & CODE --- */}
@@ -654,14 +654,14 @@ export function TikzWizard({ onInsert }: TikzWizardProps) {
                 <Box h={80} style={{ flexShrink: 0, borderBottom: '1px solid var(--mantine-color-dark-4)' }}>
                     <Group justify="space-between" px="xs" py={2} bg="dark.9" h={24}>
                         <Text size="xs" fw={700}>Added Elements</Text>
-                        <Layers size={12}/>
+                        <FontAwesomeIcon icon={faLayerGroup} style={{ width: 12, height: 12 }} />
                     </Group>
                     <ScrollArea h={56}>
                         <Stack gap={2} p={2}>
                             {elements.map((el, i) => (
                                 <Group key={el.id} justify="space-between" bg="dark.7" px="xs" py={2} style={{borderRadius: 4}}>
                                     <Text size="xs">{i+1}. {el.type} {el.type==='shapes'?`(${el.params.shapeType})`:''}</Text>
-                                    <ActionIcon size="xs" color="red" variant="subtle" onClick={() => handleRemoveElement(el.id)}><Trash2 size={10}/></ActionIcon>
+                                    <ActionIcon size="xs" color="red" variant="subtle" onClick={() => handleRemoveElement(el.id)}><FontAwesomeIcon icon={faTrash} style={{ width: 10, height: 10 }} /></ActionIcon>
                                 </Group>
                             ))}
                         </Stack>
@@ -682,26 +682,26 @@ export function TikzWizard({ onInsert }: TikzWizardProps) {
                 justifyContent: 'center'
             }}
         >
-            <GripHorizontal size={12} color="gray" style={{ opacity: 0.5 }} />
+            <FontAwesomeIcon icon={faGripLines} style={{ width: 12, height: 12, opacity: 0.5, color: "gray" }} />
         </Box>
 
         <Box className="tikz-code-editor" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <Group gap={4} p={4} bg="dark.7" style={{ borderBottom: '1px solid var(--mantine-color-dark-6)', flexShrink: 0 }}>
                 <Menu shadow="md" width={200}>
-                    <Menu.Target><Button size="compact-xs" variant="default" rightSection={<ChevronDown size={10} />}>Commands</Button></Menu.Target>
+                    <Menu.Target><Button size="compact-xs" variant="default" rightSection={<FontAwesomeIcon icon={faChevronDown} style={{ width: 10, height: 10 }} />}>Commands</Button></Menu.Target>
                     <Menu.Dropdown>
                         <Menu.Label>Drawing</Menu.Label>
-                        <Menu.Item leftSection={<Pencil size={14}/>} onClick={() => insertSnippet('\\draw (0,0) -- (1,1);')}>Line</Menu.Item>
-                        <Menu.Item leftSection={<Square size={14}/>} onClick={() => insertSnippet('\\draw (0,0) rectangle (2,2);')}>Rectangle</Menu.Item>
-                        <Menu.Item leftSection={<Type size={14}/>} onClick={() => insertSnippet('\\node at (0,0) {Label};')}>Node</Menu.Item>
+                        <Menu.Item leftSection={<FontAwesomeIcon icon={faPencilAlt} style={{ width: 14, height: 14 }} />} onClick={() => insertSnippet('\\draw (0,0) -- (1,1);')}>Line</Menu.Item>
+                        <Menu.Item leftSection={<FontAwesomeIcon icon={faSquare} style={{ width: 14, height: 14 }} />} onClick={() => insertSnippet('\\draw (0,0) rectangle (2,2);')}>Rectangle</Menu.Item>
+                        <Menu.Item leftSection={<FontAwesomeIcon icon={faFont} style={{ width: 14, height: 14 }} />} onClick={() => insertSnippet('\\node at (0,0) {Label};')}>Node</Menu.Item>
                         <Menu.Divider />
                         <Menu.Label>Structure</Menu.Label>
-                        <Menu.Item leftSection={<MousePointer2 size={14}/>} onClick={() => insertSnippet('\\coordinate (A) at (0,0);')}>Coordinate</Menu.Item>
-                        <Menu.Item leftSection={<Repeat size={14}/>} onClick={() => insertSnippet('\\foreach \\i in {1,...,5} {\n  \n}')}>Foreach Loop</Menu.Item>
+                        <Menu.Item leftSection={<FontAwesomeIcon icon={faMousePointer} style={{ width: 14, height: 14 }} />} onClick={() => insertSnippet('\\coordinate (A) at (0,0);')}>Coordinate</Menu.Item>
+                        <Menu.Item leftSection={<FontAwesomeIcon icon={faRedo} style={{ width: 14, height: 14 }} />} onClick={() => insertSnippet('\\foreach \\i in {1,...,5} {\n  \n}')}>Foreach Loop</Menu.Item>
                     </Menu.Dropdown>
                 </Menu>
                 <Menu shadow="md" width={200}>
-                    <Menu.Target><Button size="compact-xs" variant="default" rightSection={<ChevronDown size={10} />}>Styles</Button></Menu.Target>
+                    <Menu.Target><Button size="compact-xs" variant="default" rightSection={<FontAwesomeIcon icon={faChevronDown} style={{ width: 10, height: 10 }} />}>Styles</Button></Menu.Target>
                     <Menu.Dropdown>
                         <Menu.Label>Lines</Menu.Label>
                         <Menu.Item onClick={() => insertSnippet('thick')}>Thick</Menu.Item>
@@ -715,7 +715,7 @@ export function TikzWizard({ onInsert }: TikzWizardProps) {
                 </Menu>
                 <Divider orientation="vertical" />
                 <Popover position="bottom" withArrow shadow="md">
-                    <Popover.Target><ActionIcon size="sm" variant="default" aria-label="Color"><Palette size={14} color={quickColor} /></ActionIcon></Popover.Target>
+                    <Popover.Target><ActionIcon size="sm" variant="default" aria-label="Color"><FontAwesomeIcon icon={faPalette} style={{ width: 14, height: 14, color: quickColor }} /></ActionIcon></Popover.Target>
                     <Popover.Dropdown>
                         <Stack gap="xs">
                             <Text size="xs" fw={700}>Select Color</Text>
@@ -749,7 +749,7 @@ export function TikzWizard({ onInsert }: TikzWizardProps) {
             
             <Group justify="space-between" p="xs" bg="dark.7" style={{ borderTop: '1px solid var(--mantine-color-dark-6)', flexShrink: 0 }}>
                 <Text size="xs" c="dimmed">Characters: {codeValue.length}</Text>
-                <Button size="compact-xs" leftSection={<Plus size={12} />} onClick={() => onInsert(codeValue)}>
+                <Button size="compact-xs" leftSection={<FontAwesomeIcon icon={faPlus} style={{ width: 12, height: 12 }} />} onClick={() => onInsert(codeValue)}>
                     Insert Code
                 </Button>
             </Group>

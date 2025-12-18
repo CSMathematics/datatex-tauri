@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Stack, ActionIcon, Tooltip, Text, Group, ScrollArea, Box, Collapse, UnstyledButton, Divider, TextInput, Button, Menu } from '@mantine/core';
-import { 
-  Files, Search, GitBranch, Settings, Database, 
-  ChevronRight, FileText, Table2,
-  PenTool, Wand2, // Puzzle removed from here
-  FilePlus, FolderPlus, FolderOpen, ChevronsUpDown, MinusSquare,
-  FileCode, BookOpen, FileCog, Image as ImageIcon, Trash, Edit, Copy
-} from 'lucide-react';
-import { IconFolderFilled, IconFileFilled } from '@tabler/icons-react';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faCopy, faSearch, faCodeBranch, faCog, faDatabase,
+  faChevronRight, faTable,
+  faPenNib, faMagic,
+  faFileCirclePlus, faFolderPlus, faFolderOpen, faSort, faMinusSquare,
+  faFileCode, faBookOpen, faImage, faTrash, faPen,
+  faFolder, faFile, faFilePdf
+} from "@fortawesome/free-solid-svg-icons";
 
 // --- Types ---
 export type SidebarSection = "files" | "search" | "git" | "database" | "settings";
@@ -60,17 +61,17 @@ interface SidebarProps {
 
 // --- Icons Helper ---
 const getFileIcon = (name: string, type: 'file' | 'folder') => {
-    if (type === 'folder') return <IconFolderFilled size={16} color="#fab005" />;
+    if (type === 'folder') return <FontAwesomeIcon icon={faFolder} style={{ width: 16, height: 16, color: "#fab005" }} />;
     const ext = name.split('.').pop()?.toLowerCase();
     switch(ext) {
-        case 'tex': return <FileCode size={16} color="#4dabf7" />;
-        case 'bib': return <BookOpen size={16} color="#fab005" />;
-        case 'sty': return <FileCog size={16} color="#be4bdb" />;
-        case 'pdf': return <FileText size={16} color="#fa5252" />;
+        case 'tex': return <FontAwesomeIcon icon={faFileCode} style={{ width: 16, height: 16, color: "#4dabf7" }} />;
+        case 'bib': return <FontAwesomeIcon icon={faBookOpen} style={{ width: 16, height: 16, color: "#fab005" }} />;
+        case 'sty': return <FontAwesomeIcon icon={faCog} style={{ width: 16, height: 16, color: "#be4bdb" }} />;
+        case 'pdf': return <FontAwesomeIcon icon={faFilePdf} style={{ width: 16, height: 16, color: "#fa5252" }} />;
         case 'png':
         case 'jpg':
-        case 'jpeg': return <ImageIcon size={16} color="#40c057" />;
-        default: return <IconFileFilled size={16} color="#868e96" />;
+        case 'jpeg': return <FontAwesomeIcon icon={faImage} style={{ width: 16, height: 16, color: "#40c057" }} />;
+        default: return <FontAwesomeIcon icon={faFile} style={{ width: 16, height: 16, color: "#868e96" }} />;
     }
 };
 
@@ -85,7 +86,7 @@ const NewItemInput = ({ type, onCommit, onCancel, defaultValue = '' }: { type: '
     };
     return (
         <Group gap={6} wrap="nowrap" px={8} py={4} style={{ paddingLeft: 20 }}>
-            {type === 'folder' ? <IconFolderFilled size={16} color="#fab005" /> : <IconFileFilled size={16} color="#4dabf7" />}
+            {type === 'folder' ? <FontAwesomeIcon icon={faFolder} style={{ width: 16, height: 16, color: "#fab005" }} /> : <FontAwesomeIcon icon={faFile} style={{ width: 16, height: 16, color: "#4dabf7" }} />}
             <TextInput 
                 ref={inputRef} size="xs" variant="unstyled" value={name}
                 onChange={(e) => setName(e.currentTarget.value)} onKeyDown={handleKeyDown} onBlur={onCancel} 
@@ -155,7 +156,7 @@ const FileTreeItem = ({
                 }}
             >
                 <Group gap={6} wrap="nowrap" style={{ flex: 1, overflow: 'hidden' }}>
-                {node.type === 'folder' && (<Box style={{ transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.1s', display: 'flex' }}><ChevronRight size={10} /></Box>)}
+                {node.type === 'folder' && (<Box style={{ transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.1s', display: 'flex' }}><FontAwesomeIcon icon={faChevronRight} style={{ width: 10, height: 10 }} /></Box>)}
                 {getFileIcon(node.name, node.type)}
                 <Text size="xs" truncate>{node.name}</Text>
                 </Group>
@@ -166,15 +167,15 @@ const FileTreeItem = ({
             <Menu.Label>Actions</Menu.Label>
             {node.type === 'folder' && (
                 <>
-                    <Menu.Item leftSection={<FilePlus size={14} />} onClick={() => onCreateRequest('file', node.id)}>New File</Menu.Item>
-                    <Menu.Item leftSection={<FolderPlus size={14} />} onClick={() => onCreateRequest('folder', node.id)}>New Folder</Menu.Item>
+                    <Menu.Item leftSection={<FontAwesomeIcon icon={faFileCirclePlus} style={{ width: 14, height: 14 }} />} onClick={() => onCreateRequest('file', node.id)}>New File</Menu.Item>
+                    <Menu.Item leftSection={<FontAwesomeIcon icon={faFolderPlus} style={{ width: 14, height: 14 }} />} onClick={() => onCreateRequest('folder', node.id)}>New Folder</Menu.Item>
                     <Menu.Divider />
                 </>
             )}
-            <Menu.Item leftSection={<Edit size={14} />} onClick={() => setIsRenaming(true)}>Rename</Menu.Item>
-            <Menu.Item leftSection={<Copy size={14} />} onClick={() => navigator.clipboard.writeText(node.path)}>Copy Path</Menu.Item>
+            <Menu.Item leftSection={<FontAwesomeIcon icon={faPen} style={{ width: 14, height: 14 }} />} onClick={() => setIsRenaming(true)}>Rename</Menu.Item>
+            <Menu.Item leftSection={<FontAwesomeIcon icon={faCopy} style={{ width: 14, height: 14 }} />} onClick={() => navigator.clipboard.writeText(node.path)}>Copy Path</Menu.Item>
             <Menu.Divider />
-            <Menu.Item leftSection={<Trash size={14} />} color="red" onClick={() => onDelete(node)}>Delete</Menu.Item>
+            <Menu.Item leftSection={<FontAwesomeIcon icon={faTrash} style={{ width: 14, height: 14 }} />} color="red" onClick={() => onDelete(node)}>Delete</Menu.Item>
         </Menu.Dropdown>
       </Menu>
 
@@ -258,21 +259,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <Stack w={48} h="100%" bg="dark.8" gap={0} justify="space-between" py="md" style={{ borderRight: "1px solid var(--mantine-color-dark-6)", zIndex: 20 }}>
         <Stack gap={4} align="center">
           <Tooltip label="Explorer" position="right">
-              <ActionIcon size="lg" variant={getVariant("files")} color={getColor("files")} onClick={() => onToggleSection("files")}><Files size={20} /></ActionIcon>
+              <ActionIcon size="lg" variant={getVariant("files")} color={getColor("files")} onClick={() => onToggleSection("files")}><FontAwesomeIcon icon={faCopy} style={{ width: 20, height: 20 }} /></ActionIcon>
           </Tooltip>
           <Tooltip label="Search" position="right">
-              <ActionIcon size="lg" variant={getVariant("search")} color={getColor("search")} onClick={() => onToggleSection("search")}><Search size={20} /></ActionIcon>
+              <ActionIcon size="lg" variant={getVariant("search")} color={getColor("search")} onClick={() => onToggleSection("search")}><FontAwesomeIcon icon={faSearch} style={{ width: 20, height: 20 }} /></ActionIcon>
           </Tooltip>
           <Tooltip label="Source Control" position="right">
-              <ActionIcon size="lg" variant={getVariant("git")} color={getColor("git")} onClick={() => onToggleSection("git")}><GitBranch size={20} /></ActionIcon>
+              <ActionIcon size="lg" variant={getVariant("git")} color={getColor("git")} onClick={() => onToggleSection("git")}><FontAwesomeIcon icon={faCodeBranch} style={{ width: 20, height: 20 }} /></ActionIcon>
           </Tooltip>
           <Tooltip label="Database" position="right">
-              <ActionIcon size="lg" variant={getVariant("database")} color={getColor("database")} onClick={() => onToggleSection("database")}><Database size={20} /></ActionIcon>
+              <ActionIcon size="lg" variant={getVariant("database")} color={getColor("database")} onClick={() => onToggleSection("database")}><FontAwesomeIcon icon={faDatabase} style={{ width: 20, height: 20 }} /></ActionIcon>
           </Tooltip>
         </Stack>
         <Stack gap={4} align="center">
           <Tooltip label="Settings" position="right">
-              <ActionIcon size="lg" variant={getVariant("settings")} color={getColor("settings")} onClick={() => onToggleSection("settings")}><Settings size={20} /></ActionIcon>
+              <ActionIcon size="lg" variant={getVariant("settings")} color={getColor("settings")} onClick={() => onToggleSection("settings")}><FontAwesomeIcon icon={faCog} style={{ width: 20, height: 20 }} /></ActionIcon>
           </Tooltip>
         </Stack>
       </Stack>
@@ -291,9 +292,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <Box p="xs">
                             <Text size="xs" fw={700} c="dimmed" mb={4}>WIZARDS</Text>
                             <Group gap={4}>
-                                <Tooltip label="Preamble"><ActionIcon variant="light" size="sm" color="violet" onClick={() => onNavigate("wizard-preamble")}><Wand2 size={14}/></ActionIcon></Tooltip>
-                                <Tooltip label="Table"><ActionIcon variant="light" size="sm" color="green" onClick={() => onNavigate("wizard-table")}><Table2 size={14}/></ActionIcon></Tooltip>
-                                <Tooltip label="TikZ/Plots"><ActionIcon variant="light" size="sm" color="orange" onClick={() => onNavigate("wizard-tikz")}><PenTool size={14}/></ActionIcon></Tooltip>
+                                <Tooltip label="Preamble"><ActionIcon variant="light" size="sm" color="violet" onClick={() => onNavigate("wizard-preamble")}><FontAwesomeIcon icon={faMagic} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
+                                <Tooltip label="Table"><ActionIcon variant="light" size="sm" color="green" onClick={() => onNavigate("wizard-table")}><FontAwesomeIcon icon={faTable} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
+                                <Tooltip label="TikZ/Plots"><ActionIcon variant="light" size="sm" color="orange" onClick={() => onNavigate("wizard-tikz")}><FontAwesomeIcon icon={faPenNib} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
                             </Group>
                         </Box>
                         <Divider my={4} color="dark.6" />
@@ -303,17 +304,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 <Group justify="space-between" py={4} bg="dark.7">
                                     <Text size="xs" fw={700} c="dimmed">PROJECT</Text>
                                     <Group gap={2}>
-                                        <Tooltip label="New File"><ActionIcon variant="subtle" size="xs" color="gray" onClick={(e) => { e.stopPropagation(); handleStartCreation('file'); }}><FilePlus size={14}/></ActionIcon></Tooltip>
-                                        <Tooltip label="New Folder"><ActionIcon variant="subtle" size="xs" color="gray" onClick={(e) => { e.stopPropagation(); handleStartCreation('folder'); }}><FolderPlus size={14}/></ActionIcon></Tooltip>
-                                        <Tooltip label="Open Folder"><ActionIcon variant="subtle" size="xs" color="gray" onClick={onOpenFolder}><FolderOpen size={14}/></ActionIcon></Tooltip>
-                                        <Tooltip label="Expand All"><ActionIcon variant="subtle" size="xs" color="gray" onClick={() => setExpandAllSignal(s => s + 1)}><ChevronsUpDown size={14}/></ActionIcon></Tooltip>
-                                        <Tooltip label="Collapse All"><ActionIcon variant="subtle" size="xs" color="gray" onClick={() => setCollapseAllSignal(s => s + 1)}><MinusSquare size={14}/></ActionIcon></Tooltip>
+                                        <Tooltip label="New File"><ActionIcon variant="subtle" size="xs" color="gray" onClick={(e) => { e.stopPropagation(); handleStartCreation('file'); }}><FontAwesomeIcon icon={faFileCirclePlus} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
+                                        <Tooltip label="New Folder"><ActionIcon variant="subtle" size="xs" color="gray" onClick={(e) => { e.stopPropagation(); handleStartCreation('folder'); }}><FontAwesomeIcon icon={faFolderPlus} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
+                                        <Tooltip label="Open Folder"><ActionIcon variant="subtle" size="xs" color="gray" onClick={onOpenFolder}><FontAwesomeIcon icon={faFolderOpen} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
+                                        <Tooltip label="Expand All"><ActionIcon variant="subtle" size="xs" color="gray" onClick={() => setExpandAllSignal(s => s + 1)}><FontAwesomeIcon icon={faSort} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
+                                        <Tooltip label="Collapse All"><ActionIcon variant="subtle" size="xs" color="gray" onClick={() => setCollapseAllSignal(s => s + 1)}><FontAwesomeIcon icon={faMinusSquare} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
                                     </Group>
                                 </Group>
                                 <TextInput
                                     placeholder="Filter files..." size="xs"
                                     value={searchQuery} onChange={(e) => setSearchQuery(e.currentTarget.value)}
-                                    rightSection={searchQuery && <ActionIcon size="xs" variant="transparent" onClick={() => setSearchQuery('')}><MinusSquare size={10}/></ActionIcon>}
+                                    rightSection={searchQuery && <ActionIcon size="xs" variant="transparent" onClick={() => setSearchQuery('')}><FontAwesomeIcon icon={faMinusSquare} style={{ width: 10, height: 10 }} /></ActionIcon>}
                                 />
                             </Stack>
 
@@ -352,7 +353,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 <Text size="xs" c="dimmed" fw={700}>TABLES</Text>
                                 {dbTables.map(t => (
                                     <UnstyledButton key={t} onClick={() => onOpenTable(t)} style={{ padding: '4px 8px', fontSize: 13, borderRadius: 4, color: '#C1C2C5', display: 'flex', alignItems: 'center', gap: 8, ':hover': { backgroundColor: '#2C2E33' } }}>
-                                        <Table2 size={14} color="#69db7c"/> {t}
+                                        <FontAwesomeIcon icon={faTable} style={{ width: 14, height: 14, color: "#69db7c" }} /> {t}
                                     </UnstyledButton>
                                 ))}
                             </Stack>

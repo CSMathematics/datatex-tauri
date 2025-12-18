@@ -3,7 +3,8 @@ import {
   Stack, Select, Divider, MultiSelect, Group, Switch, 
   ColorInput, Alert 
 } from '@mantine/core';
-import { AlertCircle } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faExclamationCircle } from '@fortawesome/free-solid-svg-icons';
 import { LANGUAGES_DB, MINTED_STYLES } from '../LanguageDb';
 
 export interface CodeHighlightConfig {
@@ -124,7 +125,7 @@ export const CodeHighlightingTab: React.FC<CodeHighlightingTabProps> = ({
           {config.engine === 'minted' && (
             <>
               <Divider label="Theme" labelPosition="left" />
-              <Alert variant="light" color="orange" title="Requirement" icon={<AlertCircle size={16}/>} fz="xs">
+              <Alert variant="light" color="orange" title="Requirement" icon={<FontAwesomeIcon icon={faExclamationCircle} style={{ width: 16, height: 16 }} />} fz="xs">
                 Minted requires compiling with <b>-shell-escape</b> flag.
               </Alert>
               <Select 

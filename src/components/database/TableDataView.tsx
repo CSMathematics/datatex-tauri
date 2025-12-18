@@ -10,7 +10,8 @@ import {
   TextInput,
   Pagination,
 } from "@mantine/core";
-import { Search, RefreshCw, Database } from "lucide-react";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSearch, faSync, faDatabase } from '@fortawesome/free-solid-svg-icons';
 
 // Τύπος για τα δεδομένα (Mock ή Real)
 type RowData = Record<string, any>;
@@ -81,7 +82,7 @@ export const TableDataView: React.FC<TableDataViewProps> = ({ tableName }) => {
       {/* Toolbar */}
       <Group mb="md" justify="space-between">
         <Group>
-          <Database size={20} color="#69db7c" />
+          <FontAwesomeIcon icon={faDatabase} style={{ width: 20, height: 20, color: "#69db7c" }} />
           <Text size="lg" fw={700} c="gray.3">
             Table:{" "}
             <Text span c="white">
@@ -92,7 +93,7 @@ export const TableDataView: React.FC<TableDataViewProps> = ({ tableName }) => {
         <Group>
           <TextInput
             placeholder="Search SQL..."
-            leftSection={<Search size={14} />}
+            leftSection={<FontAwesomeIcon icon={faSearch} style={{ width: 14, height: 14 }} />}
             size="xs"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -100,7 +101,7 @@ export const TableDataView: React.FC<TableDataViewProps> = ({ tableName }) => {
           <Button
             variant="light"
             size="xs"
-            leftSection={<RefreshCw size={14} />}
+            leftSection={<FontAwesomeIcon icon={faSync} style={{ width: 14, height: 14 }} />}
             onClick={fetchMockData}
           >
             Refresh

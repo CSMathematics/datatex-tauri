@@ -4,13 +4,19 @@ import {
   Group, Stack, Text, ScrollArea, Divider, Code, Tooltip, Box, 
   Select, ColorPicker, Popover, NumberInput
 } from '@mantine/core';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  AlignLeft, AlignCenter, AlignRight,
-  Check, Copy,
-  Bold, Italic, PaintBucket, Minimize2, Maximize2, Eraser, GripHorizontal, Settings
-} from 'lucide-react';
+  faAlignLeft, faAlignCenter, faAlignRight,
+  faCheck, faCopy,
+  faBold, faItalic, faFillDrip, faCompressAlt, faExpandAlt, faEraser, faGripLines, faCog,
+  faPlus, faTrash
+} from '@fortawesome/free-solid-svg-icons';
 
-import { IconTableRow, IconTableColumn, IconRowRemove, IconColumnRemove } from '@tabler/icons-react';
+// Using fontawesome for table icons as well, approximating with regular icons or stacking
+// IconTableRow -> faPlus
+// IconTableColumn -> faPlus
+// IconRowRemove -> faTrash
+// IconColumnRemove -> faTrash
 
 interface TableWizardProps {
   onInsert: (code: string) => void;
@@ -355,34 +361,34 @@ export const TableWizard: React.FC<TableWizardProps> = ({ onInsert }) => {
       <Group p="xs" bg="dark.7" style={{ borderBottom: '1px solid var(--mantine-color-dark-5)' }} gap={4}>
         {/* Row Operations */}
         <Group gap={0}>
-          <Tooltip label="Add Row"><ActionIcon variant="subtle" size="sm" onClick={addRow}><IconTableRow stroke={2} /></ActionIcon></Tooltip>
-          <Tooltip label="Delete Row"><ActionIcon variant="subtle" size="sm" color="red" onClick={deleteRow}><IconRowRemove size={14} /></ActionIcon></Tooltip>
+          <Tooltip label="Add Row"><ActionIcon variant="subtle" size="sm" onClick={addRow}><FontAwesomeIcon icon={faPlus} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
+          <Tooltip label="Delete Row"><ActionIcon variant="subtle" size="sm" color="red" onClick={deleteRow}><FontAwesomeIcon icon={faTrash} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
         </Group>
         <Divider orientation="vertical" />
         
         {/* Column Operations */}
         <Group gap={0}>
-          <Tooltip label="Add Column"><ActionIcon variant="subtle" size="sm" onClick={addCol}><IconTableColumn stroke={2} /></ActionIcon></Tooltip>
-          <Tooltip label="Delete Column"><ActionIcon variant="subtle" size="sm" color="red" onClick={deleteCol}><IconColumnRemove size={14}/></ActionIcon></Tooltip>
+          <Tooltip label="Add Column"><ActionIcon variant="subtle" size="sm" onClick={addCol}><FontAwesomeIcon icon={faPlus} style={{ width: 14, height: 14 }} transform={{ rotate: 90 }} /></ActionIcon></Tooltip>
+          <Tooltip label="Delete Column"><ActionIcon variant="subtle" size="sm" color="red" onClick={deleteCol}><FontAwesomeIcon icon={faTrash} style={{ width: 14, height: 14 }} transform={{ rotate: 90 }} /></ActionIcon></Tooltip>
         </Group>
         <Divider orientation="vertical" />
         
-        <Tooltip label="Merge Cells"><ActionIcon variant="subtle" size="sm" onClick={mergeCells}><Minimize2 size={14}/></ActionIcon></Tooltip>
-        <Tooltip label="Split Cells"><ActionIcon variant="subtle" size="sm" onClick={splitCells}><Maximize2 size={14}/></ActionIcon></Tooltip>
+        <Tooltip label="Merge Cells"><ActionIcon variant="subtle" size="sm" onClick={mergeCells}><FontAwesomeIcon icon={faCompressAlt} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
+        <Tooltip label="Split Cells"><ActionIcon variant="subtle" size="sm" onClick={splitCells}><FontAwesomeIcon icon={faExpandAlt} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
         <Divider orientation="vertical" />
         
-        <Tooltip label="Bold"><ActionIcon variant={grid[activeCell.r][activeCell.c].bold ? "filled" : "subtle"} size="sm" onClick={toggleBold}><Bold size={14}/></ActionIcon></Tooltip>
-        <Tooltip label="Italic"><ActionIcon variant={grid[activeCell.r][activeCell.c].italic ? "filled" : "subtle"} size="sm" onClick={toggleItalic}><Italic size={14}/></ActionIcon></Tooltip>
+        <Tooltip label="Bold"><ActionIcon variant={grid[activeCell.r][activeCell.c].bold ? "filled" : "subtle"} size="sm" onClick={toggleBold}><FontAwesomeIcon icon={faBold} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
+        <Tooltip label="Italic"><ActionIcon variant={grid[activeCell.r][activeCell.c].italic ? "filled" : "subtle"} size="sm" onClick={toggleItalic}><FontAwesomeIcon icon={faItalic} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
         <Divider orientation="vertical" />
         
-        <Tooltip label="Align Left"><ActionIcon variant={grid[activeCell.r][activeCell.c].align==='l' ? "filled" : "subtle"} size="sm" onClick={() => setAlign('l')}><AlignLeft size={14}/></ActionIcon></Tooltip>
-        <Tooltip label="Align Center"><ActionIcon variant={grid[activeCell.r][activeCell.c].align==='c' || !grid[activeCell.r][activeCell.c].align ? "filled" : "subtle"} size="sm" onClick={() => setAlign('c')}><AlignCenter size={14}/></ActionIcon></Tooltip>
-        <Tooltip label="Align Right"><ActionIcon variant={grid[activeCell.r][activeCell.c].align==='r' ? "filled" : "subtle"} size="sm" onClick={() => setAlign('r')}><AlignRight size={14}/></ActionIcon></Tooltip>
+        <Tooltip label="Align Left"><ActionIcon variant={grid[activeCell.r][activeCell.c].align==='l' ? "filled" : "subtle"} size="sm" onClick={() => setAlign('l')}><FontAwesomeIcon icon={faAlignLeft} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
+        <Tooltip label="Align Center"><ActionIcon variant={grid[activeCell.r][activeCell.c].align==='c' || !grid[activeCell.r][activeCell.c].align ? "filled" : "subtle"} size="sm" onClick={() => setAlign('c')}><FontAwesomeIcon icon={faAlignCenter} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
+        <Tooltip label="Align Right"><ActionIcon variant={grid[activeCell.r][activeCell.c].align==='r' ? "filled" : "subtle"} size="sm" onClick={() => setAlign('r')}><FontAwesomeIcon icon={faAlignRight} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
         <Divider orientation="vertical" />
         
         <Popover position="bottom" withArrow shadow="md">
             <Popover.Target>
-                <ActionIcon variant="subtle" size="sm" bg={bgColor}><PaintBucket size={14} color={bgColor === '#ffffff' ? 'black' : 'white'} /></ActionIcon>
+                <ActionIcon variant="subtle" size="sm" bg={bgColor}><FontAwesomeIcon icon={faFillDrip} style={{ width: 14, height: 14, color: bgColor === '#ffffff' ? 'black' : 'white' }} /></ActionIcon>
             </Popover.Target>
             <Popover.Dropdown>
                 <Stack gap="xs">
@@ -391,7 +397,7 @@ export const TableWizard: React.FC<TableWizardProps> = ({ onInsert }) => {
                 </Stack>
             </Popover.Dropdown>
         </Popover>
-        <Tooltip label="Clear Styles"><ActionIcon variant="subtle" size="sm" onClick={clearFormat}><Eraser size={14}/></ActionIcon></Tooltip>
+        <Tooltip label="Clear Styles"><ActionIcon variant="subtle" size="sm" onClick={clearFormat}><FontAwesomeIcon icon={faEraser} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
       </Group>
 
       {/* GRID EDITOR AREA (Top Section) */}
@@ -463,7 +469,7 @@ export const TableWizard: React.FC<TableWizardProps> = ({ onInsert }) => {
             transition: 'background-color 0.2s'
         }}
       >
-        <GripHorizontal size={12} color="gray" style={{ opacity: 0.5 }} />
+        <FontAwesomeIcon icon={faGripLines} style={{ width: 12, height: 12, opacity: 0.5, color: "gray" }} />
       </Box>
 
       {/* OPTIONS & PREVIEW (Bottom Section - Takes remaining space) */}
@@ -472,7 +478,7 @@ export const TableWizard: React.FC<TableWizardProps> = ({ onInsert }) => {
             <Grid.Col span={5} style={{ borderRight: '1px solid var(--mantine-color-dark-6)', height: '100%', overflowY: 'auto' }}>
                 <Stack gap="xs">
                     <Group gap="xs">
-                        <Settings size={14} />
+                        <FontAwesomeIcon icon={faCog} style={{ width: 14, height: 14 }} />
                         <Text size="xs" fw={700} c="dimmed">OPTIONS</Text>
                     </Group>
                     
@@ -512,7 +518,7 @@ export const TableWizard: React.FC<TableWizardProps> = ({ onInsert }) => {
             <Grid.Col span={7} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <Group justify="space-between" mb={4}>
                     <Text size="xs" fw={700} c="dimmed">LATEX CODE</Text>
-                    <ActionIcon size="xs" variant="subtle" onClick={() => navigator.clipboard.writeText(generateCode())}><Copy size={12}/></ActionIcon>
+                    <ActionIcon size="xs" variant="subtle" onClick={() => navigator.clipboard.writeText(generateCode())}><FontAwesomeIcon icon={faCopy} style={{ width: 12, height: 12 }} /></ActionIcon>
                 </Group>
                 
                 {/* Scrollable Code Area fills remaining vertical space */}
@@ -520,7 +526,7 @@ export const TableWizard: React.FC<TableWizardProps> = ({ onInsert }) => {
                     <Code block style={{ fontSize: 12, background: 'transparent' }}>{generateCode()}</Code>
                 </ScrollArea>
                 
-                <Button mt="xs" fullWidth size="xs" leftSection={<Check size={14} />} onClick={() => onInsert(generateCode())}>Insert Code</Button>
+                <Button mt="xs" fullWidth size="xs" leftSection={<FontAwesomeIcon icon={faCheck} style={{ width: 14, height: 14 }} />} onClick={() => onInsert(generateCode())}>Insert Code</Button>
             </Grid.Col>
         </Grid>
       </Box>

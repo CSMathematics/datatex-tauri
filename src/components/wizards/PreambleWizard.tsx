@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { 
   Stack, Button, Tabs, ScrollArea, Box, Grid, Code
 } from '@mantine/core';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  FileText, Layout, Package, Palette, Code as CodeIcon, List as ListIcon, Check, BookOpen
-} from 'lucide-react';
+  faFileAlt, faLayerGroup, faBoxOpen, faPalette, faCode, faList, faCheck, faBookOpen
+} from '@fortawesome/free-solid-svg-icons';
 
 // --- Imports from Separated Files ---
 // Κρατάμε μόνο τους τύπους που χρειαζόμαστε για το State
@@ -144,13 +145,13 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
             {/* Tabs Header */}
             <Tabs value={activeTab} onChange={setActiveTab} variant="pills" radius="sm" p="xs">
               <Tabs.List grow>
-                <Tabs.Tab value="general" leftSection={<FileText size={16}/>}>General</Tabs.Tab>
-                <Tabs.Tab value="layout" leftSection={<Layout size={16}/>}>Layout</Tabs.Tab>
-                <Tabs.Tab value="packages" leftSection={<Package size={16}/>}>Packages</Tabs.Tab>
-                <Tabs.Tab value="biblio" leftSection={<BookOpen size={16}/>}>Biblio</Tabs.Tab>
-                <Tabs.Tab value="code" leftSection={<CodeIcon size={16}/>}>Code</Tabs.Tab>
-                <Tabs.Tab value="lists" leftSection={<ListIcon size={16}/>}>Lists</Tabs.Tab>
-                <Tabs.Tab value="colors" leftSection={<Palette size={16}/>}>Colors</Tabs.Tab>
+                <Tabs.Tab value="general" leftSection={<FontAwesomeIcon icon={faFileAlt} style={{ width: 16, height: 16 }} />}>General</Tabs.Tab>
+                <Tabs.Tab value="layout" leftSection={<FontAwesomeIcon icon={faLayerGroup} style={{ width: 16, height: 16 }} />}>Layout</Tabs.Tab>
+                <Tabs.Tab value="packages" leftSection={<FontAwesomeIcon icon={faBoxOpen} style={{ width: 16, height: 16 }} />}>Packages</Tabs.Tab>
+                <Tabs.Tab value="biblio" leftSection={<FontAwesomeIcon icon={faBookOpen} style={{ width: 16, height: 16 }} />}>Biblio</Tabs.Tab>
+                <Tabs.Tab value="code" leftSection={<FontAwesomeIcon icon={faCode} style={{ width: 16, height: 16 }} />}>Code</Tabs.Tab>
+                <Tabs.Tab value="lists" leftSection={<FontAwesomeIcon icon={faList} style={{ width: 16, height: 16 }} />}>Lists</Tabs.Tab>
+                <Tabs.Tab value="colors" leftSection={<FontAwesomeIcon icon={faPalette} style={{ width: 16, height: 16 }} />}>Colors</Tabs.Tab>
               </Tabs.List>
             </Tabs>
 
@@ -189,7 +190,7 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
 
             {/* Bottom Action Bar */}
             <Box p="sm" bg="dark.8" style={{ borderTop: '1px solid var(--mantine-color-dark-6)' }}>
-                <Button fullWidth onClick={() => onInsert(generatedCode)} leftSection={<Check size={16}/>}>
+                <Button fullWidth onClick={() => onInsert(generatedCode)} leftSection={<FontAwesomeIcon icon={faCheck} style={{ width: 16, height: 16 }} />}>
                     Insert Preamble
                 </Button>
             </Box>

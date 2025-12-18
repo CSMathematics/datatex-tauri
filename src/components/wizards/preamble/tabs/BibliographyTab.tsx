@@ -1,5 +1,5 @@
 import React from 'react';
-import { Stack, Select, TextInput, Text, SegmentedControl, Divider } from '@mantine/core';
+import { Stack, Select, TextInput, Text, Divider } from '@mantine/core';
 import { BIB_BACKENDS, BIB_STYLES_BIBTEX, BIB_STYLES_BIBLATEX } from '../LanguageDb';
 import { PreambleConfig } from '../generators/preambleGenerators';
 

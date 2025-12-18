@@ -11,7 +11,8 @@ import {
   Text,
   Stack
 } from "@mantine/core";
-import { X } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import { invoke } from "@tauri-apps/api/core"; 
 
 // --- Custom Theme ---
@@ -556,7 +557,7 @@ export default function App() {
                                         <Text size="xs" fw={700} c="dimmed">PDF PREVIEW</Text>
                                         <Group gap={4}>
                                             {isCompiling && <Loader size="xs" />}
-                                            <ActionIcon size="xs" variant="transparent" onClick={() => setShowPdf(false)}><X size={12} /></ActionIcon>
+                                            <ActionIcon size="xs" variant="transparent" onClick={() => setShowPdf(false)}><FontAwesomeIcon icon={faTimes} style={{ width: 12, height: 12 }} /></ActionIcon>
                                         </Group>
                                     </Group>
                                     <Box style={{ flex: 1, position: 'relative', overflow: 'hidden' }} bg="gray.7">
