@@ -7,14 +7,15 @@ import {
   Menu,
   Box
 } from "@mantine/core";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  Database,
-  Search,
-  Save,
-  FolderOpen,
-  FilePlus,
-  FileText
-} from "lucide-react";
+  faDatabase,
+  faSearch,
+  faSave,
+  faFolderOpen,
+  faFileCirclePlus,
+  faFilePdf
+} from "@fortawesome/free-solid-svg-icons";
 
 interface HeaderProps {
   onNewFile: () => void;
@@ -30,7 +31,7 @@ export const HeaderContent: React.FC<HeaderProps> = ({
   <Group h="100%" px="md" justify="space-between" style={{ borderBottom: "1px solid var(--mantine-color-dark-6)" }} data-tauri-drag-region>
     <Group data-tauri-drag-region>
       <Group gap={6} mr="lg" style={{ userSelect: 'none' }}>
-        <Database size={18} color="#339af0" />
+        <FontAwesomeIcon icon={faDatabase} style={{ width: 18, height: 18, color: "#339af0" }} />
         <Text fw={700} size="sm" c="gray.3">DataTex <Text span size="xs" c="dimmed">v2.0</Text></Text>
       </Group>
       <Group gap={0} visibleFrom="sm">
@@ -42,11 +43,11 @@ export const HeaderContent: React.FC<HeaderProps> = ({
             <Menu.Dropdown>
               {label === 'File' && (
                 <>
-                  <Menu.Item leftSection={<FilePlus size={14}/>} onClick={onNewFile}>New File</Menu.Item>
-                  <Menu.Item leftSection={<FolderOpen size={14}/>} onClick={onOpenFile}>Open Folder</Menu.Item>
-                  <Menu.Item leftSection={<Save size={14}/>} onClick={onSaveFile}>Save</Menu.Item>
+                  <Menu.Item leftSection={<FontAwesomeIcon icon={faFileCirclePlus} style={{ width: 14, height: 14 }} />} onClick={onNewFile}>New File</Menu.Item>
+                  <Menu.Item leftSection={<FontAwesomeIcon icon={faFolderOpen} style={{ width: 14, height: 14 }} />} onClick={onOpenFile}>Open Folder</Menu.Item>
+                  <Menu.Item leftSection={<FontAwesomeIcon icon={faSave} style={{ width: 14, height: 14 }} />} onClick={onSaveFile}>Save</Menu.Item>
                   <Menu.Divider />
-                  <Menu.Item leftSection={<FileText size={14}/>}>Export to PDF</Menu.Item>
+                  <Menu.Item leftSection={<FontAwesomeIcon icon={faFilePdf} style={{ width: 14, height: 14 }} />}>Export to PDF</Menu.Item>
                 </>
               )}
               {label === 'Edit' && (
@@ -70,7 +71,7 @@ export const HeaderContent: React.FC<HeaderProps> = ({
     <Box style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', width: '30%' }}>
       <TextInput 
         placeholder="DataTex Search (Ctrl+P)" 
-        leftSection={<Search size={12} />} 
+        leftSection={<FontAwesomeIcon icon={faSearch} style={{ width: 12, height: 12 }} />}
         size="xs" 
         radius="md" 
         styles={{ 

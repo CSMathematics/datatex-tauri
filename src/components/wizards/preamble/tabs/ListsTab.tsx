@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { 
   Stack, Select, Divider, Card, Group, Switch, Text, TextInput, Button, ActionIcon 
 } from '@mantine/core';
-import { Plus, Trash } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { PreambleConfig } from '../generators/preambleGenerators';
 import { CustomListDef } from '../LanguageDb';
 
@@ -114,7 +115,7 @@ export const ListsTab: React.FC<ListsTabProps> = ({
                      onChange={(e) => setNewListLabel(e.currentTarget.value)} 
                      style={{ flex: 1 }} 
                    />
-                   <Button onClick={handleAdd} leftSection={<Plus size={16}/>}>Add</Button>
+                   <Button onClick={handleAdd} leftSection={<FontAwesomeIcon icon={faPlus} style={{ width: 16, height: 16 }} />}>Add</Button>
                 </Group>
              </Stack>
           </Card>
@@ -127,7 +128,7 @@ export const ListsTab: React.FC<ListsTabProps> = ({
                       <Text size="xs" c="dimmed">Type: {l.baseType} | Label: {l.label || 'Default'}</Text>
                    </Stack>
                    <ActionIcon color="red" variant="subtle" onClick={() => onRemoveList(l.id)}>
-                      <Trash size={16} />
+                      <FontAwesomeIcon icon={faTrash} style={{ width: 16, height: 16 }} />
                    </ActionIcon>
                 </Group>
              ))}

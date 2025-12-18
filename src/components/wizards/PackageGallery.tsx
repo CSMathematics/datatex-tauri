@@ -4,11 +4,12 @@ import {
   ScrollArea, Stack, ThemeIcon, Box, NavLink,
   Code, ActionIcon, Tooltip, Select, Switch, Textarea, SegmentedControl
 } from '@mantine/core';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  Search, Calculator, Image as ImageIcon,
-  Table as TableIcon, Layout, Code as CodeIcon, Package, 
-  Check, Copy, Info, ChevronRight, Sigma, FileCode, Settings
-} from 'lucide-react';
+  faSearch, faCalculator, faImage,
+  faTable, faLayerGroup, faCode, faBoxOpen,
+  faCheck, faCopy, faInfoCircle, faChevronRight, faSquareRootAlt, faFileCode, faCog
+} from '@fortawesome/free-solid-svg-icons';
 import { ViewType } from '../layout/Sidebar';
 
 // IMPORT SHARED DATA
@@ -206,12 +207,12 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onOpen
 
   // Group packages by category
   const categories: Record<string, React.ReactNode> = {
-    'math': <Calculator size={16} />,
-    'graphics': <ImageIcon size={16} />,
-    'tables': <TableIcon size={16} />,
-    'code': <CodeIcon size={16} />,
-    'layout': <Layout size={16} />,
-    'misc': <Package size={16} />
+    'math': <FontAwesomeIcon icon={faCalculator} style={{ width: 16, height: 16 }} />,
+    'graphics': <FontAwesomeIcon icon={faImage} style={{ width: 16, height: 16 }} />,
+    'tables': <FontAwesomeIcon icon={faTable} style={{ width: 16, height: 16 }} />,
+    'code': <FontAwesomeIcon icon={faCode} style={{ width: 16, height: 16 }} />,
+    'layout': <FontAwesomeIcon icon={faLayerGroup} style={{ width: 16, height: 16 }} />,
+    'misc': <FontAwesomeIcon icon={faBoxOpen} style={{ width: 16, height: 16 }} />
   };
 
   const getFilteredPackages = () => {
@@ -241,7 +242,7 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onOpen
             <Box p="sm" bg="dark.8">
                 <TextInput 
                     placeholder="Search tools..." 
-                    leftSection={<Search size={14}/>} 
+                    leftSection={<FontAwesomeIcon icon={faSearch} style={{ width: 14, height: 14 }} />}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.currentTarget.value)}
                 />
@@ -267,7 +268,7 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onOpen
                                         active={pkg.id === selectedPkgId}
                                         onClick={() => setSelectedPkgId(pkg.id)}
                                         variant="light"
-                                        leftSection={activePackage?.id === pkg.id && <ChevronRight size={14}/>}
+                                        leftSection={activePackage?.id === pkg.id && <FontAwesomeIcon icon={faChevronRight} style={{ width: 14, height: 14 }} />}
                                         style={{ borderRadius: 4 }}
                                     />
                                 ))}
@@ -286,9 +287,9 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onOpen
                 <Group justify="space-between">
                     <Group>
                         <ThemeIcon size="lg" variant="light" color="blue">
-                            {activePackage?.category === 'math' ? <Sigma /> : 
-                             activePackage?.category === 'code' ? <FileCode /> : 
-                             <Package />}
+                            {activePackage?.category === 'math' ? <FontAwesomeIcon icon={faSquareRootAlt} /> :
+                             activePackage?.category === 'code' ? <FontAwesomeIcon icon={faFileCode} /> :
+                             <FontAwesomeIcon icon={faBoxOpen} />}
                         </ThemeIcon>
                         <Stack gap={0}>
                             <Text fw={700} size="lg">{activePackage?.name}</Text>
@@ -301,14 +302,14 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onOpen
                                 variant="light" 
                                 color="teal" 
                                 size="xs" 
-                                leftSection={<Settings size={14}/>}
+                                leftSection={<FontAwesomeIcon icon={faCog} style={{ width: 14, height: 14 }} />}
                                 onClick={() => activePackage && handleConfigure(activePackage)}
                             >
                                 Open Full Wizard
                             </Button>
                         )}
                         <Tooltip label="Package Info">
-                            <ActionIcon variant="subtle" color="gray"><Info size={18}/></ActionIcon>
+                            <ActionIcon variant="subtle" color="gray"><FontAwesomeIcon icon={faInfoCircle} style={{ width: 18, height: 18 }} /></ActionIcon>
                         </Tooltip>
                     </Group>
                 </Group>
@@ -361,7 +362,7 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onOpen
                                 </Button>
                             )}
                             <ActionIcon size="xs" variant="subtle" onClick={() => navigator.clipboard.writeText(generatedCode)}>
-                                <Copy size={12}/>
+                                <FontAwesomeIcon icon={faCopy} style={{ width: 12, height: 12 }} />
                             </ActionIcon>
                         </Group>
                     </Group>
@@ -370,7 +371,7 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onOpen
                             {generatedCode}
                         </Code>
                     </ScrollArea>
-                    <Button fullWidth leftSection={<Check size={16}/>} onClick={() => onInsert(generatedCode)}>
+                    <Button fullWidth leftSection={<FontAwesomeIcon icon={faCheck} style={{ width: 16, height: 16 }} />} onClick={() => onInsert(generatedCode)}>
                         Insert into Document
                     </Button>
                 </Stack>

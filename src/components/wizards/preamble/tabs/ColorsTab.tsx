@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Stack, Checkbox, Card, Text, Group, TextInput, Select, ColorInput, Button, Tooltip, Badge, ActionIcon 
 } from '@mantine/core';
-import { Plus, RefreshCw, Trash, Palette } from 'lucide-react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus, faSync, faTrash, faPalette } from '@fortawesome/free-solid-svg-icons';
 import { PreambleConfig } from '../generators/preambleGenerators';
 import { CustomColorDef, COLOR_MODELS, hexToModelValue } from '../LanguageDb';
 
@@ -54,7 +55,7 @@ export const ColorsTab: React.FC<ColorsTabProps> = ({
       
       <Card withBorder p="sm" bg="dark.7">
         <Group gap="xs" mb="xs">
-            <Palette size={16} />
+            <FontAwesomeIcon icon={faPalette} style={{ width: 16, height: 16 }} />
             <Text size="sm" fw={700}>Define New Color</Text>
         </Group>
         
@@ -88,11 +89,11 @@ export const ColorsTab: React.FC<ColorsTabProps> = ({
               style={{ flex: 1 }}
               rightSection={
                 <Tooltip label="Auto-calculated from picker. You can edit manually.">
-                  <RefreshCw size={14}/>
+                  <FontAwesomeIcon icon={faSync} style={{ width: 14, height: 14 }} />
                 </Tooltip>
               }
             />
-            <Button onClick={handleAdd} leftSection={<Plus size={16}/>}>Add</Button>
+            <Button onClick={handleAdd} leftSection={<FontAwesomeIcon icon={faPlus} style={{ width: 16, height: 16 }} />}>Add</Button>
           </Group>
         </Stack>
       </Card>
@@ -121,7 +122,7 @@ export const ColorsTab: React.FC<ColorsTabProps> = ({
               </Stack>
             </Group>
             <ActionIcon color="red" variant="subtle" onClick={() => onRemoveColor(c.id)}>
-              <Trash size={16} />
+              <FontAwesomeIcon icon={faTrash} style={{ width: 16, height: 16 }} />
             </ActionIcon>
           </Group>
         ))}
