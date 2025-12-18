@@ -4,7 +4,7 @@ import {
   UnstyledButton, Stack, Divider, ScrollArea, Box, Badge
 } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileCirclePlus, faMagic, faChevronRight, faClock, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
+import { faFileCirclePlus, faWandMagicSparkles, faChevronRight, faClock, faExternalLinkAlt } from '@fortawesome/free-solid-svg-icons';
 import { DOCUMENT_TEMPLATES } from '../../templates/documentTemplates';
 
 interface StartPageProps {
@@ -67,7 +67,7 @@ export const StartPage: React.FC<StartPageProps> = ({
           }}>
             <Group align="flex-start" justify="space-between">
                 <Box>
-                    <Title order={1} mb="xs" c="white" style={{ fontSize: '2.5rem' }}>Welcome to DataTex</Title>
+                    <Title order={1} mb="xs" c="white" style={{ fontSize: '2.5rem' }}>Welcome to DataTeX</Title>
                     <Text c="gray.3" size="lg" mb="xl" maw={600}>
                         The modern, lightweight LaTeX environment designed for speed and efficiency.
                         Start a new project or continue where you left off.
@@ -81,7 +81,8 @@ export const StartPage: React.FC<StartPageProps> = ({
                         </UnstyledButton>
                     </Group>
                 </Box>
-                <FontAwesomeIcon icon={faMagic} style={{ width: 120, height: 120, opacity: 0.1, color: 'white' }} />
+                {/* <FontAwesomeIcon icon={faWandMagicSparkles} style={{ width: 120, height: 120, opacity: 0.1, color: 'white' }} /> */}
+                <img src="./DatatexLogo.svg" alt="DataTex Logo" style={{ width: 550, height: 250, opacity: 0.2 }} />
             </Group>
           </Box>
 
@@ -97,7 +98,7 @@ export const StartPage: React.FC<StartPageProps> = ({
                         onClick={onCreateEmpty}
                     />
                     <ActionCard
-                        icon={faMagic} color="violet"
+                        icon={faWandMagicSparkles} color="violet"
                         title="Preamble Wizard"
                         description="Configure page settings, packages, and fonts."
                         onClick={onOpenWizard}

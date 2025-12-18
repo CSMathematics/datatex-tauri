@@ -4,7 +4,7 @@ import Editor, { OnMount } from "@monaco-editor/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFileCode, faBookOpen, faCog, faImage, faFile,
-  faTimes, faPlay, faColumns, faCode, faPuzzlePiece, faStop, faHome, faChevronRight,
+  faTimes, faPlay, faColumns, faCode, faCube, faStop, faHome, faChevronRight,
   faFilePdf
 } from "@fortawesome/free-solid-svg-icons";
 import { TableDataView } from "../database/TableDataView";
@@ -97,7 +97,7 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
               <Group gap="xs">
                  {isCompiling && <Tooltip label="Stop"><ActionIcon size="sm" variant="subtle" color="red" onClick={onStopCompile}><FontAwesomeIcon icon={faStop} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>}
                  <Tooltip label="Compile"><ActionIcon size="sm" variant="subtle" color="green" onClick={onCompile} loading={isCompiling} disabled={!isTexFile || isCompiling}>{!isCompiling && <FontAwesomeIcon icon={faPlay} style={{ width: 14, height: 14 }} />}</ActionIcon></Tooltip>
-                 {activeFile?.type === 'editor' && isTexFile && <Tooltip label="Package Gallery"><ActionIcon size="sm" variant="subtle" color="blue" onClick={onOpenGallery}><FontAwesomeIcon icon={faPuzzlePiece} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>}
+                 {activeFile?.type === 'editor' && isTexFile && <Tooltip label="Package Gallery"><ActionIcon size="sm" variant="subtle" color="#ca3ff5ff" onClick={onOpenGallery}><FontAwesomeIcon icon={faCube} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>}
                  {activeFile?.type === 'editor' && isTexFile && <Tooltip label="PDF"><ActionIcon size="sm" variant="subtle" color="blue" onClick={onTogglePdf}><FontAwesomeIcon icon={faColumns} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>}
               </Group>
           </Group>

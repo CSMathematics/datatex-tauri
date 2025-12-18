@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "datatex-v2",
+  "productName": "DataTeX",
   "version": "0.1.0",
   "identifier": "4",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "datatex-v2",
+        "title": "DataTeX",
         "width": 800,
         "height": 600
       }

@@ -4,14 +4,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCopy, faSearch, faCodeBranch, faCog, faDatabase,
   faChevronRight, faTable,
-  faPenNib, faMagic,
+  faPenNib, faWandMagicSparkles,
   faFileCirclePlus, faFolderPlus, faFolderOpen, faSort, faMinusSquare,
   faFileCode, faBookOpen, faImage, faTrash, faPen,
   faFolder, faFile, faFilePdf
 } from "@fortawesome/free-solid-svg-icons";
-
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBook } from '@fortawesome/free-solid-svg-icons'
 
 // --- Types ---
 export type SidebarSection = "files" | "search" | "git" | "database" | "settings";
@@ -295,7 +292,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <Box p="xs">
                             <Text size="xs" fw={700} c="dimmed" mb={4}>WIZARDS</Text>
                             <Group gap={4}>
-                                <Tooltip label="Preamble"><ActionIcon variant="light" size="sm" color="violet" onClick={() => onNavigate("wizard-preamble")}><FontAwesomeIcon icon={faMagic} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
+                                <Tooltip label="Preamble"><ActionIcon variant="light" size="sm" color="violet" onClick={() => onNavigate("wizard-preamble")}><FontAwesomeIcon icon={faWandMagicSparkles} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
                                 <Tooltip label="Table"><ActionIcon variant="light" size="sm" color="green" onClick={() => onNavigate("wizard-table")}><FontAwesomeIcon icon={faTable} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
                                 <Tooltip label="TikZ/Plots"><ActionIcon variant="light" size="sm" color="orange" onClick={() => onNavigate("wizard-tikz")}><FontAwesomeIcon icon={faPenNib} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
                             </Group>
