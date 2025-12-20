@@ -14,7 +14,7 @@ interface ListsTabProps {
   config: PreambleConfig;
   customLists: CustomListDef[];
   onChange: (key: string, val: any) => void;
-  onAddList: (name: string, type: string, label: string, options?: string) => void;
+  onAddList: (name: string, type: CustomListDef['baseType'], options: string) => void;
   onRemoveList: (id: number) => void;
 }
 
@@ -46,6 +46,7 @@ export const ListsTab: React.FC<ListsTabProps> = ({
   const [newListName, setNewListName] = useState('');
   const [newListType, setNewListType] = useState<string>('enumerate');
   const [newListLabel, setNewListLabel] = useState('\\arabic*.');
+  const [optInline, setOptInline] = useState(false);
   
   // --- Layout & Spacing Options ---
   const [optNosep, setOptNosep] = useState(false);
@@ -95,7 +96,12 @@ export const ListsTab: React.FC<ListsTabProps> = ({
 
       const optionsStr = parts.join(', ');
       
-      onAddList(newListName, newListType, optionsStr);
+      let finalType = newListType;
+      if (optInline && (newListType === 'enumerate' || newListType === 'itemize')) {
+          finalType += '*';
+      }
+
+      onAddList(newListName, finalType as CustomListDef['baseType'], optionsStr);
       
       // Reset form
       setNewListName('');
@@ -104,6 +110,7 @@ export const ListsTab: React.FC<ListsTabProps> = ({
       setOptStart('');
       setOptBold(false);
       setOptItalic(false);
+      setOptInline(false);
     }
   };
 
@@ -127,9 +134,14 @@ export const ListsTab: React.FC<ListsTabProps> = ({
           if (optResume) parts.push('resume');
           if (optStart !== '' && optStart !== 1) parts.push(`start=${optStart}`);
       }
+
+      let finalType = newListType;
+      if (optInline && (newListType === 'enumerate' || newListType === 'itemize')) {
+          finalType += '*';
+      }
       
-      return `\\newlist{${newListName || 'myList'}}{${newListType}}{3}\n\\setlist[${newListName || 'myList'}]{${parts.join(', ')}}`;
-  }, [newListName, newListType, newListLabel, optNosep, optNoItemSep, optWide, optLeftMarginStar, optBold, optItalic, optAlign, optResume, optStart]);
+      return `\\newlist{${newListName || 'myList'}}{${finalType}}{3}\n\\setlist[${newListName || 'myList'}]{${parts.join(', ')}}`;
+  }, [newListName, newListType, newListLabel, optNosep, optNoItemSep, optWide, optLeftMarginStar, optBold, optItalic, optAlign, optResume, optStart, optInline]);
 
   return (
     <Stack gap="md" pb="xl">
@@ -148,6 +160,13 @@ export const ListsTab: React.FC<ListsTabProps> = ({
         </Group>
         
         {config.pkgEnumitem && (
+            <>
+            <Switch
+                mb="xs"
+                checked={config.enumitemInline}
+                onChange={(e) => onChange('enumitemInline', e.currentTarget.checked)}
+                label="Enable Inline Lists (inline option)"
+            />
             <SimpleGrid cols={2} spacing="xs">
                 <Select 
                     label="Global Itemize"
@@ -174,6 +193,7 @@ export const ListsTab: React.FC<ListsTabProps> = ({
                     onChange={(v) => onChange('enumitemEnumerate', v)}
                 />
             </SimpleGrid>
+            </>
         )}
       </Card>
 
@@ -209,6 +229,20 @@ export const ListsTab: React.FC<ListsTabProps> = ({
                      }} 
                    />
                 </Group>
+
+                {(newListType === 'enumerate' || newListType === 'itemize') && (
+                    <Checkbox
+                        label="Inline List (Append *)"
+                        description="Creates a run-in list (requires inline option)"
+                        checked={optInline}
+                        onChange={(e) => {
+                            setOptInline(e.currentTarget.checked);
+                            if (e.currentTarget.checked && !config.enumitemInline) {
+                                onChange('enumitemInline', true);
+                            }
+                        }}
+                    />
+                )}
 
                 {/* LABEL PATTERN (Not for description) */}
                 {newListType !== 'description' && (
@@ -358,7 +392,7 @@ export const ListsTab: React.FC<ListsTabProps> = ({
                           <Text size="sm" fw={700}>{l.name}</Text>
                           <Text size="xs" c="dimmed" w={200} truncate>
                               Type: {l.baseType} <br/>
-                              {l.label && l.label !== 'default' ? `Opts: ${l.label}` : ''}
+                              {l.options && l.options !== 'default' ? `Opts: ${l.options}` : ''}
                           </Text>
                       </Stack>
                    </Group>

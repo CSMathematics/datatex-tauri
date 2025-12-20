@@ -71,6 +71,7 @@ export interface PreambleConfig {
 
   // Lists (Enumitem)
   pkgEnumitem: boolean;
+  enumitemInline: boolean;
   enumitemSep: string;
   enumitemItemize: string;
   enumitemEnumerate: string;
@@ -189,7 +190,7 @@ export const generatePackages = (
 export const generateLists = (config: PreambleConfig, customLists: CustomListDef[]): string => {
   if (!config.pkgEnumitem) return '';
 
-  let code = `\\usepackage{enumitem}\n`;
+  let code = `\\usepackage${config.enumitemInline ? '[inline]' : ''}{enumitem}\n`;
   
   if (config.enumitemSep === 'nosep') code += `\\setlist{nosep}\n`;
   else if (config.enumitemSep === 'half') code += `\\setlist{itemsep=0.5ex}\n`;
@@ -217,7 +218,7 @@ export const generateLists = (config: PreambleConfig, customLists: CustomListDef
       code += `\n% --- Custom Lists ---\n`;
       customLists.forEach(l => {
           code += `\\newlist{${l.name}}{${l.baseType}}{3}\n`;
-          if (l.label) code += `\\setlist[${l.name}]{label=${l.label}}\n`;
+          if (l.options) code += `\\setlist[${l.name}]{${l.options}}\n`;
       });
   }
   return code;

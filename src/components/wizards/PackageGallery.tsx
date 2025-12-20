@@ -261,6 +261,7 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onOpen
   // 2. Enumitem State
   const [listConfig, setListConfig] = useState({ 
       pkgEnumitem: true, 
+      enumitemInline: false,
       enumitemSep: 'default', 
       enumitemItemize: 'default', 
       enumitemEnumerate: 'default' 
@@ -291,7 +292,7 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onOpen
     else if (selectedPkgId === 'enumitem') {
         let code = '';
         if (listConfig.pkgEnumitem) {
-            code += `\\usepackage{enumitem}\n\n`;
+            code += `\\usepackage${listConfig.enumitemInline ? '[inline]' : ''}{enumitem}\n\n`;
             
             // Global Settings
             if (listConfig.enumitemSep === 'nosep') code += `\\setlist{nosep}\n`;
@@ -309,7 +310,7 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onOpen
             code += `\n% --- Custom Lists ---\n`;
             galleryLists.forEach(l => {
                 code += `\\newlist{${l.name}}{${l.baseType}}{3}\n`;
-                code += `\\setlist[${l.name}]{${l.label}}\n`;
+                if (l.options) code += `\\setlist[${l.name}]{${l.options}}\n`;
             });
         }
         setGeneratedCode(code);
@@ -506,13 +507,13 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onOpen
                                     config={listConfig as any}
                                     customLists={galleryLists}
                                     onChange={(key, val) => setListConfig(prev => ({ ...prev, [key]: val }))}
-                                    onAddList={(name, type, label, _options) => {
-                                        // "label" argument here receives the options string constructed in ListsTab
+                                    onAddList={(name, type, options) => {
+                                        // "options" argument here receives the options string constructed in ListsTab
                                         const newList: CustomListDef = { 
                                             id: Date.now(), 
                                             name, 
-                                            baseType: type as any, 
-                                            label: label // Stores full options string
+                                            baseType: type,
+                                            options: options // Stores full options string
                                         };
                                         setGalleryLists(prev => [...prev, newList]);
                                     }}

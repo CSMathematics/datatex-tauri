@@ -76,6 +76,7 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
 
     // Lists (Enumitem)
     pkgEnumitem: false,
+    enumitemInline: false,
     enumitemSep: 'default',
     enumitemItemize: 'default',
     enumitemEnumerate: 'default',
@@ -121,9 +122,8 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
     setCustomColors(prev => [...prev, { id: Date.now(), name, model, value, previewHex }]);
   };
 
-  const handleAddList = (name: string, type: string, label: string) => {
-    // @ts-ignore
-    setCustomLists(prev => [...prev, { id: Date.now(), name, baseType: type, label }]);
+  const handleAddList = (name: string, type: CustomListDef['baseType'], options: string) => {
+    setCustomLists(prev => [...prev, { id: Date.now(), name, baseType: type, options }]);
   };
 
   // --- Code Generation Effect ---
