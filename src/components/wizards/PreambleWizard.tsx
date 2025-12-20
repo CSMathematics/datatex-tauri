@@ -156,7 +156,7 @@ export const PreambleWizard: React.FC<PreambleWizardProps> = ({ onInsert }) => {
             </Tabs>
 
             {/* Scrollable Content Area */}
-            <ScrollArea style={{ flex: 1 }} p="md">
+            <ScrollArea style={{ flex: 1 }} p="md" type='hover'>
                 {activeTab === 'general' && <GeneralTab config={config} onChange={handleChange} />}
                 {activeTab === 'layout' && <LayoutTab config={config} onChange={handleChange} />}
                 {activeTab === 'packages' && <PackagesTab config={config} onChange={handleChange} />}

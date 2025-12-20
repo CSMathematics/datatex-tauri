@@ -106,13 +106,10 @@ const AmsSymbolConfig = ({ onInsert }: { onInsert: (code: string) => void }) => 
 
     const categories: { key: SymbolCategory, label: string }[] = [
         { key: 'greek', label: 'Greek' },
-        { key: 'calculus', label: 'Calculus' },
-        { key: 'linear_algebra', label: 'Lin. Algebra' },
         { key: 'operators', label: 'Operators' },
         { key: 'relations', label: 'Relations' },
         { key: 'arrows', label: 'Arrows' },
         { key: 'delimiters', label: 'Delimiters' },
-        { key: 'logic', label: 'Logic' },
         { key: 'misc', label: 'Misc' },
         { key: 'cyrillic', label: 'Cyrillic' },
         { key: 'misc_text', label: 'Misc Text' },
