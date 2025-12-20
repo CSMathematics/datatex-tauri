@@ -152,8 +152,8 @@ export interface CustomColorDef {
 export interface CustomListDef {
   id: number;
   name: string;
-  baseType: 'itemize' | 'enumerate' | 'description';
-  label: string;
+  baseType: 'itemize' | 'enumerate' | 'description' | 'enumerate*' | 'itemize*';
+  options: string;
 }
 
 // --- Helper: Color Conversion Logic ---
