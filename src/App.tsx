@@ -113,7 +113,6 @@ export default function App() {
   };
 
   // --- HELPER: Load Project Files ---
-  // Μεταφέρθηκε πιο πάνω για να χρησιμοποιηθεί από το createTabWithContent
   const loadProjectFiles = async (path: string) => {
       // @ts-ignore
       const { readDir } = await import('@tauri-apps/plugin-fs');
@@ -126,7 +125,6 @@ export default function App() {
               if (name.startsWith('.')) continue; 
               if (name === 'node_modules' || name === '.git') continue;
               
-              // Handle path separator safely
               const separator = dirPath.endsWith('/') || dirPath.endsWith('\\') ? '' : (dirPath.includes('\\') ? '\\' : '/');
               const fullPath = `${dirPath}${separator}${name}`;
               
@@ -145,15 +143,13 @@ export default function App() {
       setProjectData(nodes);
   };
 
-  // --- CORE: Create Tab Logic (Updated with Save Dialog & Auto-Open Folder) ---
+  // --- CORE: Create Tab Logic ---
   const createTabWithContent = async (code: string, defaultTitle: string = 'Untitled.tex') => {
     try {
-        // For testing environment - mock file creation if save/write fails
         let filePath: string | null = null;
         try {
             // @ts-ignore
             const { save } = await import('@tauri-apps/plugin-dialog');
-            // 1. Open Save Dialog
             filePath = await save({
                 defaultPath: defaultTitle,
                 filters: [{ name: 'LaTeX Document', extensions: ['tex'] }]
@@ -163,25 +159,21 @@ export default function App() {
             filePath = '/mock/' + defaultTitle;
         }
 
-        if (!filePath) return; // User cancelled
+        if (!filePath) return; 
 
         try {
             // @ts-ignore
             const { writeTextFile } = await import('@tauri-apps/plugin-fs');
-             // 2. Write File
             await writeTextFile(filePath, code);
         } catch(e) {
              console.warn("Tauri write failed, continuing in memory:", e);
         }
 
-        // 3. Extract Directory & Filename to update Sidebar
-        // Simple normalization to handle Windows/Unix paths
         const normalizedPath = filePath.replace(/\\/g, '/');
         const lastSlashIndex = normalizedPath.lastIndexOf('/');
         const parentDir = normalizedPath.substring(0, lastSlashIndex);
         const fileName = normalizedPath.substring(lastSlashIndex + 1);
 
-        // 4. Open Folder in Sidebar (Set as Root)
         if (parentDir && parentDir !== '/mock') {
             setRootPath(parentDir);
             try {
@@ -191,8 +183,6 @@ export default function App() {
             setIsSidebarOpen(true);
         }
 
-        // 5. Open Tab
-        // Use full path as ID
         if (!tabs.find(t => t.id === filePath)) {
             const newTab: AppTab = { 
                 id: filePath, 
@@ -204,7 +194,9 @@ export default function App() {
             };
             setTabs(prev => [...prev, newTab]);
         }
-        setActiveTabId(filePath);
+        
+        // Use smart tab switch
+        handleTabChange(filePath);
         setActiveView("editor");
 
     } catch (e) {
@@ -215,19 +207,17 @@ export default function App() {
 
   const handleRequestNewFile = () => {
     const existing = tabs.find(t => t.type === 'start-page');
-    if (existing) setActiveTabId(existing.id);
+    if (existing) handleTabChange(existing.id);
     else {
         const id = `start-${Date.now()}`;
         setTabs(prev => [...prev, { id, title: 'Start Page', type: 'start-page' }]);
-        setActiveTabId(id);
+        handleTabChange(id);
     }
   };
 
   const handleCreateFromTemplate = (code: string) => createTabWithContent(code, 'Untitled.tex');
   const handleOpenPreambleWizard = () => setActiveView('wizard-preamble');
 
-  // ... (PDF Logic, Compilation, DB, File Handlers remain SAME) ...
-  
   const handleOpenFolder = async () => {
     try {
       setLoadingFiles(true);
@@ -270,7 +260,7 @@ export default function App() {
               await writeTextFile(fullPath, ''); 
               const newTab: AppTab = { id: fullPath, title: name, type: 'editor', content: '', language: 'latex' };
               setTabs(prev => [...prev, newTab]);
-              setActiveTabId(fullPath);
+              handleTabChange(fullPath);
           } else { await mkdir(fullPath); }
           if (rootPath) await loadProjectFiles(rootPath);
       } catch (e) { setCompileError(`Failed to create ${type}: ${String(e)}`); }
@@ -288,10 +278,9 @@ export default function App() {
 
           await rename(node.path, newPath);
 
-          // Update tabs if file is open
           if (node.type === 'file') {
              setTabs(prev => prev.map(t => t.id === node.path ? { ...t, id: newPath, title: newName } : t));
-             if (activeTabId === node.path) setActiveTabId(newPath);
+             if (activeTabId === node.path) setActiveTabId(newPath); // No need to sync here usually
           }
 
           if (rootPath) await loadProjectFiles(rootPath);
@@ -312,7 +301,6 @@ export default function App() {
 
           await remove(node.path, { recursive: node.type === 'folder' });
 
-          // Close tab if file is open
           if (node.type === 'file') {
               const isOpen = tabs.find(t => t.id === node.path);
               if (isOpen) handleCloseTab(node.path, { stopPropagation: () => {} } as React.MouseEvent);
@@ -326,7 +314,7 @@ export default function App() {
 
   const handleOpenFileNode = async (node: FileSystemNode) => {
     if (node.type === 'folder') return;
-    if (tabs.find(t => t.id === node.path)) { setActiveTabId(node.path); return; }
+    if (tabs.find(t => t.id === node.path)) { handleTabChange(node.path); return; }
     let content = "";
     try {
         // @ts-ignore
@@ -335,7 +323,7 @@ export default function App() {
     } catch (e) { content = `Error reading file: ${String(e)}`; }
     const newTab: AppTab = { id: node.path, title: node.name, type: 'editor', content: content, language: 'latex' };
     setTabs([...tabs, newTab]);
-    setActiveTabId(node.path);
+    handleTabChange(node.path);
   };
 
   const handleCloseTab = (id: string, e: React.MouseEvent) => {
@@ -343,13 +331,36 @@ export default function App() {
     const newTabs = tabs.filter(t => t.id !== id);
     setTabs(newTabs);
     if (activeTabId === id) {
-        if (newTabs.length > 0) setActiveTabId(newTabs[newTabs.length - 1].id);
+        if (newTabs.length > 0) setActiveTabId(newTabs[newTabs.length - 1].id); // Just switch, no sync needed for closed tab
         else handleRequestNewFile();
     }
   };
 
+  // --- PERFORMANCE FIX: Decoupled State Updates ---
+  
+  // 1. Sync Content on Tab Switch
+  const handleTabChange = (newId: string) => {
+      // Save the content of the PREVIOUS active tab to state
+      if (activeTabId && editorRef.current && activeTab?.type === 'editor') {
+          try {
+             const currentContent = editorRef.current.getValue();
+             setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, content: currentContent } : t));
+          } catch(e) { /* ignore if editor not ready */ }
+      }
+      setActiveTabId(newId);
+  };
+
+  // 2. Editor Change (Only Dirty Flag)
   const handleEditorChange = (id: string, val: string) => {
-    setTabs(prev => prev.map(t => t.id === id ? { ...t, content: val, isDirty: true } : t));
+    // OPTIMIZATION: Do NOT update the full content in state on every keystroke.
+    // Only update the 'isDirty' flag if it wasn't dirty before.
+    setTabs(prev => {
+        const tab = prev.find(t => t.id === id);
+        if (tab && !tab.isDirty) {
+            return prev.map(t => t.id === id ? { ...t, isDirty: true } : t);
+        }
+        return prev; // Prevents re-render if already dirty
+    });
   };
 
   const handleInsertSnippet = (code: string) => {
@@ -417,9 +428,20 @@ export default function App() {
     try {
         setIsCompiling(true);
         setCompileError(null);
+        
+        // 3. Get Content Directly from Editor for Compilation
+        // (Since state might be stale due to optimization)
+        let contentToSave = activeTab.content || "";
+        if (editorRef.current) {
+            // If the active tab is active in Monaco, getValue() returns the latest
+            // Monaco handles model switching by path, but getting value from current model is safest for active tab
+            contentToSave = editorRef.current.getValue();
+        }
+
         // @ts-ignore
         const { writeTextFile } = await import('@tauri-apps/plugin-fs');
-        await writeTextFile(activeTab.id, activeTab.content || "");
+        await writeTextFile(activeTab.id, contentToSave);
+        
         await invoke('compile_tex', { filePath: activeTab.id });
         setPdfRefreshTrigger(prev => prev + 1);
     } catch (error: any) {
@@ -446,7 +468,7 @@ export default function App() {
     if (!tabs.find(t => t.id === tabId)) {
         setTabs([...tabs, { id: tabId, title: tableName, type: 'table', tableName: tableName }]);
     }
-    setActiveTabId(tabId);
+    handleTabChange(tabId);
   };
 
   // --- Resize Logic ---
@@ -482,17 +504,10 @@ export default function App() {
        if (rafRef.current) return;
        rafRef.current = requestAnimationFrame(() => {
           if (isResizingSidebar) {
-             // Constraint X based on min/max sidebar width
-             // Width = clientX - 50
-             // Min Width 150 -> Min X = 200
-             // Max Width 600 -> Max X = 650
              const x = Math.max(200, Math.min(650, e.clientX));
              if (ghostRef.current) ghostRef.current.style.left = `${x}px`;
           }
           if (isResizingRightPanel) {
-             // Right Panel Width = window.innerWidth - clientX
-             // Min Width 300 -> Max X = window.innerWidth - 300
-             // Max Width 1200 -> Min X = window.innerWidth - 1200
              const minX = window.innerWidth - 1200;
              const maxX = window.innerWidth - 300;
              const x = Math.max(minX, Math.min(maxX, e.clientX));
@@ -587,7 +602,7 @@ export default function App() {
                     activeSection={activeActivity} 
                     onToggleSection={handleToggleSidebar}
                     onNavigate={setActiveView}
-                    openTabs={tabs} activeTabId={activeTabId} onTabSelect={setActiveTabId}
+                    openTabs={tabs} activeTabId={activeTabId} onTabSelect={handleTabChange}
                     projectData={projectData} onOpenFolder={handleOpenFolder} onOpenFileNode={handleOpenFileNode}
                     loadingFiles={loadingFiles} dbConnected={dbConnected} dbTables={dbTables} onConnectDB={handleConnectDB} onOpenTable={handleOpenTable}
                     onCreateItem={handleCreateItem}
@@ -599,13 +614,12 @@ export default function App() {
                 <Box style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'row', overflow: 'hidden', minHeight: 0 }}>
                     <EditorArea 
                         files={tabs} activeFileId={activeTabId} 
-                        onFileSelect={setActiveTabId} onFileClose={handleCloseTab} 
+                        onFileSelect={handleTabChange} onFileClose={handleCloseTab} 
                         onContentChange={handleEditorChange} onMount={handleEditorDidMount} 
                         showPdf={showPdf} onTogglePdf={() => setShowPdf(!showPdf)}
                         isTexFile={isTexFile} onCompile={handleCompile} isCompiling={isCompiling}
                         onStopCompile={handleStopCompile} 
                         onOpenGallery={() => setActiveView("gallery")}
-                        // Start Page Wiring
                         onCreateEmpty={() => createTabWithContent('', 'Untitled.tex')}
                         onOpenWizard={handleOpenPreambleWizard}
                         onCreateFromTemplate={handleCreateFromTemplate}

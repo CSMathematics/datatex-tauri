@@ -15,8 +15,8 @@ export const ResizerHandle: React.FC<ResizerHandleProps> = ({
   return (
     <Box
       onMouseDown={onMouseDown}
-      w={orientation === 'vertical' ? 6 : '100%'}
-      h={orientation === 'vertical' ? '100%' : 6}
+      w={orientation === 'vertical' ? 4 : '100%'}
+      h={orientation === 'vertical' ? '100%' : 4}
       bg={isResizing ? "blue.6" : "transparent"}
       style={{
         cursor: orientation === 'vertical' ? "col-resize" : "row-resize",

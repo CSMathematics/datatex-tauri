@@ -11,9 +11,6 @@ import { TableDataView } from "../database/TableDataView";
 import { AppTab } from "./Sidebar"; 
 import { StartPage } from "./StartPage";
 import { EditorToolbar } from "./EditorToolbar";
-import { SymbolSidebar } from "./SymbolSidebar";
-import { SymbolPanel } from "./SymbolPanel";
-import { SymbolCategory } from "../wizards/preamble/SymbolDB";
 
 interface EditorAreaProps {
   files: AppTab[];
@@ -47,7 +44,6 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
   
   const activeFile = files.find(f => f.id === activeFileId);
   const [editorInstance, setEditorInstance] = React.useState<any>(null);
-  const [activeSymbolCategory, setActiveSymbolCategory] = React.useState<SymbolCategory | null>(null);
   const [symbolPanelWidth, setSymbolPanelWidth] = React.useState(250);
   const [isResizingSymbolPanel, setIsResizingSymbolPanel] = React.useState(false);
 
@@ -164,40 +160,6 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
       <Box style={{ flex: 1, position: "relative", minWidth: 0, height: "100%", overflow: "hidden" }}>
           {activeFile?.type === 'editor' ? (
              <Box style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>
-                 {isTexFile && (
-                     <>
-                        <SymbolSidebar activeCategory={activeSymbolCategory} onSelectCategory={setActiveSymbolCategory} />
-                         <Box
-                             style={{
-                                 width: activeSymbolCategory ? symbolPanelWidth : 0,
-                                 transition: isResizingSymbolPanel ? 'none' : 'width 0.3s ease',
-                                 overflow: 'hidden',
-                                 display: 'flex',
-                                 flexDirection: 'row'
-                             }}
-                         >
-                            {activeSymbolCategory && (
-                                <>
-                                    <SymbolPanel category={activeSymbolCategory} onInsert={handleInsertSymbol} width={symbolPanelWidth} />
-                                    <Box
-                                        onMouseDown={startResizingSymbolPanel}
-                                        style={{
-                                            width: 4,
-                                            height: '100%',
-                                            cursor: 'col-resize',
-                                            backgroundColor: isResizingSymbolPanel ? 'var(--mantine-color-blue-6)' : 'transparent',
-                                            transition: 'background-color 0.2s',
-                                            borderRight: '1px solid var(--mantine-color-dark-6)',
-                                            flexShrink: 0,
-                                            zIndex: 10
-                                        }}
-                                        className="resize-handle-symbol"
-                                    />
-                                </>
-                            )}
-                         </Box>
-                     </>
-                 )}
                  <Box style={{ flex: 1, minWidth: 0, height: '100%', position: 'relative' }}>
                     <Editor
                         path={activeFile.id}
@@ -206,7 +168,7 @@ export const EditorArea: React.FC<EditorAreaProps> = ({
                         defaultValue={activeFile.content}
                         onMount={handleEditorMount}
                         onChange={(value) => onContentChange(activeFile.id, value || '')}
-                        options={{ minimap: { enabled: true, scale: 0.75 }, fontSize: 14, fontFamily: "Consolas, monospace", scrollBeyondLastLine: false, automaticLayout: true, theme: "data-tex-dark", wordWrap: "on" }}
+                        options={{ minimap: { enabled: true, scale: 2 }, fontSize: 14, fontFamily: "Consolas, monospace", scrollBeyondLastLine: false, automaticLayout: true, theme: "data-tex-dark", wordWrap: "on" }}
                     />
                  </Box>
              </Box>
