@@ -45,6 +45,7 @@ export default function App() {
   const [activeView, setActiveView] = useState<ViewType>("editor");
   const [sidebarWidth, setSidebarWidth] = useState(300);
   const [rightPanelWidth, setRightPanelWidth] = useState(600);
+  const [activePackageId, setActivePackageId] = useState<string>('amsmath');
   
   // --- Resizing State ---
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
@@ -544,6 +545,7 @@ export default function App() {
         setIsResizingRightPanel(false);
 
         if(rafRef.current) cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
     };
 
     if(isResizingSidebar || isResizingRightPanel) { 
@@ -609,6 +611,8 @@ export default function App() {
                     onRenameItem={handleRenameItem}
                     onDeleteItem={handleDeleteItem}
                     onInsertSymbol={handleInsertSnippet}
+                    activePackageId={activePackageId}
+                    onSelectPackage={setActivePackageId}
                 />
                 
                 {/* 2. CENTER: EDITOR AREA */}
@@ -653,6 +657,7 @@ export default function App() {
                                     {activeView === "gallery" && (
                                         <WizardWrapper title="Package Gallery" onClose={() => setActiveView("editor")}>
                                             <PackageGallery 
+                                                selectedPkgId={activePackageId}
                                                 onInsert={handleInsertSnippet} 
                                                 onClose={() => setActiveView("editor")} 
                                                 onOpenWizard={setActiveView}

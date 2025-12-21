@@ -1,21 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Text, Group, Button, TextInput,
-  ScrollArea, Stack, ThemeIcon, Box, NavLink,
+  ScrollArea, Stack, ThemeIcon, Box,
   Code, ActionIcon, Tooltip, Select, Switch, Textarea, SegmentedControl,
 } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faSearch, faCalculator, faImage,
-  faTable, faLayerGroup, faCode, faBoxOpen,
-  faCheck, faCopy, faInfoCircle, faChevronRight, faSquareRootAlt, faFileCode, faCog,
-  faBars, faArrowLeft, faColumns, faPalette, 
+  faLayerGroup, faBoxOpen,
+  faCheck, faCopy, faInfoCircle, faSquareRootAlt, faFileCode, faCog,
+  faPalette,
 } from '@fortawesome/free-solid-svg-icons';
 import { ViewType } from '../layout/Sidebar';
 
 // IMPORT SHARED DATA
 import { LANGUAGES_DB, MINTED_STYLES, CustomColorDef, CustomListDef } from './preamble/LanguageDb';
-import { PACKAGES_DB, Category, LatexPackage } from './preamble/packages';
+import { PACKAGES_DB, LatexPackage } from './preamble/packages';
 
 import { TikzWizard } from './TikzWizard';
 import { TableWizard } from './TableWizard';
@@ -23,6 +22,7 @@ import { ColorsTab } from './preamble/tabs/ColorsTab';
 import { ListsTab } from './preamble/tabs/ListsTab';
 
 interface PackageGalleryProps {
+  selectedPkgId: string;
   onInsert: (code: string) => void;
   onClose: () => void;
   onOpenWizard: (view: ViewType) => void;
@@ -135,11 +135,8 @@ const GraphicxConfig = ({ onChange }: { onChange: (code: string) => void }) => {
 
 // --- MAIN COMPONENT ---
 
-export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onOpenWizard }) => {
-  const [selectedPkgId, setSelectedPkgId] = useState<string>('amsmath');
-  const [searchQuery, setSearchQuery] = useState('');
+export const PackageGallery: React.FC<PackageGalleryProps> = ({ selectedPkgId, onInsert, onOpenWizard }) => {
   const [generatedCode, setGeneratedCode] = useState('');
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
 
   // --- LOCAL STATES FOR WIZARDS ---
   
@@ -208,24 +205,6 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onOpen
 
   const activePackage = PACKAGES_DB.find(p => p.id === selectedPkgId);
 
-  // Group packages by category
-  const categories: Record<string, React.ReactNode> = {
-    'colors': <FontAwesomeIcon icon={faPalette} style={{ width: 16, height: 16 }} />,
-    'math': <FontAwesomeIcon icon={faCalculator} style={{ width: 16, height: 16 }} />,
-    'graphics': <FontAwesomeIcon icon={faImage} style={{ width: 16, height: 16 }} />,
-    'tables': <FontAwesomeIcon icon={faTable} style={{ width: 16, height: 16 }} />,
-    'code': <FontAwesomeIcon icon={faCode} style={{ width: 16, height: 16 }} />,
-    'layout': <FontAwesomeIcon icon={faLayerGroup} style={{ width: 16, height: 16 }} />,
-    'misc': <FontAwesomeIcon icon={faBoxOpen} style={{ width: 16, height: 16 }} />
-  };
-
-  const getFilteredPackages = () => {
-    return PACKAGES_DB.filter(p => 
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        p.description.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  };
-
   const handleConfigure = (pkg: LatexPackage) => {
     if (pkg.hasWizard) {
         if (pkg.id === 'geometry') {
@@ -239,96 +218,12 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onOpen
   const isEmbeddedWizard = ['tikz', 'pgfplots', 'booktabs', 'multirow', 'xcolor', 'enumitem'].includes(selectedPkgId);
 
   return (
-    // MAIN LAYOUT - Replaced Group with Flex Box for better scroll control
-    <Box h="100%" style={{ display: 'flex', flexDirection: 'row', overflow: 'hidden', alignItems: 'stretch' }}>
-        
-        {/* LEFT: PACKAGE BROWSER (Resizable / Collapsible) */}
-        <Box 
-            style={{ 
-                width: isSidebarOpen ? 300 : 0,
-                opacity: isSidebarOpen ? 1 : 0,
-                borderRight: isSidebarOpen ? '1px solid var(--mantine-color-dark-6)' : 'none',
-                transition: 'width 0.3s ease, opacity 0.2s ease', 
-                overflow: 'hidden',
-                flexShrink: 0,
-                display: 'flex',
-                flexDirection: 'column'
-            }}
-        >
-            {/* Inner container with Fixed width to avoid text wrapping during collapse */}
-            <Box w={300} h="100%" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                {/* Search Bar - Fixed Height */}
-                <Box p="sm" bg="dark.8" style={{ flexShrink: 0, display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <TextInput 
-                        placeholder="Search..." 
-                        style={{ flex: 1 }}
-                        leftSection={<FontAwesomeIcon icon={faSearch} style={{ width: 14, height: 14 }} />}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.currentTarget.value)}
-                    />
-                     <Tooltip label="Hide List">
-                        <ActionIcon variant="subtle" color="gray" onClick={() => setSidebarOpen(false)}>
-                            <FontAwesomeIcon icon={faArrowLeft} />
-                        </ActionIcon>
-                    </Tooltip>
-                </Box>
-                
-                {/* Scrollable Package List - Takes remaining height */}
-                <Box style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-                    <ScrollArea h="100%" type="auto" offsetScrollbars>
-                        <Stack gap={4} p="xs">
-                            {(Object.keys(categories) as Category[]).map(cat => {
-                                const pkgs = getFilteredPackages().filter(p => p.category === cat);
-                                if (pkgs.length === 0) return null;
-                                return (
-                                    <Box key={cat} mb="sm">
-                                        <Group gap="xs" px="xs" mb={4}>
-                                            {categories[cat]}
-                                            <Text size="xs" fw={700} tt="uppercase" c="dimmed">{cat}</Text>
-                                        </Group>
-                                        {pkgs.map(pkg => (
-                                            <NavLink 
-                                                key={pkg.id}
-                                                label={pkg.name}
-                                                description={<Text size="xs" truncate>{pkg.description}</Text>}
-                                                active={pkg.id === selectedPkgId}
-                                                onClick={() => setSelectedPkgId(pkg.id)}
-                                                variant="light"
-                                                leftSection={activePackage?.id === pkg.id && <FontAwesomeIcon icon={faChevronRight} style={{ width: 12, height: 12 }} />}
-                                                style={{ borderRadius: 4 }}
-                                            />
-                                        ))}
-                                    </Box>
-                                );
-                            })}
-                        </Stack>
-                    </ScrollArea>
-                </Box>
-            </Box>
-        </Box>
+    // MAIN LAYOUT
+    <Box h="100%" style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--mantine-color-dark-8)', overflow: 'hidden' }}>
 
-        {/* RIGHT: CONFIGURATOR (Flex Grow) */}
-        <Box 
-            style={{ 
-                flex: 1, 
-                display: 'flex', 
-                flexDirection: 'column', 
-                backgroundColor: 'var(--mantine-color-dark-8)',
-                minWidth: 0, 
-                height: '100%',
-                overflow: 'hidden'
-            }}
-        >
             <Box p="md" style={{ borderBottom: '1px solid var(--mantine-color-dark-6)', flexShrink: 0 }}>
                 <Group justify="space-between">
                     <Group>
-                        {!isSidebarOpen && (
-                            <Tooltip label="Show Packages">
-                                <ActionIcon variant="default" onClick={() => setSidebarOpen(true)} mr="xs">
-                                    <FontAwesomeIcon icon={faBars} />
-                                </ActionIcon>
-                            </Tooltip>
-                        )}
                         <ThemeIcon size="lg" variant="light" color="blue">
                             {activePackage?.category === 'math' ? <FontAwesomeIcon icon={faSquareRootAlt} /> :
                              activePackage?.category === 'code' ? <FontAwesomeIcon icon={faFileCode} /> :
@@ -355,11 +250,6 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onOpen
                         )}
                         <Tooltip label="Package Info">
                             <ActionIcon variant="subtle" color="gray"><FontAwesomeIcon icon={faInfoCircle} style={{ width: 18, height: 18 }} /></ActionIcon>
-                        </Tooltip>
-                        <Tooltip label={isSidebarOpen ? "Expand View" : "Show List"}>
-                            <ActionIcon variant="subtle" color="gray" onClick={() => setSidebarOpen(!isSidebarOpen)}>
-                                <FontAwesomeIcon icon={faColumns} />
-                            </ActionIcon>
                         </Tooltip>
                     </Group>
                 </Group>
@@ -458,7 +348,6 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({ onInsert, onOpen
                 </Stack>
             ) : null}
 
-        </Box>
     </Box>
   );
 };

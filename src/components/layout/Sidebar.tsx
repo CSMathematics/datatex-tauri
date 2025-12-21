@@ -65,6 +65,8 @@ interface SidebarProps {
   onOpenTable: (name: string) => void;
 
   onInsertSymbol?: (code: string) => void;
+  activePackageId?: string;
+  onSelectPackage?: (id: string) => void;
 }
 
 // --- Icons Helper ---
@@ -210,7 +212,8 @@ const FileTreeItem = ({
 export const Sidebar: React.FC<SidebarProps> = ({ 
   width, isOpen, onResizeStart, activeSection, onToggleSection, onNavigate,
   projectData, onOpenFolder, onOpenFileNode, onCreateItem, onRenameItem, onDeleteItem,
-  dbConnected, dbTables, onConnectDB, onOpenTable, onInsertSymbol
+  dbConnected, dbTables, onConnectDB, onOpenTable, onInsertSymbol,
+  activePackageId, onSelectPackage
 }) => {
   
   const [expandAllSignal, setExpandAllSignal] = useState(0);
@@ -425,7 +428,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                             key={pkg.id}
                                             label={pkg.name}
                                             description={<Text size="xs" truncate>{pkg.description}</Text>}
-                                            onClick={() => onNavigate('gallery')}
+                                            onClick={() => {
+                                                if(onSelectPackage) onSelectPackage(pkg.id);
+                                                onNavigate('gallery');
+                                            }}
+                                            active={pkg.id === activePackageId}
                                             variant="light"
                                             style={{ borderRadius: 4 }}
                                         />
