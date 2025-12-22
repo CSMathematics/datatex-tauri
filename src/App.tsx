@@ -776,65 +776,82 @@ export default function App() {
                     )}
                 </Box>
 
-                {/* 3. RIGHT PANEL */}
+                {/* 3. RIGHT PANEL WITH TRANSITION */}
+                
+                {/* O Resizer εμφανίζεται ΜΟΝΟ αν το panel είναι ανοιχτό */}
                 {showRightPanel && (
-                    <>
-                        <ResizerHandle onMouseDown={startResizeRightPanel} isResizing={isResizingRightPanel} />
-                        <Box w="var(--right-panel-width)" h="100%" style={{ flexShrink: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                            {isWizardActive ? (
-                                <>
-                                    {activeView === "wizard-preamble" && (
-                                        <WizardWrapper title="Preamble Wizard" onClose={() => setActiveView("editor")}>
-                                            <PreambleWizard onInsert={createTabWithContent} />
-                                        </WizardWrapper>
-                                    )}
-                                    {activeView === "wizard-table" && (
-                                        <WizardWrapper title="Table Wizard" onClose={() => setActiveView("editor")}>
-                                            <TableWizard onInsert={handleInsertSnippet} />
-                                        </WizardWrapper>
-                                    )}
-                                    {activeView === "wizard-tikz" && (
-                                        <WizardWrapper title="TikZ Wizard" onClose={() => setActiveView("editor")}>
-                                            <TikzWizard onInsert={handleInsertSnippet} />
-                                        </WizardWrapper>
-                                    )}
-                                    {activeView === "gallery" && (
-                                        <WizardWrapper title="Package Gallery" onClose={() => setActiveView("editor")}>
-                                            <PackageGallery 
-                                                selectedPkgId={activePackageId}
-                                                onInsert={handleInsertSnippet} 
-                                                onClose={() => setActiveView("editor")} 
-                                                onOpenWizard={setActiveView}
-                                            />
-                                        </WizardWrapper>
-                                    )}
-                                </>
-                            ) : (
-                                <Box h="100%" style={{ display: "flex", flexDirection: "column", backgroundColor: 'var(--app-panel-bg)' }}>
-                                    <Group justify="space-between" px="xs" py={4} style={{ borderBottom: "1px solid var(--mantine-color-default-border)", flexShrink: 0, backgroundColor: 'var(--app-header-bg)' }}>
-                                        <Text size="xs" fw={700} c="dimmed">PDF PREVIEW</Text>
-                                        <Group gap={4}>
-                                            {isCompiling && <Loader size="xs" />}
-                                            <ActionIcon size="xs" variant="transparent" onClick={() => setShowPdf(false)}><FontAwesomeIcon icon={faTimes} style={{ width: 12, height: 12 }} /></ActionIcon>
-                                        </Group>
-                                    </Group>
-                                    <Box style={{ flex: 1, position: 'relative', overflow: 'hidden' }} bg="gray.7">
-                                        {pdfUrl ? (
-                                            <PdfPreview pdfUrl={pdfUrl} />
-                                        ) : (
-                                            <Center h="100%">
-                                                {isCompiling ? 
-                                                    <Stack align="center" gap="xs"><Loader type="bars" /><Text size="xs" c="dimmed">Compiling...</Text></Stack> :
-                                                    <Text c="dimmed" size="sm">No PDF Loaded</Text>
-                                                }
-                                            </Center>
-                                        )}
-                                    </Box>
-                                </Box>
-                            )}
-                        </Box>
-                    </>
+                    <ResizerHandle onMouseDown={startResizeRightPanel} isResizing={isResizingRightPanel} />
                 )}
+
+                <Box 
+                    w={showRightPanel ? "var(--right-panel-width)" : 0} 
+                    h="100%" 
+                    style={{ 
+                        flexShrink: 0, 
+                        overflow: 'hidden', 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        
+                        /* --- TRANSITION STYLES --- */
+                        minWidth: 0, /* Σημαντικό για να κλείνει τελείως */
+                        transition: "width 300ms ease-in-out, opacity 200ms ease-in-out",
+                        opacity: showRightPanel ? 1 : 0,
+                        whiteSpace: "nowrap"
+                    }}
+                >
+                    {/* Το περιεχόμενο παραμένει το ίδιο, απλά τώρα βρίσκεται πάντα στο DOM */}
+                    {isWizardActive ? (
+                        <>
+                            {activeView === "wizard-preamble" && (
+                                <WizardWrapper title="Preamble Wizard" onClose={() => setActiveView("editor")}>
+                                    <PreambleWizard onInsert={createTabWithContent} />
+                                </WizardWrapper>
+                            )}
+                            {activeView === "wizard-table" && (
+                                <WizardWrapper title="Table Wizard" onClose={() => setActiveView("editor")}>
+                                    <TableWizard onInsert={handleInsertSnippet} />
+                                </WizardWrapper>
+                            )}
+                            {activeView === "wizard-tikz" && (
+                                <WizardWrapper title="TikZ Wizard" onClose={() => setActiveView("editor")}>
+                                    <TikzWizard onInsert={handleInsertSnippet} />
+                                </WizardWrapper>
+                            )}
+                            {activeView === "gallery" && (
+                                <WizardWrapper title="Package Gallery" onClose={() => setActiveView("editor")}>
+                                    <PackageGallery 
+                                        selectedPkgId={activePackageId}
+                                        onInsert={handleInsertSnippet} 
+                                        onClose={() => setActiveView("editor")} 
+                                        onOpenWizard={setActiveView}
+                                    />
+                                </WizardWrapper>
+                            )}
+                        </>
+                    ) : (
+                        <Box h="100%" style={{ display: "flex", flexDirection: "column", backgroundColor: 'var(--app-panel-bg)' }}>
+                            <Group justify="space-between" px="xs" py={4} style={{ borderBottom: "1px solid var(--mantine-color-default-border)", flexShrink: 0, backgroundColor: 'var(--app-header-bg)' }}>
+                                <Text size="xs" fw={700} c="dimmed">PDF PREVIEW</Text>
+                                <Group gap={4}>
+                                    {isCompiling && <Loader size="xs" />}
+                                    <ActionIcon size="xs" variant="transparent" onClick={() => setShowPdf(false)}><FontAwesomeIcon icon={faTimes} style={{ width: 12, height: 12 }} /></ActionIcon>
+                                </Group>
+                            </Group>
+                            <Box style={{ flex: 1, position: 'relative', overflow: 'hidden' }} bg="gray.7">
+                                {pdfUrl ? (
+                                    <PdfPreview pdfUrl={pdfUrl} />
+                                ) : (
+                                    <Center h="100%">
+                                        {isCompiling ? 
+                                            <Stack align="center" gap="xs"><Loader type="bars" /><Text size="xs" c="dimmed">Compiling...</Text></Stack> :
+                                            <Text c="dimmed" size="sm">No PDF Loaded</Text>
+                                        }
+                                    </Center>
+                                )}
+                            </Box>
+                        </Box>
+                    )}
+                </Box>
             </Group>
         </AppShell.Main>
 

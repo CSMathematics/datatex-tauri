@@ -3,12 +3,13 @@ import { Stack, ActionIcon, Tooltip, Text, Group, ScrollArea, Box, Collapse, Uns
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCopy, faSearch, faCodeBranch, faCog, faDatabase,
-  faChevronRight, faTable,
+  faChevronRight, faChevronDown, faTable,
   faPenNib, faWandMagicSparkles,
-  faFileCirclePlus, faFolderPlus, faFolderOpen, faSort, faMinusSquare,
+  faFileCirclePlus, faFolderPlus, faFolderOpen, faMinusSquare,
   faFileCode, faBookOpen, faImage, faTrash, faPen,
   faFolder, faFile, faFilePdf, faSquareRootAlt, faCube,
-  faPalette, faCalculator, faLayerGroup, faCode, faBoxOpen, faPlus
+  faPalette, faCalculator, faLayerGroup, faCode, faBoxOpen, faPlus,
+  faExpand, faCompress 
 } from "@fortawesome/free-solid-svg-icons";
 
 import { SymbolSidebar } from './SymbolSidebar';
@@ -72,8 +73,10 @@ interface SidebarProps {
 }
 
 // --- Icons Helper ---
-const getFileIcon = (name: string, type: 'file' | 'folder') => {
-    if (type === 'folder') return <FontAwesomeIcon icon={faFolder} style={{ width: 16, height: 16, color: "#fab005" }} />;
+const getFileIcon = (name: string, type: 'file' | 'folder', expanded: boolean = false) => {
+    if (type === 'folder') {
+        return <FontAwesomeIcon icon={expanded ? faFolderOpen : faFolder} style={{ width: 16, height: 16, color: "#fab005" }} />;
+    }
     const ext = name.split('.').pop()?.toLowerCase();
     switch(ext) {
         case 'tex': return <FontAwesomeIcon icon={faFileCode} style={{ width: 16, height: 16, color: "#4dabf7" }} />;
@@ -114,35 +117,39 @@ const FileTreeItem = ({
     expandSignal, collapseSignal, creatingState, onCommitCreation, onCancelCreation,
     onRename, onDelete, onCreateRequest, onRemoveFolder
 }: any) => {
-  const [expanded, setExpanded] = useState(false);
+  const isRoot = level === 0;
+  const [expanded, setExpanded] = useState(isRoot); // Roots start expanded
   const [isRenaming, setIsRenaming] = useState(false);
+  const [menuOpened, setMenuOpened] = useState(false);
 
   const hasChildren = node.type === 'folder' && node.children && node.children.length > 0;
   const isCreatingHere = creatingState?.parentId === node.id && node.type === 'folder';
 
   useEffect(() => { if (isCreatingHere) setExpanded(true); }, [isCreatingHere]);
-  useEffect(() => { if (expandSignal > 0 && hasChildren) setExpanded(true); }, [expandSignal, hasChildren]);
-  useEffect(() => { if (collapseSignal > 0 && hasChildren) setExpanded(false); }, [collapseSignal, hasChildren]);
+  useEffect(() => { if (expandSignal > 0) setExpanded(true); }, [expandSignal]);
+  useEffect(() => { if (collapseSignal > 0) setExpanded(false); }, [collapseSignal]);
 
+  // LEFT CLICK: Select / Expand only
   const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+    e.preventDefault();
+    e.stopPropagation(); // Stop bubbling so Menu.Target doesn't see it (if trigger="click")
+    
     if (isRenaming) return;
     onNodeClick(node);
     if (node.type === 'folder') setExpanded(!expanded);
     else onSelect(node);
   };
 
-  const [menuOpened, setMenuOpened] = useState(false);
-
+  // RIGHT CLICK: Open Menu only
   const handleContextMenu = (e: React.MouseEvent) => {
       e.preventDefault();
-      e.stopPropagation(); // Stop propagation to prevent parents from also triggering
-      setMenuOpened(true);
+      e.stopPropagation(); 
+      setMenuOpened(true); // Manually open the menu
   };
 
   if (isRenaming) {
       return (
-          <Box pl={level * 12 + 8}>
+          <Box pl={level * 12 + 8} py={4}>
             <NewItemInput
                 type={node.type} defaultValue={node.name}
                 onCommit={(newName) => { setIsRenaming(false); onRename(node, newName); }}
@@ -152,31 +159,65 @@ const FileTreeItem = ({
       );
   }
 
+  // Styles based on level/root status
+  const paddingLeft = isRoot ? 8 : (level * 12 + 8);
+  const bgColor = isRoot 
+      ? 'var(--app-header-bg)' 
+      : (selectedId === node.id ? 'var(--mantine-primary-color-light)' : 'transparent');
+  const textColor = selectedId === node.id ? 'var(--mantine-primary-color-text)' : 'var(--mantine-color-text)';
+  const fontWeight = isRoot ? 700 : 400;
+  const borderBottom = isRoot ? '1px solid var(--mantine-color-default-border)' : 'none';
+
   return (
     <>
-      <Menu shadow="md" width={200} opened={menuOpened} onChange={setMenuOpened}>
+      <Menu shadow="md" width={200} opened={menuOpened} onChange={setMenuOpened} trigger="click">
         <Menu.Target>
-            <UnstyledButton
-                onClick={handleClick}
-                onContextMenu={handleContextMenu}
-                style={{
-                    width: '100%', padding: '4px 8px', paddingLeft: level * 12 + 8, fontSize: 13,
-                    color: selectedId === node.id ? 'var(--mantine-primary-color-text)' : 'var(--mantine-color-text)',
-                    backgroundColor: selectedId === node.id ? 'var(--mantine-primary-color-light)' : 'transparent',
-                    display: 'flex', alignItems: 'center',
-                    ':hover': { backgroundColor: 'var(--mantine-color-default-hover)' }
-                }}
-            >
-                <Group gap={6} wrap="nowrap" style={{ flex: 1, overflow: 'hidden' }}>
-                {node.type === 'folder' && (<Box style={{ transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.1s', display: 'flex' }}><FontAwesomeIcon icon={faChevronRight} style={{ width: 10, height: 10 }} /></Box>)}
-                {getFileIcon(node.name, node.type)}
-                <Text size="xs" truncate>{node.name}</Text>
-                </Group>
-            </UnstyledButton>
+            <Box style={{ width: '100%' }}>
+                <UnstyledButton
+                    onClick={handleClick}        // Left click logic
+                    onContextMenu={handleContextMenu} // Right click logic
+                    style={{
+                        width: '100%', 
+                        padding: isRoot ? '8px 8px' : '4px 8px', 
+                        paddingLeft: paddingLeft,
+                        fontSize: 13,
+                        color: textColor,
+                        backgroundColor: bgColor,
+                        borderBottom: borderBottom,
+                        fontWeight: fontWeight,
+                        display: 'flex', 
+                        alignItems: 'center',
+                        transition: 'background-color 0.2s',
+                        ':hover': { backgroundColor: 'var(--mantine-color-default-hover)' }
+                    }}
+                >
+                    <Group gap={isRoot ? 8 : 6} wrap="nowrap" style={{ flex: 1, overflow: 'hidden' }}>
+                        {node.type === 'folder' && (
+                            <Box style={{ 
+                                transform: expanded ? (isRoot ? 'rotate(0deg)' : 'rotate(90deg)') : (isRoot ? 'rotate(-90deg)' : 'none'), 
+                                transition: 'transform 0.2s', 
+                                display: 'flex', opacity: 0.7
+                            }}>
+                                <FontAwesomeIcon icon={isRoot ? faChevronDown : faChevronRight} style={{ width: 10, height: 10 }} />
+                            </Box>
+                        )}
+                        
+                        {isRoot ? (
+                            <FontAwesomeIcon icon={faBoxOpen} style={{ width: 14, height: 14, color: "var(--mantine-primary-color-filled)" }} />
+                        ) : (
+                            getFileIcon(node.name, node.type, expanded)
+                        )}
+                        
+                        <Text size={isRoot ? "xs" : "xs"} truncate fw={isRoot ? 700 : 400} tt={isRoot ? "uppercase" : "none"}>
+                            {node.name}
+                        </Text>
+                    </Group>
+                </UnstyledButton>
+            </Box>
         </Menu.Target>
 
         <Menu.Dropdown onContextMenu={(e) => e.preventDefault()}>
-            <Menu.Label>Actions</Menu.Label>
+            <Menu.Label>{node.name}</Menu.Label>
             {node.type === 'folder' && (
                 <>
                     <Menu.Item leftSection={<FontAwesomeIcon icon={faFileCirclePlus} style={{ width: 14, height: 14 }} />} onClick={() => onCreateRequest('file', node.id)}>New File</Menu.Item>
@@ -184,16 +225,22 @@ const FileTreeItem = ({
                     <Menu.Divider />
                 </>
             )}
-            {level === 0 && onRemoveFolder && (
+            {/* Root specific actions */}
+            {isRoot && onRemoveFolder && (
                  <>
-                    <Menu.Item leftSection={<FontAwesomeIcon icon={faMinusSquare} style={{ width: 14, height: 14 }} />} onClick={() => onRemoveFolder(node.path)}>Remove from Workspace</Menu.Item>
+                    <Menu.Item color="orange" leftSection={<FontAwesomeIcon icon={faMinusSquare} style={{ width: 14, height: 14 }} />} onClick={() => onRemoveFolder(node.path)}>Remove Project Folder</Menu.Item>
                     <Menu.Divider />
                  </>
             )}
-            <Menu.Item leftSection={<FontAwesomeIcon icon={faPen} style={{ width: 14, height: 14 }} />} onClick={() => setIsRenaming(true)}>Rename</Menu.Item>
-            <Menu.Item leftSection={<FontAwesomeIcon icon={faCopy} style={{ width: 14, height: 14 }} />} onClick={() => navigator.clipboard.writeText(node.path)}>Copy Path</Menu.Item>
-            <Menu.Divider />
-            <Menu.Item leftSection={<FontAwesomeIcon icon={faTrash} style={{ width: 14, height: 14 }} />} color="red" onClick={() => onDelete(node)}>Delete</Menu.Item>
+            {/* Standard file/folder actions */}
+            {!isRoot && (
+                <>
+                    <Menu.Item leftSection={<FontAwesomeIcon icon={faPen} style={{ width: 14, height: 14 }} />} onClick={() => setIsRenaming(true)}>Rename</Menu.Item>
+                    <Menu.Item leftSection={<FontAwesomeIcon icon={faCopy} style={{ width: 14, height: 14 }} />} onClick={() => navigator.clipboard.writeText(node.path)}>Copy Path</Menu.Item>
+                    <Menu.Divider />
+                    <Menu.Item leftSection={<FontAwesomeIcon icon={faTrash} style={{ width: 14, height: 14 }} />} color="red" onClick={() => onDelete(node)}>Delete</Menu.Item>
+                </>
+            )}
         </Menu.Dropdown>
       </Menu>
 
@@ -225,26 +272,25 @@ export const Sidebar = React.memo<SidebarProps>(({
   activePackageId, onSelectPackage
 }) => {
   
+  // --- Global Expand/Collapse State ---
   const [expandAllSignal, setExpandAllSignal] = useState(0);
   const [collapseAllSignal, setCollapseAllSignal] = useState(0);
+  const [isToggleExpanded, setIsToggleExpanded] = useState(false);
+
   const [selectedNode, setSelectedNode] = useState<FileSystemNode | null>(null);
   const [creatingItem, setCreatingItem] = useState<{ type: 'file' | 'folder', parentId: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Symbols State
   const [activeSymbolCategory, setActiveSymbolCategory] = useState<SymbolCategory | null>('greek');
 
   const handleNodeClick = (node: FileSystemNode) => setSelectedNode(node);
 
   const handleStartCreation = (type: 'file' | 'folder', specificParentId?: string) => {
     if (projectData.length === 0) return; 
-
     let parentId = specificParentId;
     if (!parentId) {
         if (selectedNode) {
-            if (selectedNode.type === 'folder') {
-                parentId = selectedNode.id;
-            } else {
+            if (selectedNode.type === 'folder') parentId = selectedNode.id;
+            else {
                  const separator = selectedNode.path.includes('\\') ? '\\' : '/';
                  parentId = selectedNode.path.substring(0, selectedNode.path.lastIndexOf(separator));
             }
@@ -260,27 +306,30 @@ export const Sidebar = React.memo<SidebarProps>(({
     setCreatingItem(null);
   };
 
-  const getVariant = (section: SidebarSection) => activeSection === section && isOpen ? "light" : "subtle";
-  const getColor = (section: SidebarSection) => activeSection === section && isOpen ? "blue" : "gray";
+  const handleToggleExpand = () => {
+      if (isToggleExpanded) {
+          setCollapseAllSignal(prev => prev + 1);
+      } else {
+          setExpandAllSignal(prev => prev + 1);
+      }
+      setIsToggleExpanded(!isToggleExpanded);
+  };
 
-  // Filter Logic
+  const getVariant = (section: SidebarSection) => activeSection === section && isOpen ? "light" : "subtle";
+  const getColor = (section: SidebarSection) => activeSection === section && isOpen ? "blue" : "gray.7";
+
   const filterNodes = (nodes: FileSystemNode[], query: string): FileSystemNode[] => {
       if (!query) return nodes;
       return nodes.reduce((acc: FileSystemNode[], node) => {
           const matches = node.name.toLowerCase().includes(query.toLowerCase());
           let children: FileSystemNode[] = [];
-          if (node.children) {
-              children = filterNodes(node.children, query);
-          }
-          if (matches || children.length > 0) {
-              acc.push({ ...node, children });
-          }
+          if (node.children) children = filterNodes(node.children, query);
+          if (matches || children.length > 0) acc.push({ ...node, children });
           return acc;
       }, []);
   };
 
   const displayNodes = useMemo(() => {
-    // Optimization: Only filter/calculate if we are viewing files
     if (activeSection !== 'files') return [];
     return searchQuery ? filterNodes(projectData, searchQuery) : projectData;
   }, [projectData, searchQuery, activeSection]);
@@ -289,7 +338,6 @@ export const Sidebar = React.memo<SidebarProps>(({
       if (searchQuery) setExpandAllSignal(prev => prev + 1);
   }, [searchQuery]);
 
-  // Gallery Categories Helpers
   const packageCategories: Record<string, React.ReactNode> = {
     'colors': <FontAwesomeIcon icon={faPalette} style={{ width: 16, height: 16 }} />,
     'math': <FontAwesomeIcon icon={faCalculator} style={{ width: 16, height: 16 }} />,
@@ -331,78 +379,95 @@ export const Sidebar = React.memo<SidebarProps>(({
         </Stack>
       </Stack>
 
-      {/* Sidebar Content Panel */}
-      {isOpen && (
-          <>
-            <Box w={width} h="100%" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: 'var(--app-panel-bg)' }}>
-                {activeSection !== "symbols" && (
-                    <Group h={35} px="sm" justify="space-between" style={{ backgroundColor: "var(--app-header-bg)", borderBottom: "1px solid var(--mantine-color-default-border)", flexShrink: 0 }}>
-                        <Text size="xs" fw={700} tt="uppercase" c="dimmed">{activeSection}</Text>
-                    </Group>
-                )}
-                
-                {activeSection === "symbols" ? (
-                    <Group h="100%" gap={0} align="stretch" style={{ overflow: 'hidden' }}>
-                        <SymbolSidebar
-                            activeCategory={activeSymbolCategory}
-                            onSelectCategory={setActiveSymbolCategory}
-                        />
-                        {activeSymbolCategory ? (
-                             <Box style={{ flex: 1, height: '100%', overflow: 'hidden' }}>
-                                 <SymbolPanel
-                                    category={activeSymbolCategory}
-                                    onInsert={(code) => onInsertSymbol && onInsertSymbol(code)}
-                                    width="100%"
-                                 />
-                             </Box>
-                        ) : (
-                            <Box p="md" style={{ flex: 1 }}><Text c="dimmed" size="sm" ta="center">Select a category</Text></Box>
-                        )}
-                    </Group>
-                ) : (
-                <ScrollArea style={{ flex: 1 }} onClick={() => setSelectedNode(null)}> 
+      {/* Sidebar Content Panel with Transition */}
+      <>
+        <Box 
+            w={isOpen ? width : 0} 
+            h="100%" 
+            style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                overflow: 'hidden', 
+                backgroundColor: 'var(--app-panel-bg)',
+                /* TRANSITION STYLES */
+                minWidth: 0, 
+                flexShrink: 0,
+                transition: "width 300ms ease-in-out, opacity 200ms ease-in-out",
+                opacity: isOpen ? 1 : 0,
+                whiteSpace: "nowrap"
+            }}
+        >
+            {activeSection !== "symbols" && (
+                <Group h={35} px="sm" justify="space-between" style={{ backgroundColor: "var(--app-header-bg)", borderBottom: "1px solid var(--mantine-color-default-border)", flexShrink: 0 }}>
+                    <Text size="xs" fw={700} tt="uppercase" c="dimmed">{activeSection}</Text>
+                </Group>
+            )}
+            
+            {activeSection === "symbols" ? (
+                <Group h="100%" gap={0} align="stretch" style={{ overflow: 'hidden' }}>
+                    <SymbolSidebar activeCategory={activeSymbolCategory} onSelectCategory={setActiveSymbolCategory} />
+                    {activeSymbolCategory ? (
+                         <Box style={{ flex: 1, height: '100%', overflow: 'hidden' }}>
+                             <SymbolPanel category={activeSymbolCategory} onInsert={(code) => onInsertSymbol && onInsertSymbol(code)} width="100%" />
+                         </Box>
+                    ) : (
+                        <Box p="md" style={{ flex: 1 }}><Text c="dimmed" size="sm" ta="center">Select a category</Text></Box>
+                    )}
+                </Group>
+            ) : (
+            <ScrollArea style={{ flex: 1 }} onClick={() => setSelectedNode(null)}> 
                 {activeSection === "files" && (
                     <Stack gap={0}>
                         <Box p="xs">
-                            <Text size="xs" fw={700} c="dimmed" mb={4}>WIZARDS</Text>
+                            <Text size="xs" fw={700} c="dimmed" mb={4}>QUICK TOOLS</Text>
                             <Group gap={4}>
-                                <Tooltip label="Preamble"><ActionIcon variant="light" size="sm" color="violet" onClick={() => onNavigate("wizard-preamble")}><FontAwesomeIcon icon={faWandMagicSparkles} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
-                                <Tooltip label="Table"><ActionIcon variant="light" size="sm" color="green" onClick={() => onNavigate("wizard-table")}><FontAwesomeIcon icon={faTable} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
+                                <Tooltip label="Preamble Wizard"><ActionIcon variant="light" size="sm" color="violet" onClick={() => onNavigate("wizard-preamble")}><FontAwesomeIcon icon={faWandMagicSparkles} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
+                                <Tooltip label="Table Wizard"><ActionIcon variant="light" size="sm" color="green" onClick={() => onNavigate("wizard-table")}><FontAwesomeIcon icon={faTable} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
                                 <Tooltip label="TikZ/Plots"><ActionIcon variant="light" size="sm" color="orange" onClick={() => onNavigate("wizard-tikz")}><FontAwesomeIcon icon={faPenNib} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
                             </Group>
                         </Box>
                         <Divider my={4} color="default-border" />
                         
                         <Box>
-                            <Stack gap={4} px="xs" mb="xs">
-                                <Group justify="space-between" py={4} style={{ backgroundColor: "var(--app-header-bg)" }}>
-                                    <Text size="xs" fw={700} c="dimmed">PROJECT</Text>
+                            <Stack gap={4} px={0} mb="xs">
+                                <Group justify="space-between" px="xs" py={4} style={{ backgroundColor: "var(--app-header-bg)" }}>
+                                    <Text size="xs" fw={700} c="dimmed">EXPLORER</Text>
                                     <Group gap={2}>
                                         <Tooltip label="New File"><ActionIcon variant="subtle" size="xs" color="gray" onClick={(e) => { e.stopPropagation(); handleStartCreation('file'); }}><FontAwesomeIcon icon={faFileCirclePlus} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
                                         <Tooltip label="New Folder"><ActionIcon variant="subtle" size="xs" color="gray" onClick={(e) => { e.stopPropagation(); handleStartCreation('folder'); }}><FontAwesomeIcon icon={faFolderPlus} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
-                                        <Tooltip label="Open Folder"><ActionIcon variant="subtle" size="xs" color="gray" onClick={onOpenFolder}><FontAwesomeIcon icon={faFolderOpen} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
-                                        <Tooltip label="Add Folder"><ActionIcon variant="subtle" size="xs" color="gray" onClick={onAddFolder}><FontAwesomeIcon icon={faPlus} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
-                                        <Tooltip label="Expand All"><ActionIcon variant="subtle" size="xs" color="gray" onClick={() => setExpandAllSignal(s => s + 1)}><FontAwesomeIcon icon={faSort} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
-                                        <Tooltip label="Collapse All"><ActionIcon variant="subtle" size="xs" color="gray" onClick={() => setCollapseAllSignal(s => s + 1)}><FontAwesomeIcon icon={faMinusSquare} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
+                                        <Tooltip label="Add Project Folder"><ActionIcon variant="subtle" size="xs" color="gray" onClick={onAddFolder}><FontAwesomeIcon icon={faPlus} style={{ width: 14, height: 14 }} /></ActionIcon></Tooltip>
+                                        
+                                        {/* TOGGLE EXPAND/COLLAPSE */}
+                                        <Tooltip label={isToggleExpanded ? "Collapse All" : "Expand All"}>
+                                            <ActionIcon variant="subtle" size="xs" color="gray" onClick={handleToggleExpand}>
+                                                <FontAwesomeIcon icon={isToggleExpanded ? faCompress : faExpand} style={{ width: 14, height: 14 }} />
+                                            </ActionIcon>
+                                        </Tooltip>
                                     </Group>
                                 </Group>
-                                <TextInput
-                                    placeholder="Filter files..." size="xs"
-                                    value={searchQuery} onChange={(e) => setSearchQuery(e.currentTarget.value)}
-                                    rightSection={searchQuery && <ActionIcon size="xs" variant="transparent" onClick={() => setSearchQuery('')}><FontAwesomeIcon icon={faMinusSquare} style={{ width: 10, height: 10 }} /></ActionIcon>}
-                                />
+                                <Box px="xs">
+                                    <TextInput
+                                        placeholder="Filter files..." size="xs"
+                                        value={searchQuery} onChange={(e) => setSearchQuery(e.currentTarget.value)}
+                                        rightSection={searchQuery && <ActionIcon size="xs" variant="transparent" onClick={() => setSearchQuery('')}><FontAwesomeIcon icon={faMinusSquare} style={{ width: 10, height: 10 }} /></ActionIcon>}
+                                    />
+                                </Box>
                             </Stack>
 
                             {projectData.length === 0 ? (
                                 <Box p="md" ta="center">
                                     <Text size="xs" c="dimmed" mb="xs">No folder opened</Text>
-                                    <Button size="xs" variant="default" onClick={onOpenFolder}>Open Folder</Button>
+                                    <Group justify="center">
+                                        <Button size="xs" variant="default" onClick={onOpenFolder}>Open Folder</Button>
+                                    </Group>
                                 </Box>
                             ) : (
                                 <Box>
                                     {displayNodes.map(node => (
                                         <FileTreeItem 
-                                            key={node.id} node={node} level={0} 
+                                            key={node.id} 
+                                            node={node} 
+                                            level={0}
                                             onSelect={onOpenFileNode} selectedId={selectedNode?.id || null} onNodeClick={handleNodeClick}
                                             expandSignal={expandAllSignal} collapseSignal={collapseAllSignal} creatingState={creatingItem}
                                             onCommitCreation={handleCommitCreation} onCancelCreation={() => setCreatingItem(null)}
@@ -415,9 +480,9 @@ export const Sidebar = React.memo<SidebarProps>(({
                         </Box>
                     </Stack>
                 )}
-                {/* Database section */}
+                {/* Database & Gallery sections */}
                 {activeSection === "database" && (
-                    <Stack p="xs" gap="xs">
+                     <Stack p="xs" gap="xs">
                         <Button size="xs" variant={dbConnected ? "light" : "filled"} color={dbConnected ? "green" : "blue"} onClick={onConnectDB} fullWidth>
                             {dbConnected ? "Connected (SQLite)" : "Connect to DB"}
                         </Button>
@@ -449,13 +514,9 @@ export const Sidebar = React.memo<SidebarProps>(({
                                             key={pkg.id}
                                             label={pkg.name}
                                             description={<Text size="xs" truncate>{pkg.description}</Text>}
-                                            onClick={() => {
-                                                if(onSelectPackage) onSelectPackage(pkg.id);
-                                                onNavigate('gallery');
-                                            }}
+                                            onClick={() => { if(onSelectPackage) onSelectPackage(pkg.id); onNavigate('gallery'); }}
                                             active={pkg.id === activePackageId}
-                                            variant="light"
-                                            style={{ borderRadius: 4 }}
+                                            variant="light" style={{ borderRadius: 4 }}
                                         />
                                     ))}
                                 </Box>
@@ -463,17 +524,19 @@ export const Sidebar = React.memo<SidebarProps>(({
                         })}
                     </Stack>
                 )}
-                </ScrollArea>
-                )}
-            </Box>
+            </ScrollArea>
+            )}
+        </Box>
 
+        {/* Resizer Handle - Visible only when sidebar is effectively open */}
+        {isOpen && (
             <Box
                 onMouseDown={onResizeStart}
                 w={4} h="100%" bg="transparent"
                 style={{ cursor: "col-resize", ":hover": { backgroundColor: "var(--mantine-primary-color-6)" } }}
             />
-          </>
-      )}
+        )}
+      </>
     </Group>
   );
 });
