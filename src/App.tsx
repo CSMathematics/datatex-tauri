@@ -63,7 +63,6 @@ export default function App() {
   const { settings, updateEditorSetting, updateGeneralSetting, setUiTheme } = useSettings();
 
   const activeTheme = getTheme(settings.uiTheme);
-  console.log("DEBUG: Active Theme ID:", settings.uiTheme, "Primary:", activeTheme.theme.primaryColor);
 
   // --- Layout State ---
   const [activeActivity, setActiveActivity] = useState<SidebarSection>("files");
@@ -80,7 +79,6 @@ export default function App() {
   const ghostRef = useRef<HTMLDivElement>(null);
 
   // --- Editor State ---
-  // Start with Start Page tab
   const [tabs, setTabs] = useState<AppTab[]>([
     { id: 'start-page', title: 'Start Page', type: 'start-page' }
   ]);
@@ -138,10 +136,8 @@ export default function App() {
     if (section === 'settings') {
       setActiveActivity('settings');
       setActiveView('settings');
-      setIsSidebarOpen(false); // Hide the intermediate sidebar
+      setIsSidebarOpen(false); 
     } else {
-      // If we are coming FROM settings, ensure we switch back to editor view
-      // unless we are just toggling the current section
       if (activeView === 'settings') {
           setActiveView('editor');
       }
@@ -271,7 +267,6 @@ export default function App() {
             setTabs(prev => [...prev, newTab]);
         }
         
-        // Use smart tab switch
         handleTabChange(filePath);
         setActiveView("editor");
 
@@ -383,7 +378,7 @@ export default function App() {
 
           if (node.type === 'file') {
              setTabs(prev => prev.map(t => t.id === node.path ? { ...t, id: newPath, title: newName } : t));
-             if (activeTabId === node.path) setActiveTabId(newPath); // No need to sync here usually
+             if (activeTabId === node.path) setActiveTabId(newPath); 
           }
 
           await reloadProjectFiles(projectRoots);
@@ -424,7 +419,6 @@ export default function App() {
           if (!sourceName) return;
 
           const separator = targetPath.includes('\\') ? '\\' : '/';
-          // Ensure target path is a directory (it should be coming from a folder drop)
           const newPath = `${targetPath}${separator}${sourceName}`;
 
           if (sourcePath === newPath) return;
@@ -464,7 +458,7 @@ export default function App() {
     const newTabs = tabs.filter(t => t.id !== id);
     setTabs(newTabs);
     if (activeTabId === id) {
-        if (newTabs.length > 0) setActiveTabId(newTabs[newTabs.length - 1].id); // Just switch, no sync needed for closed tab
+        if (newTabs.length > 0) setActiveTabId(newTabs[newTabs.length - 1].id); 
         else handleRequestNewFile();
     }
   };
@@ -479,16 +473,14 @@ export default function App() {
       }
   };
 
-  // --- PERFORMANCE FIX: Decoupled State Updates ---
-  
-  // 1. Sync Content on Tab Switch
+  // --- TAB STATE & CONTENT SYNC ---
   const handleTabChange = (newId: string) => {
-      // Save the content of the PREVIOUS active tab to state
+      // Sync content from Monaco before switching
       if (activeTabId && editorRef.current && activeTab?.type === 'editor') {
           try {
              const currentContent = editorRef.current.getValue();
              setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, content: currentContent } : t));
-          } catch(e) { /* ignore if editor not ready */ }
+          } catch(e) { /* ignore */ }
       }
 
       const newTab = tabs.find(t => t.id === newId);
@@ -499,7 +491,6 @@ export default function App() {
       setActiveTabId(newId);
   };
 
-  // Debounce helper for outline updates
   const debouncedOutlineUpdate = useCallback(
       debounce((content: string) => {
           setOutlineSource(content);
@@ -507,19 +498,16 @@ export default function App() {
       []
   );
 
-  // 2. Editor Change (Only Dirty Flag)
   const handleEditorChange = (id: string, val: string) => {
-    // OPTIMIZATION: Do NOT update the full content in state on every keystroke.
-    // Only update the 'isDirty' flag if it wasn't dirty before.
+    // Only update isDirty flag to avoid heavy re-renders
     setTabs(prev => {
         const tab = prev.find(t => t.id === id);
         if (tab && !tab.isDirty) {
             return prev.map(t => t.id === id ? { ...t, isDirty: true } : t);
         }
-        return prev; // Prevents re-render if already dirty
+        return prev; 
     });
 
-    // Update outline source if active
     if (activeActivity === 'outline') {
         debouncedOutlineUpdate(val);
     }
@@ -550,7 +538,6 @@ export default function App() {
       monaco.languages.setMonarchTokensProvider("my-latex", latexLanguage);
       monaco.languages.setLanguageConfiguration("my-latex", latexConfiguration);
 
-      // Register Snippets/Autocomplete
       setupLatexProviders(monaco);
 
       monaco.editor.defineTheme("data-tex-dark", dataTexDarkTheme);
@@ -598,93 +585,105 @@ export default function App() {
     return () => { if (activeBlobUrl) URL.revokeObjectURL(activeBlobUrl); };
   }, [activeTab?.id, activeTab?.title, activeTab?.type, pdfRefreshTrigger]);
 
-  // --- Compilation ---
+  // --- Compilation (Simplified: No Output Directory) ---
   const handleCompile = async () => {
-    if (!activeTab || !activeTab.id || !isTexFile) return;
+    if (!activeTab || !activeTab.id || !isTexFile) {
+        console.warn("[COMPILER DEBUG] Compile aborted: No active tab or not a tex file.");
+        return;
+    }
+
+    const filePath = activeTab.id;
+    console.log(`[COMPILER DEBUG] Starting compilation for: ${filePath}`);
+
     try {
         setIsCompiling(true);
         setCompileError(null);
         
-        // 3. Get Content Directly from Editor for Compilation
-        // (Since state might be stale due to optimization)
+        // 1. Save Content
         let contentToSave = activeTab.content || "";
         if (editorRef.current) {
-            // If the active tab is active in Monaco, getValue() returns the latest
-            // Monaco handles model switching by path, but getting value from current model is safest for active tab
             contentToSave = editorRef.current.getValue();
         }
 
         // @ts-ignore
-        const { writeTextFile } = await import('@tauri-apps/plugin-fs');
-        await writeTextFile(activeTab.id, contentToSave);
+        const { writeTextFile, exists, readTextFile } = await import('@tauri-apps/plugin-fs');
         
-        // --- Dynamic Engine Configuration ---
+        console.log("[COMPILER DEBUG] Saving file content to disk...");
+        await writeTextFile(filePath, contentToSave);
+        
+        // 2. Load Configuration
         let engine = 'pdflatex';
         let args = ['-interaction=nonstopmode', '-synctex=1'];
-        let outputDir = '';
+        // Output directory is intentionally ignored/removed to compile in place
+        const outputDir = ''; 
 
         const savedConfig = localStorage.getItem('tex-engine-config');
         if (savedConfig) {
             try {
                 const config = JSON.parse(savedConfig);
-                // Determine engine path based on default selection
-                // Note: We expect the binary name/path to be in the config specific fields
-                // but for now we'll use the selection logic.
+                console.log("[COMPILER DEBUG] Loaded User Config:", config);
+
                 const engineKey = config.defaultEngine || 'pdflatex';
                 if (engineKey === 'xelatex') engine = config.xelatexPath || 'xelatex';
                 else if (engineKey === 'lualatex') engine = config.lualatexPath || 'lualatex';
                 else engine = config.pdflatexPath || 'pdflatex';
 
-                // Construct Args
                 args = ['-interaction=nonstopmode'];
                 if (config.synctex) args.push('-synctex=1');
                 if (config.shellEscape) args.push('-shell-escape');
-                if (config.outputDirectory) {
-                     outputDir = config.outputDirectory;
-                     args.push(`-output-directory=${config.outputDirectory}`);
-                }
+                
+                // We IGNORE config.outputDirectory here to force in-place compilation
             } catch (e) {
-                console.warn("Failed to load tex config, using defaults", e);
+                console.warn("[COMPILER DEBUG] Failed to parse config, using defaults", e);
             }
         }
 
-        await invoke('compile_tex', { filePath: activeTab.id, engine, args, outputDir });
+        console.log(`[COMPILER DEBUG] Engine: ${engine}`);
+        console.log(`[COMPILER DEBUG] Args: ${JSON.stringify(args)}`);
+        console.log(`[COMPILER DEBUG] Output Dir: (none)`);
+
+        // 3. Invoke Compilation
+        console.log("[COMPILER DEBUG] Invoking Tauri Command...");
+        const result = await invoke('compile_tex', { filePath, engine, args, outputDir });
+        console.log("[COMPILER DEBUG] Compilation Result (Success):", result);
+
         setPdfRefreshTrigger(prev => prev + 1);
+
     } catch (error: any) {
-        console.error("Compilation Failed:", error);
-        // Note: We don't necessarily set compileError for the Toast anymore if we want to rely on the Log Panel
-        // But the user might want a quick visual indicator if the Log Panel is closed.
-        // We'll keep the toast if it's a "system error" (failed to execute),
-        // but for LaTeX errors, the log parser handles it.
-        // However, compile_tex only returns error if the process fails or exits non-zero.
-        // In those cases, we want to parse the log.
+        console.error("[COMPILER DEBUG] Compilation Failed (Rust Error):", error);
     } finally {
-        // ALWAYS try to parse the log after compilation (success or failure)
-        // because there might be warnings even on success, or errors on failure.
+        // 4. Log Parsing Strategy (Simplified for In-Place)
         try {
             // @ts-ignore
             const { exists, readTextFile } = await import('@tauri-apps/plugin-fs');
-            // Log file is usually .log replacing .tex
-            // If outputDir is set, it might be elsewhere, but currently we default to side-by-side or standard
-            // logic implies standard naming.
-            const logPath = activeTab.id.replace(/\.tex$/i, '.log');
-            if (await exists(logPath)) {
+            
+            // Log file is simply .log replacing .tex in the same path
+            const logPath = filePath.replace(/\.tex$/i, '.log');
+
+            console.log(`[COMPILER DEBUG] Looking for log file at: ${logPath}`);
+
+            const doesLogExist = await exists(logPath);
+            if (doesLogExist) {
+                console.log("[COMPILER DEBUG] Log file found. Reading...");
                 const logContent = await readTextFile(logPath);
+                
                 const entries = parseLatexLog(logContent);
+                console.log(`[COMPILER DEBUG] Parsed Entries: ${entries.length}`, entries);
+
                 setLogEntries(entries);
 
                 const hasErrors = entries.some(e => e.type === 'error');
                 if (hasErrors) {
+                    console.log("[COMPILER DEBUG] Errors found, opening Log Panel.");
                     setShowLogPanel(true);
                 } else {
-                    // Optional: Auto-close on success? Or keep warnings visible?
-                    // Usually IDEs keep the panel open if it was open, or open it only on error.
-                    // We'll leave it as is, but if we just compiled successfully with no errors,
-                    // maybe we don't force it open, but we update the list.
+                    console.log("[COMPILER DEBUG] No critical errors found.");
                 }
+            } else {
+                console.warn(`[COMPILER DEBUG] Log file NOT found at: ${logPath}`);
             }
         } catch(e) {
-            console.warn("Failed to read log file", e);
+            console.error("[COMPILER DEBUG] Failed to read/parse log file:", e);
         }
 
         setIsCompiling(false);
@@ -696,7 +695,7 @@ export default function App() {
       setCompileError("Compilation stopped by user (UI reset).");
   };
 
-  // --- Handlers (DB, Files) ---
+  // --- Handlers (DB) ---
   const handleConnectDB = () => {
     if (dbConnected) { setDbConnected(false); setDbTables([]); } 
     else { setDbConnected(true); setDbTables(['users', 'documents', 'bibliography', 'settings']); }
@@ -729,7 +728,7 @@ export default function App() {
     }
   }, []);
   
-  // Sync state with CSS variables on mount and when state changes (programmatically)
+  // Sync state with CSS variables
   useEffect(() => {
      document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth}px`);
   }, [sidebarWidth]);
@@ -805,7 +804,7 @@ export default function App() {
       const { active, over } = event;
       if (over && active.id !== over.id) {
 
-          // Case 1: Drop on Editor (Open File)
+          // Drop on Editor (Open File)
           if (over.id === 'editor-zone') {
                const activeNode = active.data.current?.node as FileSystemNode;
                if (activeNode && activeNode.type === 'file') {
@@ -814,7 +813,7 @@ export default function App() {
                return;
           }
 
-          // Case 2: Drop on Folder (Move File)
+          // Drop on Folder (Move File)
           const activeNode = active.data.current?.node as FileSystemNode;
           const overNode = over.data.current?.node as FileSystemNode;
 
@@ -949,7 +948,6 @@ export default function App() {
                         whiteSpace: "nowrap"
                     }}
                 >
-                    {/* Το περιεχόμενο παραμένει το ίδιο, απλά τώρα βρίσκεται πάντα στο DOM */}
                     {isWizardActive ? (
                         <>
                             {activeView === "wizard-preamble" && (
