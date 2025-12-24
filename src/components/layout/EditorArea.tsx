@@ -12,6 +12,7 @@ import { TableDataView } from "../database/TableDataView";
 import { AppTab } from "./Sidebar"; 
 import { StartPage } from "./StartPage";
 import { EditorToolbar } from "./EditorToolbar";
+import { LeftMathToolbar } from "./LeftMathToolbar";
 import { EditorSettings } from '../../hooks/useSettings';
 import { LogPanel } from "../ui/LogPanel";
 import { LogEntry } from "../../utils/logParser";
@@ -279,6 +280,9 @@ export const EditorArea = React.memo<EditorAreaProps>(({
           {activeFile?.type === 'editor' ? (
              <>
                 <Box style={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', flexDirection: 'row', overflow: 'hidden' }}>
+                    {isTexFile && editorInstance && (
+                        <LeftMathToolbar editor={editorInstance} />
+                    )}
                     <Box style={{ flex: 1, minWidth: 0, height: '100%', position: 'relative' }}>
                         <Editor
                             path={activeFile.id}
