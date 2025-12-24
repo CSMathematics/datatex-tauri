@@ -75,7 +75,7 @@ const ITEM_ICONS: Record<string, any> = {
   'mathtt': faTerminal,
 };
 
-export const LeftMathToolbar = React.memo<LeftMathToolbarProps>(({ editor }) => {
+export const LeftMathToolbar= React.memo<LeftMathToolbarProps>(({ editor }) => {
 
   const insertSnippet = (template: string) => {
     if (!editor) return;
