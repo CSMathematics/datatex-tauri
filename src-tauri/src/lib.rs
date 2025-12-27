@@ -21,6 +21,17 @@ async fn open_project(path: String, _state: State<'_, AppState>) -> Result<Strin
     Ok("Project path set (Global DB in use)".to_string())
 }
 
+#[tauri::command]
+fn get_db_path() -> Result<String, String> {
+    let proj_dirs = ProjectDirs::from("com", "datatex", "DataTeX");
+    if let Some(proj_dirs) = proj_dirs {
+        let db_path = proj_dirs.data_dir().join("project.db");
+        Ok(db_path.to_string_lossy().to_string())
+    } else {
+        Err("Could not determine project directories".to_string())
+    }
+}
+
 // ... Οι υπάρχουσες εντολές σου ...
 #[tauri::command]
 fn compile_tex(file_path: String, engine: String, args: Vec<String>, output_dir: String) -> Result<String, String> {
@@ -116,9 +127,11 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_sql::Builder::default().build())
         // 5. Καταχώρηση ΟΛΩΝ των εντολών
         .invoke_handler(tauri::generate_handler![
             open_project,      // Η νέα εντολή
+            get_db_path,
             compile_tex,
             run_synctex_command,
             run_texcount_command,

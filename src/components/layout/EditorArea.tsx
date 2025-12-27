@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faFileCode, faBookOpen, faCog, faImage, faFile,
   faTimes, faPlay, faCode, faStop, faHome, faChevronRight,
-  faFilePdf, faArrowRight, faCopy, faCalculator, faHeading
+  faFilePdf, faArrowRight, faCopy
 } from "@fortawesome/free-solid-svg-icons";
 import { IconLayoutBottombarCollapseFilled, IconLayoutSidebarLeftCollapseFilled } from '@tabler/icons-react';
 import { TableDataView } from "../database/TableDataView";
@@ -52,6 +52,7 @@ interface EditorAreaProps {
   onCursorChange?: (line: number, column: number) => void;
   onSyncTexForward?: (line: number, column: number) => void;
   spellCheckEnabled?: boolean;
+  onOpenFileFromTable?: (path: string) => void;
 }
 
 const getFileIcon = (name: string, type: string) => {
@@ -136,7 +137,8 @@ export const EditorArea = React.memo<EditorAreaProps>(({
   onCreateEmpty, onOpenWizard, onCreateFromTemplate, recentProjects, onOpenRecent,
   editorSettings,
   logEntries, showLogPanel, onCloseLogPanel, onJumpToLine,
-  onCursorChange, onSyncTexForward, spellCheckEnabled
+  onCursorChange, onSyncTexForward, spellCheckEnabled,
+  onOpenFileFromTable
 }) => {
   
   const activeFile = files.find(f => f.id === activeFileId);
@@ -339,7 +341,7 @@ export const EditorArea = React.memo<EditorAreaProps>(({
                 )}
              </>
           ) : activeFile?.type === 'table' ? (
-             <TableDataView tableName={activeFile.tableName || ''} />
+             <TableDataView tableName={activeFile.tableName || ''} onOpenFile={onOpenFileFromTable} />
           ) : activeFile?.type === 'start-page' ? (
              <StartPage 
                 onCreateEmpty={onCreateEmpty}
