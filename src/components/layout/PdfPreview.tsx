@@ -22,10 +22,10 @@ export function PdfPreview({ pdfUrl, onSyncTexInverse, syncTexCoords }: PdfPrevi
   const [showSidebar, setShowSidebar] = useState(true);
   const [showToolbar, setShowToolbar] = useState(true);
 
-  const defaultLayoutPluginInstance = useMemo(() => defaultLayoutPlugin({
+  const defaultLayoutPluginInstance = defaultLayoutPlugin({
     sidebarTabs: showSidebar ? undefined : () => [],
     renderToolbar: showToolbar ? undefined : () => <></>,
-  }), [showSidebar, showToolbar]);
+  });
   
   // State για να ξέρουμε πότε φορτώνει το PDF
   const [ready, setReady] = useState(false);
