@@ -125,7 +125,7 @@ export const LeftMathToolbar = React.memo<LeftMathToolbarProps>(({ editor }) => 
 
       // Logic for Top-Level Toolbar Buttons (No Menu)
       // Usually these are frequent actions like Inline Math, Bold, etc.
-      const icon = ITEM_ICONS[item.id] || faCode; // Used implicitly? Actually it seems I can just restore it to be safe.
+      // Removed the unused `icon` variable
 
       return (
         <Tooltip 

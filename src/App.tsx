@@ -876,6 +876,18 @@ export default function App() {
     handleTabChange(tabId);
   }, [handleTabChange]);
 
+  const handleOpenFileFromTable = useCallback((path: string) => {
+      // Adapt path to FileSystemNode
+      const node: FileSystemNode = {
+          id: path,
+          name: path.split(/[/\\]/).pop() || path,
+          type: 'file',
+          path: path,
+          children: []
+      };
+      handleOpenFileNode(node);
+  }, [handleOpenFileNode]);
+
   // --- Resize Logic ---
   const startResizeSidebar = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -1092,6 +1104,7 @@ export default function App() {
                             onCursorChange={handleCursorChange}
                             onSyncTexForward={handleSyncTexForward}
                             spellCheckEnabled={spellCheckEnabled}
+                            onOpenFileFromTable={handleOpenFileFromTable}
                         />
                     )}
                 </Box>
