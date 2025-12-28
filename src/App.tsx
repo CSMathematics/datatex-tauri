@@ -861,7 +861,7 @@ export default function App() {
   const handleConnectDB = useCallback(() => {
     setDbConnected(prev => {
         if (prev) { setDbTables([]); return false; }
-        else { setDbTables(['users', 'documents', 'bibliography', 'settings']); return true; }
+        else { setDbTables(['resources', 'documents', 'bibliography', 'dependencies', 'document_items']); return true; }
     });
   }, []);
 

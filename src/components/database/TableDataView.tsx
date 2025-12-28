@@ -56,96 +56,60 @@ export const TableDataView: React.FC<TableDataViewProps> = ({ tableName, onOpenF
 
     setLoading(true);
     try {
-      // @ts-ignore
-      const { default: Database } = await import('@tauri-apps/plugin-sql');
-      const db = await Database.load(`sqlite:${dbPath}`);
-
-      let query = `SELECT * FROM ${tableName}`;
-      const params: any[] = [];
-
-      if (search && columns.length > 0) {
-          // Safe Parameterized Query Construction
-          // Note: Column names still need to be interpolated as they are identifiers,
-          // but we trust internal column state or should sanitise it.
-          // The search value is parameterized.
-          const whereClause = columns.map((c) => `${c} LIKE $1`).join(' OR ');
-          query += ` WHERE ${whereClause}`;
-          params.push(`%${search}%`);
+      // Use Backend Command
+      // Response: { data: RowData[], total_count: i64, columns: string[] }
+      interface TableResponse {
+          data: RowData[];
+          total_count: number;
+          columns: string[];
       }
 
-      // Count query for pagination
-      // We need to execute this separately or subquery.
-      // Simple string replacement might be fragile if 'SELECT *' appears elsewhere, but usually safe for basic queries.
-      // Better: Construct count query explicitly.
-      let countQuery = `SELECT COUNT(*) as count FROM ${tableName}`;
-      if (search && columns.length > 0) {
-           const whereClause = columns.map((c) => `${c} LIKE $1`).join(' OR ');
-           countQuery += ` WHERE ${whereClause}`;
+      const result = await invoke<TableResponse>('get_table_data_cmd', {
+          tableName,
+          page,
+          pageSize, // Pass as i64 equivalent (number in JS is fine)
+          search,
+          searchCols: columns
+      });
+
+      // Update state
+      setTotalCount(result.total_count);
+      
+      // Update columns if needed (or if they changed/search expanded them?)
+      // We trust backend to return relevant columns or all columns if searchCols is empty?
+      // Actually backend logic uses `searchCols` only for filtering. It returns ALL columns in `columns` field.
+      if (columns.length === 0 && result.columns.length > 0) {
+          setColumns(result.columns);
       }
+      
+      setData(result.data);
 
-      const countResult = await db.select(countQuery, params);
-      // @ts-ignore
-      setTotalCount(countResult[0]?.count || 0);
-
-      // Main data query with limit/offset
-      // SQLite: LIMIT and OFFSET usually come last.
-      // We append them to the query string.
-      // Parameters for LIMIT/OFFSET are safe to interpolate as numbers, or use params.
-      // But `tauri-plugin-sql` might expect specific param order.
-      // Let's stick to interpolating integers for Limit/Offset as they are safe.
-      query += ` LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`;
-
-      const result = await db.select<RowData[]>(query, params);
-
-      if (result.length > 0) {
-        setColumns(Object.keys(result[0]));
-        setData(result);
-      } else {
-         // If no results but we have search, we might want to keep columns.
-         // If generic empty state, we might fetch schema.
-         if (data.length === 0 && columns.length === 0) {
-             // Try to get columns from schema if we have no data at all
-             try {
-                const schema = await db.select(`PRAGMA table_info(${tableName})`);
-                // @ts-ignore
-                if (schema && schema.length > 0) {
-                    // @ts-ignore
-                    setColumns(schema.map(c => c.name));
-                }
-             } catch(e) { console.warn("Failed to fetch schema", e); }
-         }
-         setData(result);
-      }
     } catch (e) {
       console.error("Failed to fetch data:", e);
     } finally {
       setLoading(false);
     }
-  }, [dbPath, tableName, page, search, columns.length]);
-  // Dependency note: added columns.length.
-  // If we search, we depend on columns. If columns change, we might re-fetch.
-  // Ideally we load columns once initially.
+  }, [dbPath, tableName, page, search, columns]);
 
-  // Initial Column Load (if not loaded)
+  // Reset state when table changes
   useEffect(() => {
-      const loadSchema = async () => {
-          if (!dbPath) return;
-          try {
-              // @ts-ignore
-              const { default: Database } = await import('@tauri-apps/plugin-sql');
-              const db = await Database.load(`sqlite:${dbPath}`);
-              const schema = await db.select(`PRAGMA table_info(${tableName})`);
-              // @ts-ignore
-              if (schema && schema.length > 0) {
-                  // @ts-ignore
-                  setColumns(schema.map(c => c.name));
-              }
-          } catch(e) {}
-      };
-      if (columns.length === 0) {
-          loadSchema();
-      }
-  }, [dbPath, tableName]);
+      setColumns([]);
+      setData([]);
+      setPage(1);
+      setSearch("");
+  }, [tableName]);
+
+  // Initial Column Load: Deprecated/Simplified
+  // The backend now returns columns with data. 
+  // But if we want to search *before* loading, we might need columns?
+  // Actually, if columns is empty, we pass empty searchCols, backend ignores search or (better) we just fetch once without search first.
+  // We can probably remove the separate Initial Column Load useEffect if fetchData handles it.
+  // However, to keep it robust:
+  // If we have no columns, we can't search effectively (searchCols empty).
+  // But fetchData gets called with empty columns initially, backend returns data + columns.
+  // So we are good. We can remove the "Initial Column Load" effect entirely!
+  
+  // NOTE: We keep usage of `dbPath` as a dependency regarding "is DB ready".
 
   useEffect(() => {
     if (dbPath) {
@@ -179,13 +143,12 @@ export const TableDataView: React.FC<TableDataViewProps> = ({ tableName, onOpenF
       }
 
       try {
-          // @ts-ignore
-          const { default: Database } = await import('@tauri-apps/plugin-sql');
-          const db = await Database.load(`sqlite:${dbPath}`);
-
-          // Use parameterized query for update
-          const query = `UPDATE ${tableName} SET ${col} = $1 WHERE id = $2`;
-          await db.execute(query, [editValue, id]);
+          await invoke('update_cell_cmd', {
+              tableName,
+              id,
+              column: col,
+              value: editValue
+          });
 
           // Optimistic update
           const newData = [...data];

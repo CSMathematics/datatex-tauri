@@ -77,6 +77,9 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
+      monaco-editor:
+        specifier: ^0.55.1
+        version: 0.55.1
       pdfjs-dist:
         specifier: ^3.11.174
         version: 3.11.174

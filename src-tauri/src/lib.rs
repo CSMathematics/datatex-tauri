@@ -23,7 +23,7 @@ async fn open_project(path: String, _state: State<'_, AppState>) -> Result<Strin
 
 #[tauri::command]
 fn get_db_path() -> Result<String, String> {
-    let proj_dirs = ProjectDirs::from("com", "datatex", "DataTeX");
+    let proj_dirs = ProjectDirs::from("", "", "datatex");
     if let Some(proj_dirs) = proj_dirs {
         let db_path = proj_dirs.data_dir().join("project.db");
         Ok(db_path.to_string_lossy().to_string())
@@ -78,6 +78,47 @@ fn get_system_fonts() -> Vec<String> {
     ]
 }
 
+#[derive(serde::Serialize)]
+struct TableDataResponse {
+    data: Vec<serde_json::Value>,
+    total_count: i64,
+    columns: Vec<String>,
+}
+
+#[tauri::command]
+async fn get_table_data_cmd(
+    table_name: String,
+    page: i64,
+    page_size: i64,
+    search: String,
+    search_cols: Vec<String>,
+    state: State<'_, AppState>,
+) -> Result<TableDataResponse, String> {
+    let db_guard = state.db_manager.lock().await;
+    if let Some(db) = &*db_guard {
+        let (data, total_count, columns) = db.get_table_data(table_name, page, page_size, search, search_cols).await?;
+        Ok(TableDataResponse { data, total_count, columns })
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn update_cell_cmd(
+    table_name: String,
+    id: i64,
+    column: String,
+    value: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let db_guard = state.db_manager.lock().await;
+    if let Some(db) = &*db_guard {
+         db.update_cell(table_name, id, column, value).await
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -87,7 +128,7 @@ pub fn run() {
         })
         .setup(|app| {
             // Εύρεση του φακέλου δεδομένων
-            let proj_dirs = ProjectDirs::from("com", "datatex", "DataTeX");
+            let proj_dirs = ProjectDirs::from("", "", "datatex");
             let data_dir = if let Some(proj_dirs) = proj_dirs {
                 let dir = proj_dirs.data_dir().to_path_buf();
                 // Δημιουργία του φακέλου αν δεν υπάρχει
@@ -127,7 +168,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_sql::Builder::default().build())
+        // .plugin(tauri_plugin_sql::Builder::default().build()) // REMOVED
         // 5. Καταχώρηση ΟΛΩΝ των εντολών
         .invoke_handler(tauri::generate_handler![
             open_project,      // Η νέα εντολή
@@ -135,7 +176,9 @@ pub fn run() {
             compile_tex,
             run_synctex_command,
             run_texcount_command,
-            get_system_fonts
+            get_system_fonts,
+            get_table_data_cmd,
+            update_cell_cmd
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
