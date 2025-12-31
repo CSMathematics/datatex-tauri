@@ -19,6 +19,7 @@ import { SymbolSidebar } from './SymbolSidebar';
 import { SymbolPanel } from './SymbolPanel';
 import { SymbolCategory } from '../wizards/preamble/SymbolDB';
 import { PACKAGES_DB, Category } from '../wizards/preamble/packages';
+import { DatabaseSidebar } from '../database/DatabaseSidebar';
 
 // --- Types ---
 export type SidebarSection = "files" | "search" | "git" | "database" | "settings" | "symbols" | "gallery" | "outline";
@@ -591,21 +592,13 @@ export const Sidebar = React.memo<SidebarProps>(({
 
                 {/* Database & Gallery sections */}
                 {activeSection === "database" && (
-                     <Stack p="xs" gap="xs">
-                        <Button size="xs" variant={dbConnected ? "light" : "filled"} color={dbConnected ? "green" : "blue"} onClick={onConnectDB} fullWidth>
-                            {dbConnected ? "Connected (SQLite)" : "Connect to DB"}
-                        </Button>
-                        {dbConnected && (
-                            <Stack gap={2}>
-                                <Text size="xs" c="dimmed" fw={700}>TABLES</Text>
-                                {dbTables.map(t => (
-                                    <UnstyledButton key={t} onClick={() => onOpenTable(t)} style={{ padding: '4px 8px', fontSize: 13, borderRadius: 4, color: 'var(--mantine-color-text)', display: 'flex', alignItems: 'center', gap: 8, ':hover': { backgroundColor: 'var(--mantine-color-default-hover)' } }}>
-                                        <FontAwesomeIcon icon={faTable} style={{ width: 14, height: 14, color: "#69db7c" }} /> {t}
-                                    </UnstyledButton>
-                                ))}
-                            </Stack>
-                        )}
-                    </Stack>
+                     <DatabaseSidebar 
+                        onOpenResource={(path) => {
+                             // Create a dummy node to use with onOpenFileNode
+                             const name = path.split(/[/\\]/).pop() || path;
+                             onOpenFileNode({ id: path, name, type: 'file', path });
+                        }}
+                     />
                 )}
                 {activeSection === "gallery" && (
                     <Stack gap={4} p="xs">

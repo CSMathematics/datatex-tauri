@@ -2,25 +2,27 @@ use directories::ProjectDirs;
 use std::fs;
 use tauri::{Manager, State};
 use tokio::sync::Mutex;
+use uuid::Uuid;
+use walkdir::WalkDir;
 
 mod compiler;
-mod db; // Import το module της βάσης
-mod lsp; // Import το LSP module
-use db::DatabaseManager;
+mod database;
+mod lsp;
+
+use database::entities::{Collection, Resource};
+use database::DatabaseManager;
 use lsp::TexlabManager;
 
-// 1. Το State για τη βάση δεδομένων και LSP
+// 1. App State
 struct AppState {
     db_manager: Mutex<Option<DatabaseManager>>,
     lsp_manager: Mutex<Option<TexlabManager>>,
 }
 
-// 2. Η εντολή για άνοιγμα Project - Πλέον δεν αλλάζει βάση δεδομένων
+// 2. Open Project Command
 #[tauri::command]
 async fn open_project(path: String, _state: State<'_, AppState>) -> Result<String, String> {
     println!("Setting active project path to: {}", path);
-    // Εδώ θα μπορούσαμε να αποθηκεύσουμε το path ως "active working directory"
-    // αλλά η βάση δεδομένων είναι πλέον Global και έχει φορτωθεί στο startup.
     Ok("Project path set (Global DB in use)".to_string())
 }
 
@@ -35,7 +37,7 @@ fn get_db_path() -> Result<String, String> {
     }
 }
 
-// ... Οι υπάρχουσες εντολές σου ...
+// ... Existing commands ...
 #[tauri::command]
 fn compile_tex(
     file_path: String,
@@ -59,7 +61,6 @@ fn run_texcount_command(args: Vec<String>, cwd: String) -> Result<String, String
 #[tauri::command]
 fn get_system_fonts() -> Vec<String> {
     use std::process::Command;
-    // ... (ο κώδικας για τα fonts παραμένει ίδιος όπως τον είχες)
     let output = if cfg!(target_os = "linux") {
         Command::new("fc-list").arg(":").arg("family").output().ok()
     } else {
@@ -123,7 +124,7 @@ async fn get_table_data_cmd(
 #[tauri::command]
 async fn update_cell_cmd(
     table_name: String,
-    id: i64,
+    id: String,
     column: String,
     value: String,
     state: State<'_, AppState>,
@@ -136,6 +137,98 @@ async fn update_cell_cmd(
     }
 }
 
+// ===== New Database Commands =====
+
+#[tauri::command]
+async fn get_collections_cmd(state: State<'_, AppState>) -> Result<Vec<Collection>, String> {
+    let db_guard = state.db_manager.lock().await;
+    if let Some(db) = &*db_guard {
+        db.get_collections().await
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn get_resources_by_collection_cmd(
+    collection: String,
+    state: State<'_, AppState>,
+) -> Result<Vec<Resource>, String> {
+    let db_guard = state.db_manager.lock().await;
+    if let Some(db) = &*db_guard {
+        db.get_resources_by_collection(&collection).await
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn import_folder_cmd(
+    path: String,
+    collection_name: String,
+    state: State<'_, AppState>,
+) -> Result<usize, String> {
+    let db_guard = state.db_manager.lock().await;
+    let db = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    // 1. Create Collection if not exists
+    let collection = Collection {
+        name: collection_name.clone(),
+        description: Some(format!("Imported from {}", path)),
+        icon: Some("folder".to_string()),
+        kind: "files".to_string(),
+        created_at: None,
+    };
+    db.create_collection(&collection).await?;
+
+    // 2. Walk directory
+    let mut count = 0;
+    for entry in WalkDir::new(&path).into_iter().filter_map(|e| e.ok()) {
+        if entry.file_type().is_file() {
+            let file_path = entry.path().to_string_lossy().to_string();
+            let file_name = entry.file_name().to_string_lossy().to_string();
+
+            // Simple type detection extension
+            let kind = if file_name.ends_with(".tex") {
+                "file" // can be more specific like 'exercise' if we parse it, but 'file' is safe
+            } else if file_name.ends_with(".bib") {
+                "bibliography"
+            } else if file_name.ends_with(".sty") || file_name.ends_with(".cls") {
+                "package"
+            } else if file_name.ends_with(".png")
+                || file_name.ends_with(".jpg")
+                || file_name.ends_with(".pdf")
+            {
+                "figure"
+            } else {
+                "file"
+            };
+
+            let resource = Resource {
+                id: Uuid::new_v4().to_string(),
+                path: file_path,
+                kind: kind.to_string(),
+                collection: collection_name.clone(),
+                title: Some(file_name),
+                content_hash: None, // TODO: calculate hash
+                metadata: Some(serde_json::json!({})),
+                created_at: None,
+                updated_at: None,
+            };
+
+            if let Err(e) = db.add_resource(&resource).await {
+                eprintln!("Failed to add resource: {}", e);
+                // Continue despite errors? or fail?
+                // For now, log and continue.
+            } else {
+                count += 1;
+            }
+        }
+    }
+
+    Ok(count)
+}
+
 // ===== LSP Commands =====
 
 #[tauri::command]
@@ -146,7 +239,6 @@ async fn lsp_initialize(root_uri: String, state: State<'_, AppState>) -> Result<
         let mut manager = TexlabManager::new();
         manager.start().await?;
 
-        // Αποστολή initialize request
         let params = serde_json::json!({
             "processId": std::process::id(),
             "rootUri": root_uri,
@@ -170,13 +262,10 @@ async fn lsp_initialize(root_uri: String, state: State<'_, AppState>) -> Result<
 
         manager.send_request("initialize", params).await?;
 
-        // Αποστολή initialized notification
         manager
             .send_notification("initialized", serde_json::json!({}))
             .await?;
 
-        // CRITICAL: Send workspace/didChangeConfiguration
-        // This is required by texlab to activate completion features
         let config = serde_json::json!({
             "settings": {
                 "texlab": {
@@ -196,7 +285,7 @@ async fn lsp_initialize(root_uri: String, state: State<'_, AppState>) -> Result<
         *lsp_guard = Some(manager);
         Ok(())
     } else {
-        Ok(()) // Already initialized
+        Ok(())
     }
 }
 
@@ -337,24 +426,20 @@ async fn lsp_shutdown(state: State<'_, AppState>) -> Result<(), String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        // 3. Αρχικοποίηση του State
         .manage(AppState {
             db_manager: Mutex::new(None),
             lsp_manager: Mutex::new(None),
         })
         .setup(|app| {
-            // Εύρεση του φακέλου δεδομένων
             let proj_dirs = ProjectDirs::from("", "", "datatex");
             let data_dir = if let Some(proj_dirs) = proj_dirs {
                 let dir = proj_dirs.data_dir().to_path_buf();
-                // Δημιουργία του φακέλου αν δεν υπάρχει
                 if let Err(e) = fs::create_dir_all(&dir) {
                     eprintln!("Error creating data directory: {}", e);
                     return Err(Box::new(e));
                 }
                 dir
             } else {
-                // Fallback (θα μπορούσε να είναι το current dir ή panic)
                 eprintln!("Could not determine project directories");
                 return Err("Could not determine project directories".into());
             };
@@ -362,7 +447,6 @@ pub fn run() {
             let data_dir_str = data_dir.to_string_lossy().to_string();
             println!("Initializing Global DB at: {}", data_dir_str);
 
-            // Ασύγχρονη αρχικοποίηση της βάσης
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 match DatabaseManager::new(&data_dir_str).await {
@@ -380,15 +464,12 @@ pub fn run() {
 
             Ok(())
         })
-        // 4. Τα Plugins σου (για να δουλεύουν οι διάλογοι)
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_clipboard_manager::init())
-        // .plugin(tauri_plugin_sql::Builder::default().build()) // REMOVED
-        // 5. Καταχώρηση ΟΛΩΝ των εντολών
         .invoke_handler(tauri::generate_handler![
-            open_project, // Η νέα εντολή
+            open_project,
             get_db_path,
             compile_tex,
             run_synctex_command,
@@ -396,6 +477,10 @@ pub fn run() {
             get_system_fonts,
             get_table_data_cmd,
             update_cell_cmd,
+            // New Commands
+            get_collections_cmd,
+            get_resources_by_collection_cmd,
+            import_folder_cmd,
             // LSP Commands
             lsp_initialize,
             lsp_completion,

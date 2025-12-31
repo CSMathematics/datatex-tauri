@@ -1,0 +1,74 @@
+import { create } from 'zustand';
+import { invoke } from '@tauri-apps/api/core';
+
+export interface Collection {
+    name: string;
+    description?: string;
+    icon?: string;
+    kind: string;
+    created_at?: string;
+}
+
+export interface Resource {
+    id: string;
+    path: string;
+    kind: string;
+    collection: string;
+    title?: string;
+    content_hash?: string;
+    metadata?: any;
+    created_at?: string;
+    updated_at?: string;
+}
+
+interface DatabaseState {
+    collections: Collection[];
+    resources: Resource[];
+    activeCollection: string | null;
+    isLoading: boolean;
+    error: string | null;
+
+    fetchCollections: () => Promise<void>;
+    selectCollection: (name: string) => Promise<void>;
+    importFolder: (path: string, name: string) => Promise<void>;
+}
+
+export const useDatabaseStore = create<DatabaseState>((set, get) => ({
+    collections: [],
+    resources: [],
+    activeCollection: null,
+    isLoading: false,
+    error: null,
+
+    fetchCollections: async () => {
+        set({ isLoading: true, error: null });
+        try {
+            const collections = await invoke<Collection[]>('get_collections_cmd');
+            set({ collections, isLoading: false });
+        } catch (err: any) {
+            set({ error: err.toString(), isLoading: false });
+        }
+    },
+
+    selectCollection: async (name: string) => {
+        set({ activeCollection: name, isLoading: true, error: null });
+        try {
+            const resources = await invoke<Resource[]>('get_resources_by_collection_cmd', { collection: name });
+            set({ resources, isLoading: false });
+        } catch (err: any) {
+            set({ error: err.toString(), isLoading: false });
+        }
+    },
+
+    importFolder: async (path: string, name: string) => {
+        set({ isLoading: true });
+        try {
+            await invoke('import_folder_cmd', { path, collectionName: name });
+            // Refresh collections
+            await get().fetchCollections();
+            await get().selectCollection(name);
+        } catch (err: any) {
+            set({ error: err.toString(), isLoading: false });
+        }
+    }
+}));
