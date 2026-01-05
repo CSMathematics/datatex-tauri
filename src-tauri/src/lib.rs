@@ -1,17 +1,23 @@
 use directories::ProjectDirs;
+use sqlx::Row;
 use std::fs;
 use tauri::{Manager, State};
 use tokio::sync::Mutex;
 use uuid::Uuid;
-use walkdir::WalkDir;
+use walkdir::WalkDir; // For typed metadata queries
 
 mod compiler;
 mod database;
 mod lsp;
 
+// Legacy rusqlite modules - kept for future typed metadata implementation
+mod types;
+
 use database::entities::{Collection, Resource};
 use database::DatabaseManager;
 use lsp::TexlabManager;
+
+// Typed metadata commands now defined below with sqlx (rusqlite commands removed)
 
 // 1. App State
 struct AppState {
@@ -685,6 +691,741 @@ async fn lsp_did_change(
     }
 }
 
+// ============================================================================
+// Typed Metadata Commands (sqlx-based)
+// ============================================================================
+
+#[tauri::command]
+async fn get_fields_cmd(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let rows = sqlx::query("SELECT id, name FROM fields ORDER BY name")
+        .fetch_all(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let mut fields = Vec::new();
+    for row in rows {
+        let id: String = row.get("id");
+        let name: String = row.get("name");
+        fields.push(serde_json::json!({"id": id, "name": name}));
+    }
+    Ok(fields)
+}
+
+#[tauri::command]
+async fn create_field_cmd(
+    state: State<'_, AppState>,
+    name: String,
+) -> Result<serde_json::Value, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    sqlx::query("INSERT INTO fields (id, name) VALUES (?, ?)")
+        .bind(&id)
+        .bind(&name)
+        .execute(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(serde_json::json!({"id": id, "name": name}))
+}
+
+#[tauri::command]
+async fn create_chapter_cmd(
+    state: State<'_, AppState>,
+    name: String,
+    field_id: String,
+) -> Result<serde_json::Value, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    sqlx::query("INSERT INTO chapters (id, name, field_id) VALUES (?, ?, ?)")
+        .bind(&id)
+        .bind(&name)
+        .bind(&field_id)
+        .execute(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(serde_json::json!({"id": id, "name": name, "fieldId": field_id}))
+}
+
+#[tauri::command]
+async fn create_section_cmd(
+    state: State<'_, AppState>,
+    name: String,
+    chapter_id: String,
+) -> Result<serde_json::Value, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    sqlx::query("INSERT INTO sections (id, name, chapter_id) VALUES (?, ?, ?)")
+        .bind(&id)
+        .bind(&name)
+        .bind(&chapter_id)
+        .execute(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(serde_json::json!({"id": id, "name": name, "chapterId": chapter_id}))
+}
+
+#[tauri::command]
+async fn create_file_type_cmd(
+    state: State<'_, AppState>,
+    name: String,
+) -> Result<serde_json::Value, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    sqlx::query("INSERT INTO file_types (id, name) VALUES (?, ?)")
+        .bind(&id)
+        .bind(&name)
+        .execute(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(serde_json::json!({"id": id, "name": name}))
+}
+
+#[tauri::command]
+async fn create_exercise_type_cmd(
+    state: State<'_, AppState>,
+    name: String,
+) -> Result<serde_json::Value, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    sqlx::query("INSERT INTO exercise_types (id, name) VALUES (?, ?)")
+        .bind(&id)
+        .bind(&name)
+        .execute(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(serde_json::json!({"id": id, "name": name}))
+}
+
+#[tauri::command]
+async fn create_package_topic_cmd(
+    state: State<'_, AppState>,
+    name: String,
+) -> Result<serde_json::Value, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    sqlx::query("INSERT INTO package_topics (id, name) VALUES (?, ?)")
+        .bind(&id)
+        .bind(&name)
+        .execute(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(serde_json::json!({"id": id, "name": name}))
+}
+
+#[tauri::command]
+async fn create_macro_command_type_cmd(
+    state: State<'_, AppState>,
+    name: String,
+) -> Result<serde_json::Value, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    sqlx::query("INSERT INTO macro_command_types (id, name) VALUES (?, ?)")
+        .bind(&id)
+        .bind(&name)
+        .execute(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(serde_json::json!({"id": id, "name": name}))
+}
+
+#[tauri::command]
+async fn get_chapters_cmd(
+    state: State<'_, AppState>,
+    field_id: Option<String>,
+) -> Result<Vec<serde_json::Value>, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let mut chapters = Vec::new();
+
+    if let Some(fid) = field_id {
+        let rows =
+            sqlx::query("SELECT id, name, field_id FROM chapters WHERE field_id = ? ORDER BY name")
+                .bind(&fid)
+                .fetch_all(&manager.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+
+        for row in rows {
+            let id: String = row.get("id");
+            let name: String = row.get("name");
+            let field_id: String = row.get("field_id");
+            chapters.push(serde_json::json!({"id": id, "name": name, "fieldId": field_id}));
+        }
+    } else {
+        let rows = sqlx::query("SELECT id, name, field_id FROM chapters ORDER BY name")
+            .fetch_all(&manager.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        for row in rows {
+            let id: String = row.get("id");
+            let name: String = row.get("name");
+            let field_id: String = row.get("field_id");
+            chapters.push(serde_json::json!({"id": id, "name": name, "fieldId": field_id}));
+        }
+    }
+
+    Ok(chapters)
+}
+
+#[tauri::command]
+async fn get_sections_cmd(
+    state: State<'_, AppState>,
+    chapter_id: Option<String>,
+) -> Result<Vec<serde_json::Value>, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let mut sections = Vec::new();
+
+    if let Some(cid) = chapter_id {
+        let rows = sqlx::query(
+            "SELECT id, name, chapter_id FROM sections WHERE chapter_id = ? ORDER BY name",
+        )
+        .bind(&cid)
+        .fetch_all(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        for row in rows {
+            let id: String = row.get("id");
+            let name: String = row.get("name");
+            let chapter_id: String = row.get("chapter_id");
+            sections.push(serde_json::json!({"id": id, "name": name, "chapterId": chapter_id}));
+        }
+    } else {
+        let rows = sqlx::query("SELECT id, name, chapter_id FROM sections ORDER BY name")
+            .fetch_all(&manager.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        for row in rows {
+            let id: String = row.get("id");
+            let name: String = row.get("name");
+            let chapter_id: String = row.get("chapter_id");
+            sections.push(serde_json::json!({"id": id, "name": name, "chapterId": chapter_id}));
+        }
+    }
+
+    Ok(sections)
+}
+
+#[tauri::command]
+async fn get_file_types_cmd(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let rows = sqlx::query(
+        "SELECT id, name, folder_name, solvable, description FROM file_types ORDER BY name",
+    )
+    .fetch_all(&manager.pool)
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let mut types = Vec::new();
+    for row in rows {
+        let id: String = row.get("id");
+        let name: String = row.get("name");
+        let folder_name: Option<String> = row.try_get("folder_name").ok();
+        let solvable: Option<bool> = row.try_get("solvable").ok();
+        let description: Option<String> = row.try_get("description").ok();
+        types.push(serde_json::json!({
+            "id": id,
+            "name": name,
+            "folderName": folder_name,
+            "solvable": solvable,
+            "description": description
+        }));
+    }
+    Ok(types)
+}
+
+#[tauri::command]
+async fn get_exercise_types_cmd(
+    state: State<'_, AppState>,
+) -> Result<Vec<serde_json::Value>, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let rows = sqlx::query("SELECT id, name, description FROM exercise_types ORDER BY name")
+        .fetch_all(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let mut types = Vec::new();
+    for row in rows {
+        let id: String = row.get("id");
+        let name: String = row.get("name");
+        let description: Option<String> = row.try_get("description").ok();
+        types.push(serde_json::json!({"id": id, "name": name, "description": description}));
+    }
+    Ok(types)
+}
+
+#[tauri::command]
+async fn get_package_topics_cmd(
+    state: State<'_, AppState>,
+) -> Result<Vec<serde_json::Value>, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let rows = sqlx::query("SELECT id, name, description FROM package_topics ORDER BY name")
+        .fetch_all(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let mut topics = Vec::new();
+    for row in rows {
+        let id: String = row.get("id");
+        let name: String = row.get("name");
+        let description: Option<String> = row.try_get("description").ok();
+        topics.push(serde_json::json!({"id": id, "name": name, "description": description}));
+    }
+    Ok(topics)
+}
+
+#[tauri::command]
+async fn get_macro_command_types_cmd(
+    state: State<'_, AppState>,
+) -> Result<Vec<serde_json::Value>, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let rows = sqlx::query("SELECT id, name, description FROM macro_command_types ORDER BY name")
+        .fetch_all(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let mut types = Vec::new();
+    for row in rows {
+        let id: String = row.get("id");
+        let name: String = row.get("name");
+        let description: Option<String> = row.try_get("description").ok();
+        types.push(serde_json::json!({"id": id, "name": name, "description": description}));
+    }
+    Ok(types)
+}
+
+// ============================================================================
+// Typed Metadata CRUD Commands (sqlx-based)
+// ============================================================================
+
+#[tauri::command]
+async fn save_typed_metadata_cmd(
+    state: State<'_, AppState>,
+    resource_id: String,
+    resource_type: String,
+    metadata: serde_json::Value,
+) -> Result<(), String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    match resource_type.as_str() {
+        "file" => {
+            // Parse metadata
+            let file_type_id: Option<String> = metadata
+                .get("fileTypeId")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let field_id: Option<String> = metadata
+                .get("fieldId")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let difficulty: Option<i32> = metadata
+                .get("difficulty")
+                .and_then(|v| v.as_i64())
+                .map(|n| n as i32);
+            let solved_prooved: Option<bool> =
+                metadata.get("solvedProoved").and_then(|v| v.as_bool());
+            let build_command: Option<String> = metadata
+                .get("buildCommand")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let file_description: Option<String> = metadata
+                .get("fileDescription")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+
+            // Insert or replace main record
+            sqlx::query(
+                "INSERT OR REPLACE INTO resource_files (resource_id, file_type_id, field_id, difficulty, solved_prooved, build_command, file_description)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)"
+            )
+            .bind(&resource_id)
+            .bind(&file_type_id)
+            .bind(&field_id)
+            .bind(difficulty)
+            .bind(solved_prooved)
+            .bind(&build_command)
+            .bind(&file_description)
+            .execute(&manager.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+
+            // Save chapters (junction table)
+            if let Some(chapters) = metadata.get("chapters").and_then(|v| v.as_array()) {
+                // Clear existing
+                sqlx::query("DELETE FROM resource_file_chapters WHERE resource_id = ?")
+                    .bind(&resource_id)
+                    .execute(&manager.pool)
+                    .await
+                    .map_err(|e| e.to_string())?;
+
+                for chapter in chapters {
+                    if let Some(chapter_id) = chapter.as_str() {
+                        sqlx::query("INSERT OR IGNORE INTO resource_file_chapters (resource_id, chapter_id) VALUES (?, ?)")
+                            .bind(&resource_id)
+                            .bind(chapter_id)
+                            .execute(&manager.pool)
+                            .await
+                            .map_err(|e| e.to_string())?;
+                    }
+                }
+            }
+
+            // Save sections
+            if let Some(sections) = metadata.get("sections").and_then(|v| v.as_array()) {
+                sqlx::query("DELETE FROM resource_file_sections WHERE resource_id = ?")
+                    .bind(&resource_id)
+                    .execute(&manager.pool)
+                    .await
+                    .map_err(|e| e.to_string())?;
+
+                for section in sections {
+                    if let Some(section_id) = section.as_str() {
+                        sqlx::query("INSERT OR IGNORE INTO resource_file_sections (resource_id, section_id) VALUES (?, ?)")
+                            .bind(&resource_id)
+                            .bind(section_id)
+                            .execute(&manager.pool)
+                            .await
+                            .map_err(|e| e.to_string())?;
+                    }
+                }
+            }
+
+            // Save exercise types
+            if let Some(exercise_types) = metadata.get("exerciseTypes").and_then(|v| v.as_array()) {
+                sqlx::query("DELETE FROM resource_file_exercise_types WHERE resource_id = ?")
+                    .bind(&resource_id)
+                    .execute(&manager.pool)
+                    .await
+                    .map_err(|e| e.to_string())?;
+
+                for et in exercise_types {
+                    if let Some(et_id) = et.as_str() {
+                        sqlx::query("INSERT OR IGNORE INTO resource_file_exercise_types (resource_id, exercise_type_id) VALUES (?, ?)")
+                            .bind(&resource_id)
+                            .bind(et_id)
+                            .execute(&manager.pool)
+                            .await
+                            .map_err(|e| e.to_string())?;
+                    }
+                }
+            }
+
+            // Save custom tags
+            if let Some(tags) = metadata.get("customTags").and_then(|v| v.as_array()) {
+                sqlx::query("DELETE FROM resource_file_tags WHERE resource_id = ?")
+                    .bind(&resource_id)
+                    .execute(&manager.pool)
+                    .await
+                    .map_err(|e| e.to_string())?;
+
+                for tag in tags {
+                    if let Some(tag_str) = tag.as_str() {
+                        // Ensure tag exists
+                        sqlx::query("INSERT OR IGNORE INTO custom_tags (tag) VALUES (?)")
+                            .bind(tag_str)
+                            .execute(&manager.pool)
+                            .await
+                            .map_err(|e| e.to_string())?;
+
+                        sqlx::query("INSERT OR IGNORE INTO resource_file_tags (resource_id, tag) VALUES (?, ?)")
+                            .bind(&resource_id)
+                            .bind(tag_str)
+                            .execute(&manager.pool)
+                            .await
+                            .map_err(|e| e.to_string())?;
+                    }
+                }
+            }
+        }
+        "document" => {
+            let title: Option<String> = metadata
+                .get("title")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let document_type_id: Option<String> = metadata
+                .get("documentTypeId")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let description: Option<String> = metadata
+                .get("description")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+
+            sqlx::query(
+                "INSERT OR REPLACE INTO resource_documents (resource_id, title, document_type_id, description)
+                 VALUES (?, ?, ?, ?)"
+            )
+            .bind(&resource_id)
+            .bind(&title)
+            .bind(&document_type_id)
+            .bind(&description)
+            .execute(&manager.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        }
+        "figure" => {
+            let environment: Option<String> = metadata
+                .get("environment")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let caption: Option<String> = metadata
+                .get("caption")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let description: Option<String> = metadata
+                .get("description")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+
+            sqlx::query(
+                "INSERT OR REPLACE INTO resource_figures (resource_id, environment, caption, description)
+                 VALUES (?, ?, ?, ?)"
+            )
+            .bind(&resource_id)
+            .bind(&environment)
+            .bind(&caption)
+            .bind(&description)
+            .execute(&manager.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        }
+        "table" => {
+            let caption: Option<String> = metadata
+                .get("caption")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+
+            sqlx::query(
+                "INSERT OR REPLACE INTO resource_tables (resource_id, caption)
+                 VALUES (?, ?)",
+            )
+            .bind(&resource_id)
+            .bind(&caption)
+            .execute(&manager.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        }
+        "command" => {
+            let name: Option<String> = metadata
+                .get("name")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let description: Option<String> = metadata
+                .get("description")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let built_in: Option<bool> = metadata.get("builtIn").and_then(|v| v.as_bool());
+
+            sqlx::query(
+                "INSERT OR REPLACE INTO resource_commands (resource_id, name, description, built_in)
+                 VALUES (?, ?, ?, ?)"
+            )
+            .bind(&resource_id)
+            .bind(&name)
+            .bind(&description)
+            .bind(built_in)
+            .execute(&manager.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        }
+        _ => {
+            // For other types, just succeed silently for now
+        }
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn load_typed_metadata_cmd(
+    state: State<'_, AppState>,
+    resource_id: String,
+    resource_type: String,
+) -> Result<Option<serde_json::Value>, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    match resource_type.as_str() {
+        "file" => {
+            // Load main record
+            let main_row = sqlx::query(
+                "SELECT file_type_id, field_id, difficulty, solved_prooved, build_command, file_description
+                 FROM resource_files WHERE resource_id = ?"
+            )
+            .bind(&resource_id)
+            .fetch_optional(&manager.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+
+            if let Some(row) = main_row {
+                let file_type_id: Option<String> = row.try_get("file_type_id").ok();
+                let field_id: Option<String> = row.try_get("field_id").ok();
+                let difficulty: Option<i32> = row.try_get("difficulty").ok();
+                let solved_prooved: Option<bool> = row.try_get("solved_prooved").ok();
+                let build_command: Option<String> = row.try_get("build_command").ok();
+                let file_description: Option<String> = row.try_get("file_description").ok();
+
+                // Load chapters
+                let chapter_rows = sqlx::query(
+                    "SELECT chapter_id FROM resource_file_chapters WHERE resource_id = ?",
+                )
+                .bind(&resource_id)
+                .fetch_all(&manager.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+                let chapters: Vec<String> =
+                    chapter_rows.iter().map(|r| r.get("chapter_id")).collect();
+
+                // Load sections
+                let section_rows = sqlx::query(
+                    "SELECT section_id FROM resource_file_sections WHERE resource_id = ?",
+                )
+                .bind(&resource_id)
+                .fetch_all(&manager.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+                let sections: Vec<String> =
+                    section_rows.iter().map(|r| r.get("section_id")).collect();
+
+                // Load exercise types
+                let et_rows = sqlx::query("SELECT exercise_type_id FROM resource_file_exercise_types WHERE resource_id = ?")
+                    .bind(&resource_id)
+                    .fetch_all(&manager.pool)
+                    .await
+                    .map_err(|e| e.to_string())?;
+                let exercise_types: Vec<String> =
+                    et_rows.iter().map(|r| r.get("exercise_type_id")).collect();
+
+                // Load custom tags
+                let tag_rows =
+                    sqlx::query("SELECT tag FROM resource_file_tags WHERE resource_id = ?")
+                        .bind(&resource_id)
+                        .fetch_all(&manager.pool)
+                        .await
+                        .map_err(|e| e.to_string())?;
+                let custom_tags: Vec<String> = tag_rows.iter().map(|r| r.get("tag")).collect();
+
+                return Ok(Some(serde_json::json!({
+                    "fileTypeId": file_type_id,
+                    "fieldId": field_id,
+                    "difficulty": difficulty,
+                    "solvedProoved": solved_prooved,
+                    "buildCommand": build_command,
+                    "fileDescription": file_description,
+                    "chapters": if chapters.is_empty() { None } else { Some(chapters) },
+                    "sections": if sections.is_empty() { None } else { Some(sections) },
+                    "exerciseTypes": if exercise_types.is_empty() { None } else { Some(exercise_types) },
+                    "customTags": if custom_tags.is_empty() { None } else { Some(custom_tags) }
+                })));
+            }
+        }
+        "document" => {
+            let main_row = sqlx::query(
+                "SELECT title, document_type_id, description FROM resource_documents WHERE resource_id = ?"
+            )
+            .bind(&resource_id)
+            .fetch_optional(&manager.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+
+            if let Some(row) = main_row {
+                return Ok(Some(serde_json::json!({
+                    "title": row.try_get::<String, _>("title").ok(),
+                    "documentTypeId": row.try_get::<String, _>("document_type_id").ok(),
+                    "description": row.try_get::<String, _>("description").ok()
+                })));
+            }
+        }
+        "figure" => {
+            let main_row = sqlx::query(
+                "SELECT environment, caption, description FROM resource_figures WHERE resource_id = ?"
+            )
+            .bind(&resource_id)
+            .fetch_optional(&manager.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+
+            if let Some(row) = main_row {
+                return Ok(Some(serde_json::json!({
+                    "environment": row.try_get::<String, _>("environment").ok(),
+                    "caption": row.try_get::<String, _>("caption").ok(),
+                    "description": row.try_get::<String, _>("description").ok()
+                })));
+            }
+        }
+        "table" => {
+            let main_row = sqlx::query("SELECT caption FROM resource_tables WHERE resource_id = ?")
+                .bind(&resource_id)
+                .fetch_optional(&manager.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+
+            if let Some(row) = main_row {
+                return Ok(Some(serde_json::json!({
+                    "caption": row.try_get::<String, _>("caption").ok()
+                })));
+            }
+        }
+        "command" => {
+            let main_row = sqlx::query(
+                "SELECT name, description, built_in FROM resource_commands WHERE resource_id = ?",
+            )
+            .bind(&resource_id)
+            .fetch_optional(&manager.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+
+            if let Some(row) = main_row {
+                return Ok(Some(serde_json::json!({
+                    "name": row.try_get::<String, _>("name").ok(),
+                    "description": row.try_get::<String, _>("description").ok(),
+                    "builtIn": row.try_get::<bool, _>("built_in").ok()
+                })));
+            }
+        }
+        _ => {}
+    }
+
+    Ok(None)
+}
+
 #[tauri::command]
 async fn lsp_shutdown(state: State<'_, AppState>) -> Result<(), String> {
     let mut lsp_guard = state.lsp_manager.lock().await;
@@ -769,7 +1510,27 @@ pub fn run() {
             lsp_definition,
             lsp_did_open,
             lsp_did_change,
-            lsp_shutdown
+            lsp_shutdown,
+            // Typed Metadata Lookup Commands (sqlx-based)
+            get_fields_cmd,
+            get_chapters_cmd,
+            get_sections_cmd,
+            get_file_types_cmd,
+            get_exercise_types_cmd,
+            // Create Lookup Commands (for creatable dropdowns)
+            create_field_cmd,
+            create_chapter_cmd,
+            create_section_cmd,
+            create_file_type_cmd,
+            create_exercise_type_cmd,
+            // Typed Metadata CRUD Commands (sqlx-based)
+            save_typed_metadata_cmd,
+            load_typed_metadata_cmd,
+            // New Lookup Commands
+            get_package_topics_cmd,
+            get_macro_command_types_cmd,
+            create_package_topic_cmd,
+            create_macro_command_type_cmd
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

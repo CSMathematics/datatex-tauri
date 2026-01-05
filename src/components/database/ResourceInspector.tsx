@@ -4,6 +4,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSave, faInfoCircle, faFilePdf, faBook, faTimes, faMagic } from '@fortawesome/free-solid-svg-icons';
 import { PreambleWizard } from '../wizards/PreambleWizard';
 import { useDatabaseStore } from '../../stores/databaseStore';
+import { DynamicMetadataEditor } from '../metadata/DynamicMetadataEditor';
+import { useTypedMetadataStore } from '../../stores/typedMetadataStore';
 // @ts-ignore
 import { readFile, exists } from '@tauri-apps/plugin-fs';
 import { PdfViewerContainer } from './PdfViewerContainer';
@@ -365,6 +367,13 @@ export const ResourceInspector = ({
     const [pdfUrl, setPdfUrl] = useState<string | null>(null);
     const [pdfLoading, setPdfLoading] = useState(false);
     const [pdfError, setPdfError] = useState<string | null>(null);
+    
+    // Initialize typed metadata lookup data
+    const loadAllLookupData = useTypedMetadataStore(state => state.loadAllLookupData);
+    
+    useEffect(() => {
+        loadAllLookupData();
+    }, []);
 
     // Load PDF when resource changes
     useEffect(() => {
@@ -539,7 +548,7 @@ export const ResourceInspector = ({
                                         }}
                                     />
                                     <Select 
-                                        label="File Tyle" 
+                                        label="File Type" 
                                         data={RESOURCE_KINDS}
                                         value={resource.kind}
                                         onChange={(val) => {
@@ -554,9 +563,13 @@ export const ResourceInspector = ({
                                     <TextInput label="Created" value={resource.created_at || '-'} readOnly variant="filled" c="dimmed" />
                                 </Group>
                                 
-                                <MetadataEditor 
-                                    resource={resource} 
-                                    onPreviewAvailable={setPreviewUrl}
+                                {/* Dynamic Typed Metadata Editor - uses sqlx backend commands */}
+                                <DynamicMetadataEditor
+                                    resourceId={resource.id}
+                                    resourceType={resource.kind as any}
+                                    onSave={() => {
+                                        console.log('Metadata saved for', resource.id);
+                                    }}
                                 />
 
                             </Stack>
