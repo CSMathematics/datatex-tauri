@@ -74,8 +74,8 @@ CREATE TABLE IF NOT EXISTS dependencies (
 -- TRIGGERS
 -- ============================================================================
 
-CREATE TRIGGER IF NOT EXISTS update_timestamp_resources 
-AFTER UPDATE ON resources 
+CREATE TRIGGER IF NOT EXISTS update_timestamp_resources
+AFTER UPDATE ON resources
 BEGIN
     UPDATE resources SET updated_at = CURRENT_TIMESTAMP WHERE id = new.id;
 END;
@@ -85,7 +85,7 @@ END;
 -- ============================================================================
 
 -- Default Collections
-INSERT OR IGNORE INTO collections (name, description, type) VALUES 
+INSERT OR IGNORE INTO collections (name, description, type) VALUES
 ('General Files', 'Default collection for uncategorized files', 'files'),
 ('Calculus', 'Derivatives and Integrals', 'files'),
 ('Linear Algebra', 'Matrices and Vectors', 'files'),

@@ -499,7 +499,7 @@ export const ResourceInspector = ({
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     
     const effectivePdfUrl = previewUrl || pdfUrl || mainEditorPdfUrl;
-    const filename = resource ? (resource.path.split(/[/\\]/).pop() || resource.title || 'Untitled') : 'PDF Preview';
+    const filename = resource ? (resource.title || resource.path.split(/[/\\]/).pop() || 'Untitled') : 'PDF Preview';
     
     const { updateResourceKind } = useDatabaseStore();
 
@@ -542,6 +542,7 @@ export const ResourceInspector = ({
                             <Stack p="md" gap="md">
                                 <Group grow>
                                     <TextInput label="Title" 
+                                        key={resource.id}
                                         defaultValue={resource.title || ''} 
                                         onChange={(e) => {
                                            // Ideally update title too, but for now focusing on metadata

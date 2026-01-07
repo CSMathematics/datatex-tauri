@@ -1,9 +1,10 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Table, ScrollArea, Group, Text, TextInput, Badge, Paper, Tooltip, ActionIcon, Box, Menu, Modal, Grid } from '@mantine/core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'; 
-import { faSearch, faSort, faSortUp, faSortDown, faTrash, faExternalLinkAlt, faFolderOpen, faPlus, faFile, faFileAlt, faMagic } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faSort, faSortUp, faSortDown, faTrash, faExternalLinkAlt, faFolderOpen, faPlus, faFile, faFileAlt, faMagic, faProjectDiagram, faTable } from '@fortawesome/free-solid-svg-icons';
 import { useDatabaseStore } from '../../stores/databaseStore';
 import { invoke } from '@tauri-apps/api/core';
+import { VisualGraphView } from './VisualGraphView';
 // import { PreambleWizard } from '../wizards/PreambleWizard'; // Moved to ResourceInspector
 import { DOCUMENT_TEMPLATES } from '../../templates/documentTemplates';
 
@@ -23,6 +24,16 @@ export const DatabaseView = React.memo(({ onOpenFile }: DatabaseViewProps) => {
     const [globalSearch, setGlobalSearch] = useState('');
     const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
     const [sort, setSort] = useState<SortState>({ column: null, direction: null });
+    const [viewMode, setViewMode] = useState<'table' | 'graph'>('table');
+    const scrollViewportRef = useRef<HTMLDivElement>(null);
+    const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
+
+    useEffect(() => {
+        // Scroll to active resource when switching to table view or changing selection
+        if (viewMode === 'table' && activeResourceId && rowRefs.current[activeResourceId]) {
+            rowRefs.current[activeResourceId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, [viewMode, activeResourceId]);
     
     // Filter to only .tex files for the table view
     const texResources = useMemo(() => 
@@ -280,11 +291,30 @@ export const DatabaseView = React.memo(({ onOpenFile }: DatabaseViewProps) => {
                         </Text>
                         <Badge size="xs" variant="light">{filteredData.length} files</Badge>
                     </Group>
-                    
-                    {/* Action Toolbar - Only visible when a resource is selected */}
-                    {activeResourceId && (
-                         <Group gap= '2px' style={{ backgroundColor: 'var(--mantine-color-dark-7)', padding: '4px 8px', borderRadius: '4px' }}>
-                        <Menu shadow="md" width={200}>
+
+                    <Group gap="xs">
+                        {/* View Toggle */}
+                        <ActionIcon.Group>
+                            <ActionIcon 
+                                variant={viewMode === 'table' ? 'filled' : 'default'} 
+                                onClick={() => setViewMode('table')}
+                                title="Table View"
+                            >
+                                <FontAwesomeIcon icon={faTable} />
+                            </ActionIcon>
+                            <ActionIcon 
+                                variant={viewMode === 'graph' ? 'filled' : 'default'} 
+                                onClick={() => setViewMode('graph')}
+                                title="Graph View"
+                            >
+                                <FontAwesomeIcon icon={faProjectDiagram} />
+                            </ActionIcon>
+                        </ActionIcon.Group>
+
+                        {/* Action Toolbar - Only visible when a resource is selected */}
+                        {activeResourceId && (
+                             <Group gap= '2px' style={{ backgroundColor: 'var(--mantine-color-dark-7)', padding: '4px 8px', borderRadius: '4px' }}>
+                            <Menu shadow="md" width={200}>
                             <Tooltip label="Create new">
                             <Menu.Target>
                                 <ActionIcon size="xs" color='gray.7' variant='subtle'>
@@ -328,86 +358,96 @@ export const DatabaseView = React.memo(({ onOpenFile }: DatabaseViewProps) => {
                             </Tooltip>
                         </Group>
                     )}
-
+                    </Group>
                 </Group>
              </Paper>
 
-            {/* Table Area */}
-            <ScrollArea style={{ flex: 1 }}>
-                <Table stickyHeader highlightOnHover striped>
-                    <Table.Thead>
-                        <Table.Tr>
-                            {columns.map(col => {
-                                const isSorted = sort.column === col;
-                                return (
-                                    <Table.Th key={col} style={{ whiteSpace: 'nowrap', minWidth: 100 }}>
-                                        <Box 
-                                            onClick={() => handleSort(col)} 
-                                            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}
-                                        >
-                                            <Text size="xs" fw={700} tt="capitalize" style={{ userSelect: 'none' }}>{col}</Text>
-                                            <FontAwesomeIcon 
-                                                icon={isSorted ? (sort.direction === 'asc' ? faSortUp : faSortDown) : faSort} 
-                                                style={{ opacity: isSorted ? 1 : 0.3, width: 10 }} 
-                                            />
-                                        </Box>
-                                        <TextInput 
-                                            placeholder={`Filter ${col}`} 
-                                            size="xs" 
-                                            value={columnFilters[col] || ''}
-                                            onChange={(e) => handleColumnFilterChange(col, e.currentTarget.value)}
-                                            variant="filled" 
-                                            styles={{ input: { height: 22, fontSize: 10, padding: '0 4px' } }}
-                                            onClick={(e) => e.stopPropagation()} // Prevent sort when clicking input
-                                        />
-                                    </Table.Th>
-                                );
-                            })}
-                        </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
-                        {filteredData.map(row => {
-                            const isSelected = row.id === activeResourceId;
-                            const filename = row.path.split(/[/\\]/).pop() || row.title || row.id;
-                            
-                            return (
-                                <Table.Tr 
-                                key={row.id} 
-                                onClick={() => handleRowClick(row.id, row.path)}
-                                bg={isSelected ? 'var(--mantine-primary-color-light)' : undefined}
-                                style={{ cursor: 'pointer' }}
-                                >
-                                    {columns.map(col => {
-                                        let val = '';
-                                        if (col === 'title') val = row.title || filename;
-                                        else if (col === 'collection') val = row.collection;
-                                        else if (col === 'kind') val = row.kind;
-                                        else val = row.metadata?.[col] || '';
-
+            {/* Content Area */}
+            <Box style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                {viewMode === 'graph' ? (
+                    <VisualGraphView onOpenFile={onOpenFile} />
+                ) : (
+                    <>
+                        {/* Table Area */}
+                        <ScrollArea style={{ flex: 1 }} viewportRef={scrollViewportRef}>
+                            <Table stickyHeader highlightOnHover striped>
+                                <Table.Thead>
+                                    <Table.Tr>
+                                        {columns.map(col => {
+                                            const isSorted = sort.column === col;
+                                            return (
+                                                <Table.Th key={col} style={{ whiteSpace: 'nowrap', minWidth: 100 }}>
+                                                    <Box 
+                                                        onClick={() => handleSort(col)} 
+                                                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}
+                                                    >
+                                                        <Text size="xs" fw={700} tt="capitalize" style={{ userSelect: 'none' }}>{col}</Text>
+                                                        <FontAwesomeIcon 
+                                                            icon={isSorted ? (sort.direction === 'asc' ? faSortUp : faSortDown) : faSort} 
+                                                            style={{ opacity: isSorted ? 1 : 0.3, width: 10 }} 
+                                                        />
+                                                    </Box>
+                                                    <TextInput 
+                                                        placeholder={`Filter ${col}`} 
+                                                        size="xs" 
+                                                        value={columnFilters[col] || ''}
+                                                        onChange={(e) => handleColumnFilterChange(col, e.currentTarget.value)}
+                                                        variant="filled" 
+                                                        styles={{ input: { height: 22, fontSize: 10, padding: '0 4px' } }}
+                                                        onClick={(e) => e.stopPropagation()} // Prevent sort when clicking input
+                                                    />
+                                                </Table.Th>
+                                            );
+                                        })}
+                                    </Table.Tr>
+                                </Table.Thead>
+                                <Table.Tbody>
+                                    {filteredData.map(row => {
+                                        const isSelected = row.id === activeResourceId;
+                                        const filename = row.path.split(/[/\\]/).pop() || row.title || row.id;
+                                        
                                         return (
-                                            <Table.Td key={`${row.id}-${col}`}>
-                                                <Text size="xs" truncate>{String(val)}</Text>
-                                            </Table.Td>
+                                            <Table.Tr 
+                                            key={row.id} 
+                                            ref={(el: any) => { if (el) rowRefs.current[row.id] = el; }}
+                                            onClick={() => handleRowClick(row.id, row.path)}
+                                            bg={isSelected ? 'var(--mantine-primary-color-light)' : undefined}
+                                            style={{ cursor: 'pointer' }}
+                                            >
+                                                {columns.map(col => {
+                                                    let val = '';
+                                                    if (col === 'title') val = row.title || filename;
+                                                    else if (col === 'collection') val = row.collection;
+                                                    else if (col === 'kind') val = row.kind;
+                                                    else val = row.metadata?.[col] || '';
+
+                                                    return (
+                                                        <Table.Td key={`${row.id}-${col}`}>
+                                                            <Text size="xs" truncate>{String(val)}</Text>
+                                                        </Table.Td>
+                                                    );
+                                                })}
+                                            </Table.Tr>
                                         );
                                     })}
-                                </Table.Tr>
-                            );
-                        })}
-                    </Table.Tbody>
-                </Table>
-            </ScrollArea>
-                                <Group style={{ position: 'sticky', bottom: 0, zIndex: 10 }}>
-                                    <TextInput 
-                                    flex={1}
-                                    style={{padding:4}}
-                                        placeholder="Global Search..." 
-                                        leftSection={<FontAwesomeIcon icon={faSearch} style={{ width: 12, height: 12 }} />}
-                                        value={globalSearch}
-                                        onChange={(e) => setGlobalSearch(e.currentTarget.value)}
-                                        size="xs"
-                                        styles={{ input: { height: 28 } }}
-                                    />
-                                </Group>
+                                </Table.Tbody>
+                            </Table>
+                        </ScrollArea>
+                        <Group style={{ position: 'sticky', bottom: 0, zIndex: 10 }}>
+                            <TextInput 
+                            flex={1}
+                            style={{padding:4}}
+                                placeholder="Global Search..." 
+                                leftSection={<FontAwesomeIcon icon={faSearch} style={{ width: 12, height: 12 }} />}
+                                value={globalSearch}
+                                onChange={(e) => setGlobalSearch(e.currentTarget.value)}
+                                size="xs"
+                                styles={{ input: { height: 28 } }}
+                            />
+                        </Group>
+                    </>
+                )}
+            </Box>
         </div>
     );
 });

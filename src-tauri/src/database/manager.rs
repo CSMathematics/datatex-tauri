@@ -324,4 +324,20 @@ impl DatabaseManager {
             .map_err(|e| e.to_string())?;
         Ok(r)
     }
+
+    pub async fn get_all_dependencies(&self) -> Result<Vec<(String, String, String)>, String> {
+        let rows = sqlx::query("SELECT source_id, target_id, relation_type FROM dependencies")
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let mut results = Vec::new();
+        for row in rows {
+            let source: String = row.try_get("source_id").unwrap_or_default();
+            let target: String = row.try_get("target_id").unwrap_or_default();
+            let relation: String = row.try_get("relation_type").unwrap_or_default();
+            results.push((source, target, relation));
+        }
+        Ok(results)
+    }
 }

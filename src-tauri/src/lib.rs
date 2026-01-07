@@ -268,6 +268,22 @@ async fn get_collections_cmd(state: State<'_, AppState>) -> Result<Vec<Collectio
 }
 
 #[tauri::command]
+async fn create_collection_cmd(name: String, state: State<'_, AppState>) -> Result<(), String> {
+    let db_guard = state.db_manager.lock().await;
+    let db = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let collection = Collection {
+        name: name.clone(),
+        description: Some("Manually created collection".to_string()),
+        icon: Some("database".to_string()),
+        kind: "manual".to_string(),
+        created_at: None,
+    };
+    db.create_collection(&collection).await?;
+    Ok(())
+}
+
+#[tauri::command]
 async fn get_resources_by_collection_cmd(
     collection: String,
     state: State<'_, AppState>,
@@ -289,7 +305,7 @@ async fn import_folder_cmd(
     let db_guard = state.db_manager.lock().await;
     let db = db_guard.as_ref().ok_or("Database not initialized")?;
 
-    // 1. Create Collection if not exists
+    // 2. Create Collection if not exists
     let collection = Collection {
         name: collection_name.clone(),
         description: Some(format!("Imported from {}", path)),
@@ -506,6 +522,16 @@ async fn get_linked_resources_cmd(
 
     db.get_dependencies(&source_id, relation_type.as_deref())
         .await
+}
+
+#[tauri::command]
+async fn get_all_dependencies_cmd(
+    state: State<'_, AppState>,
+) -> Result<Vec<(String, String, String)>, String> {
+    let db_guard = state.db_manager.lock().await;
+    let db = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    db.get_all_dependencies().await
 }
 
 // ===== LSP Commands =====
@@ -1494,6 +1520,7 @@ pub fn run() {
             update_cell_cmd,
             // New Commands
             get_collections_cmd,
+            create_collection_cmd,
             get_resources_by_collection_cmd,
             import_folder_cmd,
             delete_collection_cmd,
@@ -1503,6 +1530,7 @@ pub fn run() {
             reveal_path_cmd,
             link_resources_cmd,
             get_linked_resources_cmd,
+            get_all_dependencies_cmd,
             // LSP Commands
             lsp_initialize,
             lsp_completion,
