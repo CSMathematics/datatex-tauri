@@ -23,7 +23,6 @@ import {
 
 interface HeaderProps {
   onNewFile: () => void;
-  onOpenFile: () => void;
   onSaveFile?: () => void;
   // Database panel props
   showDatabasePanel?: boolean;
@@ -31,16 +30,51 @@ interface HeaderProps {
   // Right sidebar (ResourceInspector) props
   showRightSidebar?: boolean;
   onToggleRightSidebar?: () => void;
+  // New props
+  onUndo?: () => void;
+  onRedo?: () => void;
+  onCut?: () => void;
+  onCopy?: () => void;
+  onPaste?: () => void;
+  onFind?: () => void;
+  onToggleWordCount?: () => void;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onOpenWizard?: (wizard: string) => void;
+  onOpenSettings?: () => void;
+  onOpenDatabase?: () => void;
+  onAddCollection?: () => void;
+  onRefreshDatabase?: () => void;
+  onCompile?: () => void;
+  onStopCompile?: () => void;
 }
 
 export const HeaderContent: React.FC<HeaderProps> = ({
   onNewFile,
-  onOpenFile,
   onSaveFile,
+  // Database panel props
   showDatabasePanel,
   onToggleDatabasePanel,
+  // Right sidebar (ResourceInspector) props
   showRightSidebar,
   onToggleRightSidebar,
+  // New props
+  onUndo,
+  onRedo,
+  onCut,
+  onCopy,
+  onPaste,
+  onFind,
+  onToggleWordCount,
+  onZoomIn,
+  onZoomOut,
+  onOpenWizard,
+  onOpenSettings,
+  onOpenDatabase,
+  onAddCollection,
+  onRefreshDatabase,
+  onCompile,
+  onStopCompile,
 }) => (
   <Group
     h="100%"
@@ -63,85 +97,309 @@ export const HeaderContent: React.FC<HeaderProps> = ({
         </Text>
       </Group>
       <Group gap={0} visibleFrom="sm">
-        {["File", "Edit", "View", "Go", "Help"].map((label) => (
-          <Menu key={label} shadow="md" width={200}>
-            <Menu.Target>
-              <Button
-                variant="subtle"
-                color="gray"
-                size="compact-xs"
-                radius="sm"
-                fw={400}
-                style={{ fontSize: 12 }}
-              >
-                {label}
-              </Button>
-            </Menu.Target>
-            <Menu.Dropdown>
-              {label === "File" && (
-                <>
-                  <Menu.Item
-                    leftSection={
-                      <FontAwesomeIcon
-                        icon={faFileCirclePlus}
-                        style={{ width: 14, height: 14 }}
-                      />
-                    }
-                    onClick={onNewFile}
-                  >
-                    New File
-                  </Menu.Item>
-                  <Menu.Item
-                    leftSection={
-                      <FontAwesomeIcon
-                        icon={faFolderOpen}
-                        style={{ width: 14, height: 14 }}
-                      />
-                    }
-                    onClick={onOpenFile}
-                  >
-                    Open Folder
-                  </Menu.Item>
-                  <Menu.Item
-                    leftSection={
-                      <FontAwesomeIcon
-                        icon={faSave}
-                        style={{ width: 14, height: 14 }}
-                      />
-                    }
-                    onClick={onSaveFile}
-                  >
-                    Save
-                  </Menu.Item>
-                  <Menu.Divider />
-                  <Menu.Item
-                    leftSection={
-                      <FontAwesomeIcon
-                        icon={faFilePdf}
-                        style={{ width: 14, height: 14 }}
-                      />
-                    }
-                  >
-                    Export to PDF
-                  </Menu.Item>
-                </>
-              )}
-              {label === "Edit" && (
-                <>
-                  <Menu.Item>Undo</Menu.Item>
-                  <Menu.Item>Redo</Menu.Item>
-                  <Menu.Divider />
-                  <Menu.Item>Cut</Menu.Item>
-                  <Menu.Item>Copy</Menu.Item>
-                  <Menu.Item>Paste</Menu.Item>
-                </>
-              )}
-              {label !== "File" && label !== "Edit" && (
-                <Menu.Item>Placeholder Action</Menu.Item>
-              )}
-            </Menu.Dropdown>
-          </Menu>
-        ))}
+        {/* FILE MENU */}
+        <Menu shadow="md" width={220}>
+          <Menu.Target>
+            <Button
+              variant="subtle"
+              color="gray"
+              size="compact-xs"
+              radius="sm"
+              fw={400}
+              style={{ fontSize: 12 }}
+            >
+              File
+            </Button>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item
+              leftSection={
+                <FontAwesomeIcon
+                  icon={faFileCirclePlus}
+                  style={{ width: 14, height: 14 }}
+                />
+              }
+              onClick={onNewFile}
+              rightSection={
+                <Text size="xs" c="dimmed">
+                  Ctrl+N
+                </Text>
+              }
+            >
+              New File
+            </Menu.Item>
+            <Menu.Item
+              leftSection={
+                <FontAwesomeIcon
+                  icon={faFolderOpen}
+                  style={{ width: 14, height: 14 }}
+                />
+              }
+              onClick={onOpenDatabase}
+              rightSection={
+                <Text size="xs" c="dimmed">
+                  Ctrl+O
+                </Text>
+              }
+            >
+              Open Database / Folder
+            </Menu.Item>
+            <Menu.Item
+              leftSection={
+                <FontAwesomeIcon
+                  icon={faSave}
+                  style={{ width: 14, height: 14 }}
+                />
+              }
+              onClick={onSaveFile}
+              rightSection={
+                <Text size="xs" c="dimmed">
+                  Ctrl+S
+                </Text>
+              }
+            >
+              Save
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item
+              leftSection={
+                <FontAwesomeIcon
+                  icon={faFilePdf}
+                  style={{ width: 14, height: 14 }}
+                />
+              }
+            >
+              Export to PDF
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item color="red">Exit</Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+
+        {/* EDIT MENU */}
+        <Menu shadow="md" width={200}>
+          <Menu.Target>
+            <Button
+              variant="subtle"
+              color="gray"
+              size="compact-xs"
+              radius="sm"
+              fw={400}
+              style={{ fontSize: 12 }}
+            >
+              Edit
+            </Button>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item
+              onClick={onUndo}
+              rightSection={<Text size="xs">Ctrl+Z</Text>}
+            >
+              Undo
+            </Menu.Item>
+            <Menu.Item
+              onClick={onRedo}
+              rightSection={<Text size="xs">Ctrl+Y</Text>}
+            >
+              Redo
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item
+              onClick={onCut}
+              rightSection={<Text size="xs">Ctrl+X</Text>}
+            >
+              Cut
+            </Menu.Item>
+            <Menu.Item
+              onClick={onCopy}
+              rightSection={<Text size="xs">Ctrl+C</Text>}
+            >
+              Copy
+            </Menu.Item>
+            <Menu.Item
+              onClick={onPaste}
+              rightSection={<Text size="xs">Ctrl+V</Text>}
+            >
+              Paste
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item
+              onClick={onFind}
+              rightSection={<Text size="xs">Ctrl+F</Text>}
+            >
+              Find
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+
+        {/* VIEW MENU */}
+        <Menu shadow="md" width={200}>
+          <Menu.Target>
+            <Button
+              variant="subtle"
+              color="gray"
+              size="compact-xs"
+              radius="sm"
+              fw={400}
+              style={{ fontSize: 12 }}
+            >
+              View
+            </Button>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item
+              leftSection={
+                <FontAwesomeIcon
+                  icon={faTableList}
+                  style={{ width: 14, height: 14 }}
+                />
+              }
+              onClick={onToggleDatabasePanel}
+              rightSection={
+                <Text size="xs">{showDatabasePanel ? "✓" : ""}</Text>
+              }
+            >
+              Database Panel
+            </Menu.Item>
+            <Menu.Item
+              leftSection={
+                <FontAwesomeIcon
+                  icon={faColumns}
+                  style={{ width: 14, height: 14 }}
+                />
+              }
+              onClick={onToggleRightSidebar}
+              rightSection={
+                <Text size="xs">{showRightSidebar ? "✓" : ""}</Text>
+              }
+            >
+              Right Sidebar (PDF)
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item onClick={onToggleWordCount}>Word Count</Menu.Item>
+            <Menu.Divider />
+            <Menu.Item
+              onClick={onZoomIn}
+              rightSection={<Text size="xs">Ctrl++</Text>}
+            >
+              Zoom In
+            </Menu.Item>
+            <Menu.Item
+              onClick={onZoomOut}
+              rightSection={<Text size="xs">Ctrl+-</Text>}
+            >
+              Zoom Out
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+
+        {/* DATABASE MENU */}
+        <Menu shadow="md" width={220}>
+          <Menu.Target>
+            <Button
+              variant="subtle"
+              color="gray"
+              size="compact-xs"
+              radius="sm"
+              fw={400}
+              style={{ fontSize: 12 }}
+            >
+              Database
+            </Button>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item onClick={onOpenDatabase}>Open Database</Menu.Item>
+            <Menu.Item onClick={onAddCollection}>
+              Add Collection (Folder)
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item onClick={onRefreshDatabase}>Refresh Database</Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+
+        {/* TOOLS MENU */}
+        <Menu shadow="md" width={200}>
+          <Menu.Target>
+            <Button
+              variant="subtle"
+              color="gray"
+              size="compact-xs"
+              radius="sm"
+              fw={400}
+              style={{ fontSize: 12 }}
+            >
+              Tools
+            </Button>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Label>Wizards</Menu.Label>
+            <Menu.Item onClick={() => onOpenWizard && onOpenWizard("preamble")}>
+              Preamble Wizard
+            </Menu.Item>
+            <Menu.Item onClick={() => onOpenWizard && onOpenWizard("table")}>
+              Table Wizard
+            </Menu.Item>
+            <Menu.Item onClick={() => onOpenWizard && onOpenWizard("tikz")}>
+              TikZ Wizard
+            </Menu.Item>
+            <Menu.Item onClick={() => onOpenWizard && onOpenWizard("fancyhdr")}>
+              FancyHDR Wizard
+            </Menu.Item>
+            <Menu.Item onClick={() => onOpenWizard && onOpenWizard("pstricks")}>
+              PSTricks Wizard
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item onClick={() => onOpenWizard && onOpenWizard("gallery")}>
+              Package Gallery
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item onClick={onOpenSettings}>Settings</Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+
+        {/* BUILD MENU */}
+        <Menu shadow="md" width={200}>
+          <Menu.Target>
+            <Button
+              variant="subtle"
+              color="gray"
+              size="compact-xs"
+              radius="sm"
+              fw={400}
+              style={{ fontSize: 12 }}
+            >
+              Build
+            </Button>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item
+              onClick={onCompile}
+              rightSection={<Text size="xs">F5</Text>}
+            >
+              Compile
+            </Menu.Item>
+            <Menu.Item onClick={onStopCompile}>Stop Build</Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+
+        {/* HELP MENU */}
+        <Menu shadow="md" width={200}>
+          <Menu.Target>
+            <Button
+              variant="subtle"
+              color="gray"
+              size="compact-xs"
+              radius="sm"
+              fw={400}
+              style={{ fontSize: 12 }}
+            >
+              Help
+            </Button>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item>About DataTex</Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       </Group>
     </Group>
     <Box

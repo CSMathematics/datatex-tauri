@@ -6,17 +6,15 @@ interface UsePdfStateOptions {
   isTexFile: boolean;
   pdfRefreshTrigger: number;
   setCompileError: (error: string | null) => void;
+  onRequirePanelOpen?: () => void;
 }
 
 interface UsePdfStateReturn {
-  showPdf: boolean;
-  setShowPdf: React.Dispatch<React.SetStateAction<boolean>>;
   pdfUrl: string | null;
   syncTexCoords: { page: number; x: number; y: number } | null;
   setSyncTexCoords: React.Dispatch<
     React.SetStateAction<{ page: number; x: number; y: number } | null>
   >;
-  handleTogglePdf: () => void;
   handleSyncTexForward: (line: number, column: number) => Promise<void>;
 }
 
@@ -25,8 +23,8 @@ export function usePdfState({
   isTexFile,
   pdfRefreshTrigger,
   setCompileError,
+  onRequirePanelOpen,
 }: UsePdfStateOptions): UsePdfStateReturn {
-  const [showPdf, setShowPdf] = useState(true);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   // @ts-ignore
   const [syncTexCoords, setSyncTexCoords] = useState<{
@@ -76,10 +74,6 @@ export function usePdfState({
     pdfRefreshTrigger,
     isTexFile,
   ]);
-
-  const handleTogglePdf = useCallback(() => {
-    setShowPdf((prev) => !prev);
-  }, []);
 
   const handleSyncTexForward = useCallback(
     async (line: number, column: number) => {
@@ -135,7 +129,7 @@ export function usePdfState({
           }
 
           setSyncTexCoords({ page, x, y });
-          setShowPdf(true);
+          onRequirePanelOpen?.();
         } else {
           setCompileError(
             "SyncTeX forward sync failed. Make sure you compiled with -synctex=1 flag."
@@ -157,12 +151,9 @@ export function usePdfState({
   );
 
   return {
-    showPdf,
-    setShowPdf,
     pdfUrl,
     syncTexCoords,
     setSyncTexCoords,
-    handleTogglePdf,
     handleSyncTexForward,
   };
 }

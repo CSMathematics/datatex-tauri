@@ -42,6 +42,7 @@ import { PreambleWizard } from "./components/wizards/PreambleWizard";
 import { TableWizard } from "./components/wizards/TableWizard";
 import { TikzWizard } from "./components/wizards/TikzWizard";
 import { FancyhdrWizard } from "./components/wizards/FancyhdrWizard";
+import { PstricksWizard } from "./components/wizards/PstricksWizard";
 import { PackageGallery } from "./components/wizards/PackageGallery";
 import { SettingsPanel } from "./components/settings/SettingsPanel";
 import { DatabaseView } from "./components/database/DatabaseView";
@@ -153,8 +154,6 @@ export default function App() {
   const [wordCountResult, setWordCountResult] = useState<string>("");
 
   // --- File System & DB State ---
-  const [dbConnected, setDbConnected] = useState(false);
-  const [dbTables, setDbTables] = useState<string[]>([]);
 
   // --- Recent Projects State ---
   const [recentProjects, setRecentProjects] = useState<string[]>([]);
@@ -170,7 +169,7 @@ export default function App() {
   const {
     projectData,
     rootPath,
-    loadingFiles,
+
     setRootPath,
     reloadProjectFiles,
     handleOpenFolder,
@@ -247,23 +246,25 @@ export default function App() {
   });
 
   // --- PDF Hook ---
-  const { showPdf, pdfUrl, handleTogglePdf, handleSyncTexForward } =
-    usePdfState({
-      activeTab,
-      isTexFile,
-      pdfRefreshTrigger,
-      setCompileError,
-    });
+  const handleTogglePdf = useCallback(() => {
+    setShowRightSidebar((prev) => !prev);
+  }, []);
+
+  const { pdfUrl, syncTexCoords, handleSyncTexForward } = usePdfState({
+    activeTab,
+    isTexFile,
+    pdfRefreshTrigger,
+    setCompileError,
+    onRequirePanelOpen: () => setShowRightSidebar(true),
+  });
 
   const isWizardActive = useMemo(
     () => activeView.startsWith("wizard-") || activeView === "gallery",
     [activeView]
   );
   const showRightPanel = useMemo(
-    () =>
-      showRightSidebar &&
-      (isWizardActive || (activeView === "editor" && showPdf && isTexFile)),
-    [showRightSidebar, isWizardActive, activeView, showPdf, isTexFile]
+    () => showRightSidebar && (isWizardActive || activeView === "editor"),
+    [showRightSidebar, isWizardActive, activeView]
   );
 
   // --- Sync projectData to projectStore for DatabaseSidebar ---
@@ -700,36 +701,6 @@ export default function App() {
   }, [activeTab, isTexFile]);
 
   // --- Handlers (DB) ---
-  const handleConnectDB = useCallback(() => {
-    setDbConnected((prev) => {
-      if (prev) {
-        setDbTables([]);
-        return false;
-      } else {
-        setDbTables([
-          "resources",
-          "documents",
-          "bibliography",
-          "dependencies",
-          "document_items",
-        ]);
-        return true;
-      }
-    });
-  }, []);
-
-  const handleOpenTable = useCallback(
-    (tableName: string) => {
-      const tabId = `table-${tableName}`;
-      openTab({
-        id: tabId,
-        title: tableName,
-        type: "table",
-        tableName: tableName,
-      });
-    },
-    [openTab]
-  );
 
   const handleOpenFileFromTable = useCallback(
     (path: string) => {
@@ -798,15 +769,78 @@ export default function App() {
           >
             <HeaderContent
               onNewFile={handleRequestNewFile}
-              onOpenFile={handleOpenFolder}
+              onSaveFile={() => handleSave()}
+              // Database
               showDatabasePanel={showDatabasePanel}
               onToggleDatabasePanel={() =>
                 setShowDatabasePanel(!showDatabasePanel)
               }
+              // Right Sidebar
               showRightSidebar={showRightSidebar}
               onToggleRightSidebar={() =>
                 setShowRightSidebar(!showRightSidebar)
               }
+              // Edit Actions
+              onUndo={() => editorRef.current?.trigger(null, "undo", null)}
+              onRedo={() => editorRef.current?.trigger(null, "redo", null)}
+              onCut={() =>
+                editorRef.current?.trigger(
+                  null,
+                  "editor.action.clipboardCutAction",
+                  null
+                )
+              }
+              onCopy={() =>
+                editorRef.current?.trigger(
+                  null,
+                  "editor.action.clipboardCopyAction",
+                  null
+                )
+              }
+              onPaste={() =>
+                editorRef.current?.trigger(
+                  null,
+                  "editor.action.clipboardPasteAction",
+                  null
+                )
+              }
+              onFind={() =>
+                editorRef.current?.trigger(null, "actions.find", null)
+              }
+              // View Actions
+              onToggleWordCount={handleWordCount}
+              onZoomIn={() =>
+                editorRef.current?.trigger(
+                  null,
+                  "editor.action.fontZoomIn",
+                  null
+                )
+              }
+              onZoomOut={() =>
+                editorRef.current?.trigger(
+                  null,
+                  "editor.action.fontZoomOut",
+                  null
+                )
+              }
+              // Tools
+              onOpenWizard={(wizard) =>
+                setActiveView(`wizard-${wizard}` as ViewType)
+              }
+              onOpenSettings={() => {
+                setActiveActivity("settings");
+                setActiveView("settings");
+                setIsSidebarOpen(false);
+              }}
+              // Database Menu Actions
+              onOpenDatabase={handleOpenFolder}
+              onAddCollection={handleAddFolder}
+              onRefreshDatabase={() =>
+                reloadProjectFiles(projectData.map((node) => node.path))
+              }
+              // Build Actions
+              onCompile={handleCompile}
+              onStopCompile={handleStopCompile}
             />
           </AppShell.Header>
 
@@ -892,19 +926,10 @@ export default function App() {
                 activeSection={activeActivity}
                 onToggleSection={handleToggleSidebar}
                 onNavigate={setActiveView}
-                openTabs={tabs}
-                activeTabId={activeTabId}
-                onTabSelect={handleTabChange}
-                projectData={projectData}
                 onOpenFolder={handleOpenFolder}
                 onOpenFileNode={handleOpenFileNode}
                 onAddFolder={handleAddFolder}
                 onRemoveFolder={handleRemoveFolder}
-                loadingFiles={loadingFiles}
-                dbConnected={dbConnected}
-                dbTables={dbTables}
-                onConnectDB={handleConnectDB}
-                onOpenTable={handleOpenTable}
                 onCreateItem={handleCreateItem}
                 onRenameItem={handleRenameItem}
                 onDeleteItem={handleDeleteItem}
@@ -983,7 +1008,7 @@ export default function App() {
                       onCloseFiles={handleCloseTabs}
                       onContentChange={handleEditorChange}
                       onMount={handleEditorDidMount}
-                      showPdf={showPdf}
+                      showPdf={showRightSidebar}
                       onTogglePdf={handleTogglePdf}
                       isTexFile={isTexFile}
                       onCompile={handleCompile}
@@ -1078,6 +1103,15 @@ export default function App() {
                         }}
                       />
                     )}
+                    {activeView === "wizard-pstricks" && (
+                      <PstricksWizard
+                        onInsert={(code: string) => {
+                          handleInsertSnippet(code);
+                          setActiveView("editor");
+                        }}
+                        onChange={() => {}}
+                      />
+                    )}
                   </WizardWrapper>
                 ) : activeView === "gallery" ? (
                   <PackageGallery
@@ -1091,7 +1125,10 @@ export default function App() {
                   />
                 ) : (
                   /* ResourceInspector with 3 tabs: PDF, Metadata, Bibliography */
-                  <ResourceInspector mainEditorPdfUrl={pdfUrl} />
+                  <ResourceInspector
+                    mainEditorPdfUrl={pdfUrl}
+                    syncTexCoords={syncTexCoords}
+                  />
                 )}
               </Box>
             </Group>
@@ -1100,8 +1137,8 @@ export default function App() {
           {/* FOOTER */}
           <AppShell.Footer withBorder={false} p={0}>
             <StatusBar
-              activeFile={tabs.find((f) => f.id === activeTabId)}
-              dbConnected={dbConnected}
+              language={activeTab?.language}
+              dbConnected={true}
               cursorPosition={cursorPosition}
               spellCheckEnabled={spellCheckEnabled}
               onToggleSpellCheck={() =>

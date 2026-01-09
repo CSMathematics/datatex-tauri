@@ -35,6 +35,7 @@ const DEFAULT_PAGE_HEIGHT = 842; // A4 height in points (approximate)
 interface PdfViewerContainerProps {
   pdfUrl: string | null;
   onSyncTexInverse?: (page: number, x: number, y: number) => void;
+  syncTexCoords?: { page: number; x: number; y: number } | null;
 }
 
 // Memoized toolbar - completely stable, only updates via props

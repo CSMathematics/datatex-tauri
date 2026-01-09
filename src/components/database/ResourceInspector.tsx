@@ -408,10 +408,12 @@ const MetadataEditor = ({
 interface ResourceInspectorProps {
   /** PDF URL from main editor */
   mainEditorPdfUrl?: string | null;
+  syncTexCoords?: { page: number; x: number; y: number } | null;
 }
 
 export const ResourceInspector = ({
   mainEditorPdfUrl,
+  syncTexCoords,
 }: ResourceInspectorProps) => {
   const { allLoadedResources, activeResourceId } = useDatabaseStore();
   const resource = allLoadedResources.find((r) => r.id === activeResourceId);
@@ -621,6 +623,7 @@ export const ResourceInspector = ({
                 <PdfViewerContainer
                   key={effectivePdfUrl}
                   pdfUrl={effectivePdfUrl}
+                  syncTexCoords={syncTexCoords}
                 />
               ) : (
                 <EmptyState
