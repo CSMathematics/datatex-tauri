@@ -53,7 +53,8 @@ export type ViewType =
   | "wizard-pstricks"
   | "gallery"
   | "settings"
-  | "database";
+  | "database"
+  | "package-browser";
 
 export interface FileSystemNode {
   id: string;

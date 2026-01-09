@@ -4,7 +4,6 @@ import {
   Box,
   Group,
   MantineProvider,
-  Notification,
   Text,
   CSSVariablesResolver,
   Modal,
@@ -47,6 +46,7 @@ import { PackageGallery } from "./components/wizards/PackageGallery";
 import { SettingsPanel } from "./components/settings/SettingsPanel";
 import { DatabaseView } from "./components/database/DatabaseView";
 import { ResourceInspector } from "./components/database/ResourceInspector";
+import { PackageBrowser } from "./components/tools/PackageBrowser";
 
 import {
   latexLanguage,
@@ -109,7 +109,7 @@ export default function App() {
   // --- Layout State ---
   const [activeActivity, setActiveActivity] =
     useState<SidebarSection>("database");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState<ViewType>("editor");
   const [activePackageId, setActivePackageId] = useState<string>("amsmath");
 
@@ -121,7 +121,6 @@ export default function App() {
     ghostRef,
     startResizeSidebar,
     startResizeRightPanel,
-    startResizeDatabase,
   } = useAppPanelResize();
 
   // --- Editor State (from Zustand) ---
@@ -146,8 +145,6 @@ export default function App() {
   const lspClientRef = useRef<TexlabLspClient | null>(null);
 
   // --- Compilation State ---
-
-  const [compileError, setCompileError] = useState<string | null>(null);
 
   // --- Word Count State ---
   const [showWordCount, setShowWordCount] = useState(false);
@@ -181,7 +178,7 @@ export default function App() {
     handleDeleteItem,
     handleMoveItem,
   } = useProjectFiles({
-    onSetCompileError: setCompileError,
+    onSetCompileError: (err) => console.error("Project Error:", err),
     onSetActiveActivity: (act) => setActiveActivity(act as SidebarSection),
     onAddToRecent: addToRecent,
     openTab,
@@ -190,10 +187,10 @@ export default function App() {
   });
 
   // --- Database Panel State ---
-  const [showDatabasePanel, setShowDatabasePanel] = useState(true);
+  const [showDatabasePanel, setShowDatabasePanel] = useState(false);
 
   // --- Right Sidebar (ResourceInspector) State ---
-  const [showRightSidebar, setShowRightSidebar] = useState(true);
+  const [showRightSidebar, setShowRightSidebar] = useState(false);
 
   // --- Derived State (from Zustand selectors) ---
   const activeTab = useActiveTab();
@@ -223,7 +220,6 @@ export default function App() {
         updateTabContent(targetId, contentToSave);
       } catch (e) {
         console.error("Failed to save file:", e);
-        setCompileError("Failed to save file: " + String(e));
       }
     },
     [tabs, activeTabId, markDirty, updateTabContent]
@@ -242,7 +238,7 @@ export default function App() {
     activeTab,
     isTexFile,
     onSave: handleSave,
-    setCompileError,
+    setCompileError: (msg) => console.error("Compile Error:", msg),
   });
 
   // --- PDF Hook ---
@@ -254,7 +250,7 @@ export default function App() {
     activeTab,
     isTexFile,
     pdfRefreshTrigger,
-    setCompileError,
+    setCompileError: (msg) => console.error("PDF Error:", msg),
     onRequirePanelOpen: () => setShowRightSidebar(true),
   });
 
@@ -263,7 +259,9 @@ export default function App() {
     [activeView]
   );
   const showRightPanel = useMemo(
-    () => showRightSidebar && (isWizardActive || activeView === "editor"),
+    () =>
+      showRightSidebar &&
+      (isWizardActive || activeView === "editor" || activeView === "database"),
     [showRightSidebar, isWizardActive, activeView]
   );
 
@@ -434,7 +432,7 @@ export default function App() {
         setActiveView("editor");
       } catch (e) {
         console.error("Failed to create file:", e);
-        setCompileError("Failed to create file: " + String(e));
+        console.error("Failed to create file: " + String(e));
       }
     },
     [handleTabChange]
@@ -696,7 +694,7 @@ export default function App() {
       setShowWordCount(true);
     } catch (e) {
       console.error("TexCount Failed:", e);
-      setCompileError("Word count failed: " + String(e));
+      console.error("Word count failed: " + String(e));
     }
   }, [activeTab, isTexFile]);
 
@@ -770,6 +768,9 @@ export default function App() {
             <HeaderContent
               onNewFile={handleRequestNewFile}
               onSaveFile={() => handleSave()}
+              // Left Sidebar
+              showLeftSidebar={isSidebarOpen}
+              onToggleLeftSidebar={() => setIsSidebarOpen((prev) => !prev)}
               // Database
               showDatabasePanel={showDatabasePanel}
               onToggleDatabasePanel={() =>
@@ -883,57 +884,27 @@ export default function App() {
               height: "100vh",
               paddingTop: 35,
               paddingBottom: 24,
-              overflow: "hidden",
-              boxSizing: "border-box",
-              backgroundColor: "var(--app-bg)",
             }}
           >
-            {compileError && (
-              <Box
-                style={{
-                  position: "absolute",
-                  top: 10,
-                  right: 10,
-                  zIndex: 1000,
-                  maxWidth: 400,
-                }}
-              >
-                <Notification
-                  color="red"
-                  title="Error"
-                  onClose={() => setCompileError(null)}
-                  withBorder
-                >
-                  <pre style={{ fontSize: 10, whiteSpace: "pre-wrap" }}>
-                    {compileError}
-                  </pre>
-                </Notification>
-              </Box>
-            )}
-
-            <Group
-              gap={0}
-              wrap="nowrap"
-              h="100%"
-              align="stretch"
-              style={{ flex: 1, overflow: "hidden", minHeight: 0 }}
-            >
+            <Group gap={0} h="calc(100vh - 35px - 24px)" wrap="nowrap">
               {/* 1. SIDEBAR */}
               <Sidebar
-                width="var(--sidebar-width)"
+                width={databasePanelWidth}
                 isOpen={isSidebarOpen}
                 onResizeStart={startResizeSidebar}
-                activeSection={activeActivity}
+                activeSection={activeActivity} // This assumes activeActivity is of type SidebarSection
                 onToggleSection={handleToggleSidebar}
                 onNavigate={setActiveView}
+                // File System
                 onOpenFolder={handleOpenFolder}
-                onOpenFileNode={handleOpenFileNode}
                 onAddFolder={handleAddFolder}
                 onRemoveFolder={handleRemoveFolder}
+                onOpenFileNode={handleOpenFileNode}
                 onCreateItem={handleCreateItem}
                 onRenameItem={handleRenameItem}
                 onDeleteItem={handleDeleteItem}
                 onMoveItem={handleMoveItem}
+                // Tools
                 onInsertSymbol={handleInsertSnippet}
                 activePackageId={activePackageId}
                 onSelectPackage={setActivePackageId}
@@ -941,196 +912,174 @@ export default function App() {
                 onScrollToLine={handleRevealLine}
               />
 
-              {/* 2. CENTER: DATABASE VIEW (when toggled) + EDITOR AREA */}
+              {/* 2. CENTER: EDITOR / VIEWS */}
               <Box
                 style={{
                   flex: 1,
                   minWidth: 0,
+                  height: "100%",
                   display: "flex",
-                  flexDirection: "row",
-                  overflow: "hidden",
-                  minHeight: 0,
-                }}
-              >
-                {/* Database Table - LEFT SIDE (only when toggled ON and not in settings) */}
-                {showDatabasePanel && activeView !== "settings" && (
-                  <>
-                    <Box
-                      style={{
-                        width: `${databasePanelWidth}px`,
-                        minWidth: "250px",
-                        maxWidth: "60%",
-                        display: "flex",
-                        flexDirection: "column",
-                        overflow: "hidden",
-                      }}
-                    >
-                      <DatabaseView onOpenFile={handleOpenFileFromTable} />
-                    </Box>
-
-                    {/* Resize handle between Database and Editor */}
-                    <ResizerHandle
-                      onMouseDown={startResizeDatabase}
-                      isResizing={isResizing}
-                    />
-                  </>
-                )}
-
-                {/* Editor/Settings - RIGHT SIDE (always visible) */}
-                <Box
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                    display: "flex",
-                    flexDirection: "column",
-                    overflow: "hidden",
-                    minHeight: 0,
-                  }}
-                >
-                  {activeView === "settings" ? (
-                    <SettingsPanel
-                      settings={settings}
-                      onUpdateEditor={updateEditorSetting}
-                      onUpdateEditorBehavior={updateEditorBehaviorSetting}
-                      onUpdatePdfViewer={updatePdfViewerSetting}
-                      onUpdateCompilation={updateCompilationSetting}
-                      onUpdateDatabase={updateDatabaseSetting}
-                      onUpdateAccessibility={updateAccessibilitySetting}
-                      onUpdateGeneral={updateGeneralSetting}
-                      onUpdateUi={setUiTheme}
-                    />
-                  ) : (
-                    <EditorArea
-                      files={tabs}
-                      activeFileId={activeTabId}
-                      onFileSelect={handleTabChange}
-                      onFileClose={handleCloseTab}
-                      onCloseFiles={handleCloseTabs}
-                      onContentChange={handleEditorChange}
-                      onMount={handleEditorDidMount}
-                      showPdf={showRightSidebar}
-                      onTogglePdf={handleTogglePdf}
-                      isTexFile={isTexFile}
-                      onCompile={handleCompile}
-                      isCompiling={isCompiling}
-                      onStopCompile={handleStopCompile}
-                      onSave={handleSave}
-                      onCreateEmpty={handleCreateEmpty}
-                      onOpenWizard={handleOpenPreambleWizard}
-                      onCreateFromTemplate={handleCreateFromTemplate}
-                      recentProjects={recentProjects}
-                      onOpenRecent={handleOpenRecent}
-                      // --- PASSING MEMOIZED SETTINGS ---
-                      editorSettings={editorSettingsMemo}
-                      logEntries={logEntries}
-                      showLogPanel={showLogPanel}
-                      onCloseLogPanel={handleCloseLogPanel}
-                      onJumpToLine={handleRevealLine}
-                      onCursorChange={handleCursorChange}
-                      onSyncTexForward={handleSyncTexForward}
-                      spellCheckEnabled={spellCheckEnabled}
-                      onOpenFileFromTable={handleOpenFileFromTable}
-                      lspClient={lspClientRef.current}
-                    />
-                  )}
-                </Box>
-              </Box>
-
-              {/* 3. RIGHT PANEL WITH TRANSITION */}
-
-              {/* Resizer for Right Panel */}
-              {showRightPanel && (
-                <ResizerHandle
-                  onMouseDown={startResizeRightPanel}
-                  isResizing={isResizing}
-                />
-              )}
-
-              {/* Right Panel Content */}
-              <Box
-                w={showRightPanel ? "var(--right-panel-width)" : 0}
-                h="100%"
-                style={{
-                  flexShrink: 0,
-                  overflow: "hidden",
-                  display: showRightPanel ? "flex" : "none",
                   flexDirection: "column",
-                  minWidth: 0,
-                  transition: isResizing
-                    ? "none"
-                    : "width 300ms ease-in-out, opacity 200ms ease-in-out",
-                  opacity: showRightPanel ? 1 : 0,
-                  whiteSpace: "nowrap",
-                  backgroundColor: "var(--app-panel-bg)",
-                  borderLeft: "1px solid var(--mantine-color-default-border)",
+                  overflow: "hidden",
                 }}
               >
-                {/* Right Panel Content: Wizard > Gallery > ResourceInspector (when resource selected) > PDF Preview (default) */}
-                {activeView.startsWith("wizard-") ? (
+                {activeView === "settings" ? (
+                  <SettingsPanel
+                    settings={settings}
+                    onUpdateEditor={updateEditorSetting}
+                    onUpdateEditorBehavior={updateEditorBehaviorSetting}
+                    onUpdatePdfViewer={updatePdfViewerSetting}
+                    onUpdateCompilation={updateCompilationSetting}
+                    onUpdateDatabase={updateDatabaseSetting}
+                    onUpdateAccessibility={updateAccessibilitySetting}
+                    onUpdateGeneral={updateGeneralSetting}
+                    onUpdateUi={setUiTheme}
+                  />
+                ) : activeView === "database" ? (
+                  <DatabaseView onOpenFile={handleOpenFileFromTable} />
+                ) : activeView === "package-browser" ? (
+                  <PackageBrowser onClose={() => setActiveView("editor")} />
+                ) : activeView === "wizard-preamble" ? (
                   <WizardWrapper
-                    title={activeView.replace("wizard-", "").toUpperCase()}
+                    title="Preamble Wizard"
                     onClose={() => setActiveView("editor")}
                   >
-                    {activeView === "wizard-preamble" && (
-                      <PreambleWizard
-                        onInsert={(code: string) => {
-                          handleInsertSnippet(code);
-                          setActiveView("editor");
-                        }}
-                      />
-                    )}
-                    {activeView === "wizard-table" && (
-                      <TableWizard
-                        onInsert={(code: string) => {
-                          handleInsertSnippet(code);
-                          setActiveView("editor");
-                        }}
-                      />
-                    )}
-                    {activeView === "wizard-tikz" && (
-                      <TikzWizard
-                        onInsert={(code: string) => {
-                          handleInsertSnippet(code);
-                          setActiveView("editor");
-                        }}
-                      />
-                    )}
-                    {activeView === "wizard-fancyhdr" && (
-                      <FancyhdrWizard
-                        onInsert={(code: string) => {
-                          handleInsertSnippet(code);
-                          setActiveView("editor");
-                        }}
-                      />
-                    )}
-                    {activeView === "wizard-pstricks" && (
-                      <PstricksWizard
-                        onInsert={(code: string) => {
-                          handleInsertSnippet(code);
-                          setActiveView("editor");
-                        }}
-                        onChange={() => {}}
-                      />
-                    )}
+                    <PreambleWizard
+                      onInsert={(code) => {
+                        handleInsertSnippet(code);
+                        setActiveView("editor");
+                      }}
+                    />
+                  </WizardWrapper>
+                ) : activeView === "wizard-table" ? (
+                  <WizardWrapper
+                    title="Table Wizard"
+                    onClose={() => setActiveView("editor")}
+                  >
+                    <TableWizard
+                      onInsert={(code) => {
+                        handleInsertSnippet(code);
+                        setActiveView("editor");
+                      }}
+                    />
+                  </WizardWrapper>
+                ) : activeView === "wizard-tikz" ? (
+                  <WizardWrapper
+                    title="TikZ Wizard"
+                    onClose={() => setActiveView("editor")}
+                  >
+                    <TikzWizard
+                      onInsert={(code) => {
+                        handleInsertSnippet(code);
+                        setActiveView("editor");
+                      }}
+                    />
+                  </WizardWrapper>
+                ) : activeView === "wizard-fancyhdr" ? (
+                  <WizardWrapper
+                    title="Fancy Header Wizard"
+                    onClose={() => setActiveView("editor")}
+                  >
+                    <FancyhdrWizard
+                      onInsert={(code) => {
+                        handleInsertSnippet(code);
+                        setActiveView("editor");
+                      }}
+                    />
+                  </WizardWrapper>
+                ) : activeView === "wizard-pstricks" ? (
+                  <WizardWrapper
+                    title="PSTricks Wizard"
+                    onClose={() => setActiveView("editor")}
+                  >
+                    <PstricksWizard
+                      onInsert={(code) => {
+                        handleInsertSnippet(code);
+                        setActiveView("editor");
+                      }}
+                      onChange={() => {}}
+                    />
                   </WizardWrapper>
                 ) : activeView === "gallery" ? (
-                  <PackageGallery
-                    selectedPkgId={activePackageId}
-                    onInsert={(code: string) => {
-                      handleInsertSnippet(code);
-                      setActiveView("editor");
-                    }}
+                  <WizardWrapper
+                    title="Package Gallery"
                     onClose={() => setActiveView("editor")}
-                    onOpenWizard={setActiveView}
-                  />
+                  >
+                    <PackageGallery
+                      selectedPkgId={activePackageId || ""}
+                      onInsert={(code) => {
+                        handleInsertSnippet(code);
+                        setActiveView("editor");
+                      }}
+                      onClose={() => setActiveView("editor")}
+                      onOpenWizard={setActiveView}
+                    />
+                  </WizardWrapper>
                 ) : (
-                  /* ResourceInspector with 3 tabs: PDF, Metadata, Bibliography */
-                  <ResourceInspector
-                    mainEditorPdfUrl={pdfUrl}
-                    syncTexCoords={syncTexCoords}
+                  /* Default: EDITOR AREA */
+                  <EditorArea
+                    files={tabs}
+                    activeFileId={activeTabId}
+                    onFileSelect={handleTabChange}
+                    onFileClose={handleCloseTab}
+                    onCloseFiles={handleCloseTabs}
+                    onContentChange={handleEditorChange}
+                    onMount={handleEditorDidMount}
+                    showPdf={showRightPanel && activeView === "editor"}
+                    onTogglePdf={handleTogglePdf}
+                    isTexFile={isTexFile}
+                    onCompile={handleCompile}
+                    isCompiling={isCompiling}
+                    onStopCompile={handleStopCompile}
+                    onSave={() => handleSave()}
+                    onCreateEmpty={handleCreateEmpty}
+                    onOpenWizard={handleOpenPreambleWizard}
+                    onCreateFromTemplate={handleCreateFromTemplate}
+                    recentProjects={recentProjects}
+                    onOpenRecent={handleOpenRecent}
+                    onOpenDatabase={() => setActiveView("database")}
+                    onOpenPackageBrowser={() =>
+                      setActiveView("package-browser")
+                    }
+                    onOpenExamGenerator={() => {}}
+                    editorSettings={editorSettingsMemo}
+                    logEntries={logEntries}
+                    showLogPanel={showLogPanel}
+                    onCloseLogPanel={handleCloseLogPanel}
+                    onJumpToLine={handleRevealLine}
+                    onCursorChange={handleCursorChange}
+                    onSyncTexForward={handleSyncTexForward}
+                    spellCheckEnabled={spellCheckEnabled}
+                    onOpenFileFromTable={handleOpenFileFromTable}
+                    lspClient={lspClientRef.current}
                   />
                 )}
               </Box>
+
+              {/* 3. RIGHT PANEL (PDF / Inspectors) */}
+              {showRightPanel && (
+                <>
+                  <ResizerHandle
+                    onMouseDown={startResizeRightPanel}
+                    isResizing={isResizing}
+                  />
+                  <Box
+                    style={{
+                      width: 500, // Or use a variable
+                      borderLeft: "1px solid var(--mantine-color-dark-6)",
+                      backgroundColor: "var(--app-panel-bg)",
+                      display: "flex",
+                      flexDirection: "column",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <ResourceInspector
+                      mainEditorPdfUrl={pdfUrl}
+                      syncTexCoords={syncTexCoords}
+                    />
+                  </Box>
+                </>
+              )}
             </Group>
           </AppShell.Main>
 

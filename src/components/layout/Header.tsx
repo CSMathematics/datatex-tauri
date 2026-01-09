@@ -20,6 +20,16 @@ import {
   faTableList,
   faColumns,
 } from "@fortawesome/free-solid-svg-icons";
+import {
+  IconLayoutSidebarRightCollapseFilled,
+  IconLayoutSidebarRightExpandFilled,
+  IconDatabase,
+  IconLayoutSidebarFilled,
+  IconMinus,
+  IconSquare,
+  IconX,
+} from "@tabler/icons-react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 interface HeaderProps {
   onNewFile: () => void;
@@ -27,6 +37,11 @@ interface HeaderProps {
   // Database panel props
   showDatabasePanel?: boolean;
   onToggleDatabasePanel?: () => void;
+
+  // Left sidebar (Outline) props
+  showLeftSidebar?: boolean;
+  onToggleLeftSidebar?: () => void;
+
   // Right sidebar (ResourceInspector) props
   showRightSidebar?: boolean;
   onToggleRightSidebar?: () => void;
@@ -55,6 +70,11 @@ export const HeaderContent: React.FC<HeaderProps> = ({
   // Database panel props
   showDatabasePanel,
   onToggleDatabasePanel,
+
+  // Left sidebar (Outline) props
+  showLeftSidebar,
+  onToggleLeftSidebar,
+
   // Right sidebar (ResourceInspector) props
   showRightSidebar,
   onToggleRightSidebar,
@@ -429,7 +449,21 @@ export const HeaderContent: React.FC<HeaderProps> = ({
         }}
       />
     </Box>
-    <Group gap="xs">
+    <Group gap={3}>
+      {/* Left Sidebar (Outline) Toggle */}
+      {onToggleLeftSidebar && (
+        <Tooltip label={showLeftSidebar ? "Hide outline" : "Show outline"}>
+          <ActionIcon
+            variant="subtle"
+            size="sm"
+            color={showLeftSidebar ? "blue" : "gray"}
+            onClick={onToggleLeftSidebar}
+          >
+            <IconLayoutSidebarFilled size={16} />
+          </ActionIcon>
+        </Tooltip>
+      )}
+
       {/* Database Table Toggle */}
       {onToggleDatabasePanel && (
         <Tooltip
@@ -443,10 +477,7 @@ export const HeaderContent: React.FC<HeaderProps> = ({
             color={showDatabasePanel ? "blue" : "gray"}
             onClick={onToggleDatabasePanel}
           >
-            <FontAwesomeIcon
-              icon={faTableList}
-              style={{ width: 14, height: 14 }}
-            />
+            <IconDatabase size={16} />
           </ActionIcon>
         </Tooltip>
       )}
@@ -462,13 +493,43 @@ export const HeaderContent: React.FC<HeaderProps> = ({
             color={showRightSidebar ? "blue" : "gray"}
             onClick={onToggleRightSidebar}
           >
-            <FontAwesomeIcon
-              icon={faColumns}
-              style={{ width: 14, height: 14 }}
-            />
+            {showRightSidebar ? (
+              <IconLayoutSidebarRightCollapseFilled size={16} />
+            ) : (
+              <IconLayoutSidebarRightExpandFilled size={16} />
+            )}
           </ActionIcon>
         </Tooltip>
       )}
+
+      {/* Window Controls */}
+      <Group gap={0} ml="xs">
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          size="sm"
+          onClick={() => getCurrentWindow().minimize()}
+        >
+          <IconMinus size={16} />
+        </ActionIcon>
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          size="sm"
+          onClick={() => getCurrentWindow().toggleMaximize()}
+        >
+          <IconSquare size={14} />
+        </ActionIcon>
+        <ActionIcon
+          variant="subtle"
+          color="red" // Usually close is red on hover, but user asked for simple style. Let's start with gray and maybe hover red if possible, but mantine simple variant is easiest.
+          // Actually user image showed grey icons. Let's stick to gray.
+          onClick={() => getCurrentWindow().close()}
+          size="sm"
+        >
+          <IconX size={16} />
+        </ActionIcon>
+      </Group>
     </Group>
   </Group>
 );

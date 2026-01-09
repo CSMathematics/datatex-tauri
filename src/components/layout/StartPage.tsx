@@ -21,6 +21,9 @@ import {
   faChevronRight,
   faClock,
   faExternalLinkAlt,
+  faDatabase,
+  faFileSignature,
+  faBoxOpen,
 } from "@fortawesome/free-solid-svg-icons";
 import { DOCUMENT_TEMPLATES } from "../../templates/documentTemplates";
 
@@ -30,6 +33,9 @@ interface StartPageProps {
   onCreateFromTemplate: (code: string) => void;
   recentProjects?: string[];
   onOpenRecent?: (path: string) => void;
+  onOpenDatabase: () => void;
+  onOpenExamGenerator: () => void;
+  onOpenPackageBrowser: () => void;
 }
 
 export const StartPage: React.FC<StartPageProps> = ({
@@ -38,6 +44,9 @@ export const StartPage: React.FC<StartPageProps> = ({
   onCreateFromTemplate,
   recentProjects = [],
   onOpenRecent,
+  onOpenDatabase,
+  onOpenExamGenerator,
+  onOpenPackageBrowser,
 }) => {
   const ActionCard = ({ icon, color, title, description, onClick }: any) => (
     <UnstyledButton onClick={onClick} style={{ width: "100%" }}>
@@ -202,6 +211,40 @@ export const StartPage: React.FC<StartPageProps> = ({
                   title="Preamble Wizard"
                   description="Configure page settings, packages, and fonts."
                   onClick={onOpenWizard}
+                />
+              </SimpleGrid>
+
+              <Text
+                fw={700}
+                c="dimmed"
+                size="sm"
+                tt="uppercase"
+                mt="md"
+                style={{ letterSpacing: 1 }}
+              >
+                Database Tools
+              </Text>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                <ActionCard
+                  icon={faFileSignature}
+                  color="teal"
+                  title="Exam Generator"
+                  description="Create exams automatically from valid exercises."
+                  onClick={onOpenExamGenerator}
+                />
+                <ActionCard
+                  icon={faDatabase}
+                  color="cyan"
+                  title="Browse Database"
+                  description="Manage files, tags, and metadata."
+                  onClick={onOpenDatabase}
+                />
+                <ActionCard
+                  icon={faBoxOpen}
+                  color="indigo"
+                  title="Package Browser"
+                  description="Search and explore CTAN packages."
+                  onClick={onOpenPackageBrowser}
                 />
               </SimpleGrid>
 
