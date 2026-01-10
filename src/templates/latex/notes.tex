@@ -1,0 +1,47 @@
+\documentclass[a4paper,11pt]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[greek,english]{babel}
+\usepackage{alphabeta}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{geometry}
+\geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+
+% Environments
+\newtheorem{theorem}{Θεώρημα}[chapter]
+\newtheorem{definition}{Ορισμός}[chapter]
+\newtheorem{example}{Παράδειγμα}[chapter]
+\newtheorem{exercise}{Άσκηση}[chapter]
+
+\title{Σημειώσεις Μαθήματος}
+\author{Συγγραφέας}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\chapter{Εισαγωγή}
+\section{Βασικές Έννοιες}
+Το μαθηματικό υπόβαθρο...
+
+\begin{definition}
+    Έστω $A$ ένα σύνολο...
+\end{definition}
+
+\section{Κύριο Μέρος}
+\begin{theorem}
+    (Θεώρημα Μέσης Τιμής) Αν μια συνάρτηση $f$...
+\end{theorem}
+
+\begin{proof}
+    Έστω συνάρτηση $\phi(x)$...
+\end{proof}
+
+\begin{tcolorbox}[colback=blue!5!white,colframe=blue!75!black,title=Σημαντική Σημείωση]
+    Προσοχή στις προϋποθέσεις του θεωρήματος!
+\end{tcolorbox}
+
+\end{document}

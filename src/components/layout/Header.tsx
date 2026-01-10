@@ -33,10 +33,13 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 
 interface HeaderProps {
   onNewFile: () => void;
+  onNewFromTemplate?: () => void;
   onSaveFile?: () => void;
   // Database panel props
   showDatabasePanel?: boolean;
   onToggleDatabasePanel?: () => void;
+  databasePanelPosition?: "bottom" | "left";
+  onToggleDatabasePosition?: () => void;
 
   // Left sidebar (Outline) props
   showLeftSidebar?: boolean;
@@ -62,14 +65,18 @@ interface HeaderProps {
   onRefreshDatabase?: () => void;
   onCompile?: () => void;
   onStopCompile?: () => void;
+  onOpenPackageBrowser?: () => void;
 }
 
 export const HeaderContent: React.FC<HeaderProps> = ({
   onNewFile,
+  onNewFromTemplate,
   onSaveFile,
   // Database panel props
   showDatabasePanel,
   onToggleDatabasePanel,
+  databasePanelPosition,
+  onToggleDatabasePosition,
 
   // Left sidebar (Outline) props
   showLeftSidebar,
@@ -95,6 +102,7 @@ export const HeaderContent: React.FC<HeaderProps> = ({
   onRefreshDatabase,
   onCompile,
   onStopCompile,
+  onOpenPackageBrowser,
 }) => (
   <Group
     h="100%"
@@ -147,6 +155,22 @@ export const HeaderContent: React.FC<HeaderProps> = ({
               }
             >
               New File
+            </Menu.Item>
+            <Menu.Item
+              leftSection={
+                <FontAwesomeIcon
+                  icon={faFileCirclePlus}
+                  style={{ width: 14, height: 14 }}
+                />
+              }
+              onClick={onNewFromTemplate}
+              rightSection={
+                <Text size="xs" c="dimmed">
+                  Ctrl+Shift+N
+                </Text>
+              }
+            >
+              New from Template
             </Menu.Item>
             <Menu.Item
               leftSection={
@@ -372,6 +396,12 @@ export const HeaderContent: React.FC<HeaderProps> = ({
             <Menu.Item onClick={() => onOpenWizard && onOpenWizard("gallery")}>
               Package Gallery
             </Menu.Item>
+            <Menu.Item
+              onClick={onOpenPackageBrowser}
+              rightSection={<Text size="xs">Ctrl+Shift+P</Text>}
+            >
+              Package Browser
+            </Menu.Item>
             <Menu.Divider />
             <Menu.Item onClick={onOpenSettings}>Settings</Menu.Item>
           </Menu.Dropdown>
@@ -478,6 +508,31 @@ export const HeaderContent: React.FC<HeaderProps> = ({
             onClick={onToggleDatabasePanel}
           >
             <IconDatabase size={16} />
+          </ActionIcon>
+        </Tooltip>
+      )}
+
+      {/* Database Panel Position Toggle */}
+      {showDatabasePanel && onToggleDatabasePosition && (
+        <Tooltip
+          label={
+            databasePanelPosition === "bottom"
+              ? "Move database to left"
+              : "Move database to bottom"
+          }
+        >
+          <ActionIcon
+            variant="subtle"
+            size="sm"
+            color="gray"
+            onClick={onToggleDatabasePosition}
+          >
+            <FontAwesomeIcon
+              icon={
+                databasePanelPosition === "bottom" ? faColumns : faTableList
+              }
+              style={{ width: 14, height: 14 }}
+            />
           </ActionIcon>
         </Tooltip>
       )}

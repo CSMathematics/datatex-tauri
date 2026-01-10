@@ -4,18 +4,22 @@ interface UseAppPanelResizeOptions {
   initialSidebarWidth?: number;
   initialRightPanelWidth?: number;
   initialDatabasePanelWidth?: number;
+  initialDatabasePanelHeight?: number;
+  isSidebarOpen?: boolean;
 }
 
 interface UseAppPanelResizeReturn {
-  // Widths
+  // Widths/Heights
   sidebarWidth: number;
   rightPanelWidth: number;
   databasePanelWidth: number;
+  databasePanelHeight: number;
 
-  // Width setters (for external control)
+  // Setters
   setSidebarWidth: React.Dispatch<React.SetStateAction<number>>;
   setRightPanelWidth: React.Dispatch<React.SetStateAction<number>>;
   setDatabasePanelWidth: React.Dispatch<React.SetStateAction<number>>;
+  setDatabasePanelHeight: React.Dispatch<React.SetStateAction<number>>;
 
   // Resizing state
   isResizing: boolean;
@@ -27,6 +31,7 @@ interface UseAppPanelResizeReturn {
   startResizeSidebar: (e: React.MouseEvent) => void;
   startResizeRightPanel: (e: React.MouseEvent) => void;
   startResizeDatabase: (e: React.MouseEvent) => void;
+  startResizeDatabaseHeight: (e: React.MouseEvent) => void;
 }
 
 /**
@@ -47,8 +52,10 @@ export function useAppPanelResize({
   initialSidebarWidth = 300,
   initialRightPanelWidth = 600,
   initialDatabasePanelWidth = 400,
+  initialDatabasePanelHeight = 300,
+  isSidebarOpen = false,
 }: UseAppPanelResizeOptions = {}): UseAppPanelResizeReturn {
-  // Panel widths
+  // Panel dimensions
   const [sidebarWidth, setSidebarWidth] = useState(initialSidebarWidth);
   const [rightPanelWidth, setRightPanelWidth] = useState(
     initialRightPanelWidth
@@ -56,11 +63,16 @@ export function useAppPanelResize({
   const [databasePanelWidth, setDatabasePanelWidth] = useState(
     initialDatabasePanelWidth
   );
+  const [databasePanelHeight, setDatabasePanelHeight] = useState(
+    initialDatabasePanelHeight
+  );
 
   // Resizing states
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [isResizingRightPanel, setIsResizingRightPanel] = useState(false);
   const [isResizingDatabase, setIsResizingDatabase] = useState(false);
+  const [isResizingDatabaseHeight, setIsResizingDatabaseHeight] =
+    useState(false);
 
   // Refs
   const rafRef = useRef<number | null>(null);
@@ -93,7 +105,25 @@ export function useAppPanelResize({
     setIsResizingDatabase(true);
     if (ghostRef.current) {
       ghostRef.current.style.display = "block";
+      ghostRef.current.style.width = "4px";
+      ghostRef.current.style.height = "100%";
+      ghostRef.current.style.top = "0";
       ghostRef.current.style.left = `${e.clientX}px`;
+      ghostRef.current.style.cursor = "col-resize";
+    }
+  }, []);
+
+  const startResizeDatabaseHeight = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizingDatabaseHeight(true);
+    if (ghostRef.current) {
+      ghostRef.current.style.display = "block";
+      ghostRef.current.style.height = "4px";
+      ghostRef.current.style.width = "100%";
+      ghostRef.current.style.left = "0";
+      ghostRef.current.style.top = `${e.clientY}px`;
+      ghostRef.current.style.cursor = "row-resize";
     }
   }, []);
 
@@ -111,6 +141,20 @@ export function useAppPanelResize({
       `${rightPanelWidth}px`
     );
   }, [rightPanelWidth]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      "--database-panel-width",
+      `${databasePanelWidth}px`
+    );
+  }, [databasePanelWidth]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      "--database-panel-height",
+      `${databasePanelHeight}px`
+    );
+  }, [databasePanelHeight]);
 
   // Mouse move/up handlers
   useEffect(() => {
@@ -130,6 +174,15 @@ export function useAppPanelResize({
         if (isResizingDatabase) {
           const x = Math.max(250, Math.min(window.innerWidth * 0.6, e.clientX));
           if (ghostRef.current) ghostRef.current.style.left = `${x}px`;
+        }
+        if (isResizingDatabaseHeight) {
+          // Bottom panel resizing (drag up/down).
+          // Since it's at the bottom, we calculate height as (Window Height - Mouse Y).
+          // But the ghost element follows the mouse Y.
+          const minY = 100;
+          const maxY = window.innerHeight - 100;
+          const y = Math.max(minY, Math.min(maxY, e.clientY));
+          if (ghostRef.current) ghostRef.current.style.top = `${y}px`;
         }
         rafRef.current = null;
       });
@@ -156,9 +209,32 @@ export function useAppPanelResize({
       if (isResizingDatabase && ghostRef.current) {
         const x = parseInt(ghostRef.current.style.left || "0", 10);
         if (x > 0) {
-          // Note: sidebarWidth dependency removed - caller can adjust if needed
-          const w = Math.max(250, Math.min(window.innerWidth * 0.6, x - 50));
+          // Calculate offset based on sidebar state
+          const sidebarOffset = isSidebarOpen ? sidebarWidth + 50 : 50;
+          const w = Math.max(
+            250,
+            Math.min(window.innerWidth * 0.6, x - sidebarOffset)
+          );
           setDatabasePanelWidth(w);
+        }
+        ghostRef.current.style.display = "none";
+      }
+      if (isResizingDatabaseHeight && ghostRef.current) {
+        const y = parseInt(ghostRef.current.style.top || "0", 10);
+        if (y > 0) {
+          // Height is effectively (Total Height - y) if it's a bottom panel?
+          // Wait, App layout typically uses "height" for the bottom panel.
+          // If the resize handle is AT the top of the bottom panel:
+          // Mouse Y is the top edge of the panel.
+          // So Height = Window Height - Mouse Y (approx).
+          // Let's assume footer is 30px (or similar).
+          // We can use flex or fixed height. The hook manages the value.
+          // Let's calculate from bottom.
+          const h = Math.max(
+            100,
+            Math.min(window.innerHeight - 100, window.innerHeight - y)
+          );
+          setDatabasePanelHeight(h);
         }
         ghostRef.current.style.display = "none";
       }
@@ -166,18 +242,24 @@ export function useAppPanelResize({
       setIsResizingSidebar(false);
       setIsResizingRightPanel(false);
       setIsResizingDatabase(false);
+      setIsResizingDatabaseHeight(false);
 
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     };
 
     const isAnyResizing =
-      isResizingSidebar || isResizingRightPanel || isResizingDatabase;
+      isResizingSidebar ||
+      isResizingRightPanel ||
+      isResizingDatabase ||
+      isResizingDatabaseHeight;
 
     if (isAnyResizing) {
       window.addEventListener("mousemove", move);
       window.addEventListener("mouseup", up);
-      document.body.style.cursor = "col-resize";
+      document.body.style.cursor = isResizingDatabaseHeight
+        ? "row-resize"
+        : "col-resize";
     } else {
       document.body.style.cursor = "default";
     }
@@ -186,22 +268,35 @@ export function useAppPanelResize({
       window.removeEventListener("mousemove", move);
       window.removeEventListener("mouseup", up);
     };
-  }, [isResizingSidebar, isResizingRightPanel, isResizingDatabase]);
+  }, [
+    isResizingSidebar,
+    isResizingRightPanel,
+    isResizingDatabase,
+    isResizingDatabaseHeight,
+    isSidebarOpen,
+    sidebarWidth,
+  ]);
 
   const isResizing =
-    isResizingSidebar || isResizingRightPanel || isResizingDatabase;
+    isResizingSidebar ||
+    isResizingRightPanel ||
+    isResizingDatabase ||
+    isResizingDatabaseHeight;
 
   return {
     sidebarWidth,
     rightPanelWidth,
     databasePanelWidth,
+    databasePanelHeight,
     setSidebarWidth,
     setRightPanelWidth,
     setDatabasePanelWidth,
+    setDatabasePanelHeight,
     isResizing,
     ghostRef,
     startResizeSidebar,
     startResizeRightPanel,
     startResizeDatabase,
+    startResizeDatabaseHeight,
   };
 }

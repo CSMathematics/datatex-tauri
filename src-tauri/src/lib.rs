@@ -15,6 +15,9 @@ mod graph_processor;
 mod log_parser;
 mod tree_builder;
 mod types;
+mod commands {
+    pub mod ctan;
+}
 
 use database::entities::{Collection, Resource};
 use database::DatabaseManager;
@@ -1852,7 +1855,11 @@ pub fn run() {
             create_package_topic_cmd,
             create_macro_command_type_cmd,
             // Graph Processing
-            graph_processor::get_graph_data_cmd
+            graph_processor::get_graph_data_cmd,
+            // CTAN Commands
+            commands::ctan::get_packages,
+            commands::ctan::get_all_topics,
+            commands::ctan::get_package_by_id,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

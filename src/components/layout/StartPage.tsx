@@ -25,7 +25,7 @@ import {
   faFileSignature,
   faBoxOpen,
 } from "@fortawesome/free-solid-svg-icons";
-import { DOCUMENT_TEMPLATES } from "../../templates/documentTemplates";
+import { templates } from "../../services/templateService";
 
 interface StartPageProps {
   onCreateEmpty: () => void;
@@ -36,6 +36,7 @@ interface StartPageProps {
   onOpenDatabase: () => void;
   onOpenExamGenerator: () => void;
   onOpenPackageBrowser: () => void;
+  onOpenTemplateModal: () => void;
 }
 
 export const StartPage: React.FC<StartPageProps> = ({
@@ -47,6 +48,7 @@ export const StartPage: React.FC<StartPageProps> = ({
   onOpenDatabase,
   onOpenExamGenerator,
   onOpenPackageBrowser,
+  onOpenTemplateModal,
 }) => {
   const ActionCard = ({ icon, color, title, description, onClick }: any) => (
     <UnstyledButton onClick={onClick} style={{ width: "100%" }}>
@@ -129,22 +131,14 @@ export const StartPage: React.FC<StartPageProps> = ({
               //   border: "1px solid var(--mantine-color-dark-6)",
             }}
           >
-            <Group align="flex-start" justify="space-between">
+            <Group align="flex-start" justify="center">
               <Box>
-                <Title
-                  order={1}
-                  mb="xs"
-                  c="white"
-                  style={{ fontSize: "2.5rem" }}
-                >
-                  Welcome to DataTeX
-                </Title>
-                <Text c="gray.3" size="lg" mb="xl" maw={600}>
-                  The modern, lightweight LaTeX environment designed for speed
-                  and efficiency. Start a new project or continue where you left
-                  off.
-                </Text>
-                <Group>
+                <Group justify="center">
+                  <img
+                    src="./DatatexLogo.svg"
+                    alt="DataTex Logo"
+                    style={{ width: "100%", height: 200, opacity: 0.2 }}
+                  />
                   <UnstyledButton
                     onClick={() =>
                       window.open(
@@ -177,11 +171,6 @@ export const StartPage: React.FC<StartPageProps> = ({
                 </Group>
               </Box>
               {/* <FontAwesomeIcon icon={faWandMagicSparkles} style={{ width: 120, height: 120, opacity: 0.1, color: 'white' }} /> */}
-              <img
-                src="./DatatexLogo.svg"
-                alt="DataTex Logo"
-                style={{ width: "100%", height: 200, opacity: 0.2 }}
-              />
             </Group>
           </Box>
 
@@ -224,7 +213,7 @@ export const StartPage: React.FC<StartPageProps> = ({
               >
                 Database Tools
               </Text>
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+              <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
                 <ActionCard
                   icon={faFileSignature}
                   color="teal"
@@ -343,10 +332,10 @@ export const StartPage: React.FC<StartPageProps> = ({
                 Templates
               </Text>
               <Stack gap="xs">
-                {DOCUMENT_TEMPLATES.slice(0, 3).map((tmpl) => (
+                {templates.slice(0, 3).map((tmpl) => (
                   <UnstyledButton
                     key={tmpl.id}
-                    onClick={() => onCreateFromTemplate(tmpl.code)}
+                    onClick={() => onCreateFromTemplate(tmpl.content)}
                   >
                     <Card
                       withBorder
@@ -374,7 +363,7 @@ export const StartPage: React.FC<StartPageProps> = ({
                   </UnstyledButton>
                 ))}
                 <UnstyledButton
-                  onClick={() => {}}
+                  onClick={onOpenTemplateModal}
                   style={{ textAlign: "center" }}
                 >
                   <Text size="xs" c="blue" td="underline">

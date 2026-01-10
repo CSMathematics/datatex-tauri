@@ -1,0 +1,43 @@
+\documentclass[a4paper,11pt]{book}
+\usepackage[utf8]{inputenc}
+\usepackage[greek,english]{babel}
+\usepackage{alphabeta}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{makeidx}
+\usepackage{graphicx}
+
+\makeindex
+
+\newtheorem{theorem}{Θεώρημα}[chapter]
+\newtheorem{definition}{Ορισμός}[chapter]
+
+\title{Τίτλος Βιβλίου}
+\author{Συγγραφέας}
+\date{\today}
+
+\begin{document}
+\frontmatter
+\maketitle
+\tableofcontents
+
+\chapter*{Πρόλογος}
+Λίγα λόγια για το βιβλίο...
+
+\mainmatter
+\chapter{Εισαγωγή}
+\section{Πρώτη Ενότητα}
+Κείμενο του πρώτου κεφαλαίου...
+
+\begin{definition}
+Ορισμός...
+\end{definition}
+
+\chapter{Κυρίως Θέμα}
+\section{Ανάλυση}
+Περισσότερο κείμενο...
+
+\backmatter
+\printindex
+\end{document}

@@ -9,6 +9,7 @@ import {
   Box,
   UnstyledButton,
   NavLink,
+  Button,
 } from "@mantine/core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -473,6 +474,17 @@ export const Sidebar = React.memo<SidebarProps>(
                 )}
                 {activeSection === "gallery" && (
                   <Stack gap={4} p="xs">
+                    <Button
+                      variant="light"
+                      color="blue"
+                      size="xs"
+                      fullWidth
+                      leftSection={<FontAwesomeIcon icon={faDatabase} />}
+                      onClick={() => onNavigate("package-browser")}
+                      mb="sm"
+                    >
+                      Open Package Database
+                    </Button>
                     {(Object.keys(packageCategories) as Category[]).map(
                       (cat) => {
                         const pkgs = PACKAGES_DB.filter(

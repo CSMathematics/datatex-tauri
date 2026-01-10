@@ -88,6 +88,7 @@ interface EditorAreaProps {
   spellCheckEnabled?: boolean;
   onOpenFileFromTable?: (path: string) => void;
   onOpenPackageBrowser?: () => void;
+  onOpenTemplateModal?: () => void;
   lspClient?: TexlabLspClient | null;
 }
 
@@ -297,6 +298,7 @@ export const EditorArea = React.memo<EditorAreaProps>(
     onOpenDatabase,
     onOpenExamGenerator,
     onOpenPackageBrowser,
+    onOpenTemplateModal,
     editorSettings,
     logEntries,
     showLogPanel,
@@ -1029,6 +1031,7 @@ export const EditorArea = React.memo<EditorAreaProps>(
               onOpenDatabase={onOpenDatabase!}
               onOpenExamGenerator={onOpenExamGenerator!}
               onOpenPackageBrowser={onOpenPackageBrowser!}
+              onOpenTemplateModal={onOpenTemplateModal!}
             />
           ) : (
             <Box

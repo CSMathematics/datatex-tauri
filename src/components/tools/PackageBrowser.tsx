@@ -12,10 +12,10 @@ import {
   Button,
   ThemeIcon,
   Box,
-  LoadingOverlay,
   Select,
   Divider,
-  Accordion,
+  Checkbox,
+  Tooltip,
 } from "@mantine/core";
 import { useInputState, useDebouncedValue } from "@mantine/hooks";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -23,220 +23,194 @@ import {
   faSearch,
   faBoxOpen,
   faExternalLinkAlt,
-  faCopyright,
-  faUser,
   faTag,
   faTimes,
   faLayerGroup,
   faList,
+  faWandMagicSparkles,
+  faPlus,
+  faInfo,
+  faGlobe,
 } from "@fortawesome/free-solid-svg-icons";
 
-import ctanData from "../../assets/CTANpackageDatabase.json";
-
-interface PackageAuthor {
-  givenname?: string;
-  familyname?: string;
-}
-
-interface PackageLicense {
-  name?: string;
-  key?: string;
-  free?: boolean;
-}
-
-interface PackageTopic {
-  details: string;
-  key: string;
-}
-
-interface PackageEntry {
-  id: string;
-  name: string;
-  caption?: string;
-  descriptions?: { text: string }[] | { description: string };
-  authors?: PackageAuthor[];
-  license?: PackageLicense;
-  version?: { number: string; date: string };
-  topics?: PackageTopic[];
-  documentation?: { href: string; details: string }[];
-  home?: string;
-}
+import {
+  getAllPackages,
+  ListPackage,
+  hasWizard,
+  getAllTopics,
+} from "../../services/packageService";
 
 interface PackageBrowserProps {
   onClose: () => void;
+  onInsertPackage?: (code: string) => void;
+  compact?: boolean;
 }
 
 type ViewMode = "list" | "grouped";
 
 const ITEMS_PER_PAGE = 100;
 
-export const PackageBrowser: React.FC<PackageBrowserProps> = ({ onClose }) => {
+// Helper functions moved outside component to avoid recreation on every render
+const stripHtml = (html: string): string => {
+  // Use regex instead of DOM manipulation for better performance
+  return html.replace(/<[^>]*>/g, "").trim();
+};
+
+export const PackageBrowser: React.FC<PackageBrowserProps> = ({
+  onClose,
+  onInsertPackage,
+  compact = false,
+}) => {
   const [search, setSearch] = useInputState("");
-  const [debouncedSearch] = useDebouncedValue(search, 300);
-  const [selectedPackage, setSelectedPackage] = useState<PackageEntry | null>(
+  const [debouncedSearch] = useDebouncedValue(search, 150);
+  // Selected package for detail view (null = none selected, storing just the ID)
+  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
     null
   );
-  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
-  const [isLoading, setIsLoading] = useState(true);
+
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [selectedPkgs, setSelectedPkgs] = useState<Set<string>>(new Set());
 
-  // Simulate initial load delay
+  const [filteredPackages, setFilteredPackages] = useState<ListPackage[]>([]);
+  const [allTopics, setAllTopics] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const [totalPackages, setTotalPackages] = useState(0);
+
+  // Load topics on mount
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Extract all unique topics for the filter dropdown
-  const allTopics = useMemo(() => {
-    const topicMap = new Map<string, string>();
-    (ctanData as PackageEntry[]).forEach((pkg) => {
-      pkg.topics?.forEach((t) => {
-        if (!topicMap.has(t.key)) {
-          topicMap.set(t.key, t.details);
-        }
-      });
+    getAllTopics().then((topics) => {
+      setAllTopics(topics.map((t) => ({ value: t.key, label: t.label })));
     });
-    return Array.from(topicMap.entries())
-      .map(([key, details]) => ({ value: key, label: details }))
-      .sort((a, b) => a.label.localeCompare(b.label));
   }, []);
 
-  // Filter and sort packages alphabetically
-  const filteredPackages = useMemo(() => {
-    let result = ctanData as PackageEntry[];
+  // Fetch packages when search or topic changes
+  useEffect(() => {
+    const fetchData = async () => {
+      const startTime = performance.now();
+      try {
+        const result = await getAllPackages(
+          debouncedSearch,
+          selectedTopic || undefined,
+          ITEMS_PER_PAGE,
+          0
+        );
+        const elapsed = performance.now() - startTime;
+        console.log(
+          `[PackageBrowser] Fetched ${
+            result.total
+          } packages in ${elapsed.toFixed(1)}ms`
+        );
+        setFilteredPackages(result.packages);
+        setTotalPackages(result.total);
+      } catch (error) {
+        console.error("Failed to fetch packages:", error);
+      }
+    };
 
-    // Filter by search
-    if (debouncedSearch.trim()) {
-      const lowerQuery = debouncedSearch.toLowerCase();
-      result = result.filter(
-        (pkg) =>
-          pkg.name?.toLowerCase().includes(lowerQuery) ||
-          pkg.caption?.toLowerCase().includes(lowerQuery) ||
-          pkg.id?.toLowerCase().includes(lowerQuery)
-      );
-    }
-
-    // Filter by topic
-    if (selectedTopic) {
-      result = result.filter((pkg) =>
-        pkg.topics?.some((t) => t.key === selectedTopic)
-      );
-    }
-
-    // Sort alphabetically by name
-    return result.sort((a, b) =>
-      (a.name || a.id).localeCompare(b.name || b.id)
-    );
+    fetchData();
   }, [debouncedSearch, selectedTopic]);
 
-  // Group packages by topic
-  const packagesByTopic = useMemo(() => {
-    const topicGroups: Record<
-      string,
-      { label: string; packages: PackageEntry[] }
-    > = {};
+  const loadMore = async () => {
+    try {
+      const nextOffset = filteredPackages.length;
+      const result = await getAllPackages(
+        debouncedSearch,
+        selectedTopic || undefined,
+        ITEMS_PER_PAGE,
+        nextOffset
+      );
+      setFilteredPackages((prev) => [...prev, ...result.packages]);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-    filteredPackages.forEach((pkg) => {
-      if (pkg.topics && pkg.topics.length > 0) {
-        pkg.topics.forEach((t) => {
-          if (!topicGroups[t.key]) {
-            topicGroups[t.key] = { label: t.details, packages: [] };
-          }
-          // Avoid duplicates
-          if (!topicGroups[t.key].packages.find((p) => p.id === pkg.id)) {
-            topicGroups[t.key].packages.push(pkg);
-          }
-        });
-      } else {
-        // Packages without topics
-        if (!topicGroups["_uncategorized"]) {
-          topicGroups["_uncategorized"] = {
-            label: "Uncategorized",
-            packages: [],
-          };
-        }
-        topicGroups["_uncategorized"].packages.push(pkg);
-      }
-    });
-
-    // Sort by topic label
-    return Object.entries(topicGroups)
-      .sort(([, a], [, b]) => a.label.localeCompare(b.label))
-      .slice(0, 50); // Limit topics shown for performance
-  }, [filteredPackages]);
+  // Note: Topic grouping removed for performance - lightweight list items don't include topics
+  // Use the topic filter dropdown instead to filter by topic
 
   const visiblePackages = useMemo(() => {
-    return filteredPackages.slice(0, visibleCount);
-  }, [filteredPackages, visibleCount]);
+    return filteredPackages;
+  }, [filteredPackages]);
 
-  const getAuthorString = (authors?: PackageAuthor[]) => {
-    if (!authors || authors.length === 0) return "Unknown Author";
-    return authors
-      .map((a) => `${a.givenname || ""} ${a.familyname || ""}`.trim())
-      .join(", ");
-  };
-
-  const getDescription = (pkg: PackageEntry) => {
-    if (Array.isArray(pkg.descriptions)) {
-      return pkg.descriptions[0]?.text || "";
-    }
-    // @ts-ignore
-    return pkg.descriptions?.description || pkg.caption || "";
-  };
-
-  const stripHtml = (html: string) => {
-    const tmp = document.createElement("DIV");
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || "";
-  };
-
-  // Package Card Component
-  const PackageCard = ({ pkg }: { pkg: PackageEntry }) => (
+  // Package Card Component (uses lightweight ListPackage)
+  const PackageCard = ({ pkg }: { pkg: ListPackage }) => (
     <Card
       shadow="sm"
       padding="sm"
       radius="sm"
       withBorder
-      bg={selectedPackage?.id === pkg.id ? "dark.6" : "dark.7"}
+      bg={selectedPackageId === pkg.id ? "dark.6" : "dark.7"}
       style={{
         cursor: "pointer",
         transition: "background-color 0.15s",
         borderColor:
-          selectedPackage?.id === pkg.id
+          selectedPackageId === pkg.id
             ? "var(--mantine-color-teal-6)"
             : undefined,
       }}
-      onClick={() => setSelectedPackage(pkg)}
+      onClick={() => setSelectedPackageId(pkg.id)}
     >
       <Group justify="space-between" wrap="nowrap">
-        <Text fw={600} size="sm" truncate style={{ flex: 1 }}>
-          {pkg.name}
-        </Text>
-        {pkg.version?.number && (
-          <Badge size="xs" variant="dot" color="gray">
-            {pkg.version.number}
+        <Group gap={8} wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
+          <Checkbox
+            checked={selectedPkgs.has(pkg.id)}
+            onChange={(e) => {
+              e.stopPropagation(); // Prevent card selection
+              const newSet = new Set(selectedPkgs);
+              if (newSet.has(pkg.id)) newSet.delete(pkg.id);
+              else newSet.add(pkg.id);
+              setSelectedPkgs(newSet);
+            }}
+            size="xs"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+            <Group gap={4} wrap="nowrap">
+              <Text fw={600} size="sm" truncate>
+                {pkg.name}
+              </Text>
+              {hasWizard(pkg.id) && (
+                <ThemeIcon size="xs" variant="light" color="violet" radius="xl">
+                  <FontAwesomeIcon
+                    icon={faWandMagicSparkles}
+                    style={{ width: 8, height: 8 }}
+                  />
+                </ThemeIcon>
+              )}
+            </Group>
+            {/* Caption only if not compact or if brief */}
+            {!compact && (
+              <Text size="xs" c="dimmed" lineClamp={2} mt={4}>
+                {stripHtml(pkg.caption || "")}
+              </Text>
+            )}
+          </Stack>
+        </Group>
+        {pkg.version && (
+          <Badge
+            size="xs"
+            variant="dot"
+            color="gray"
+            style={{ alignSelf: "flex-start" }}
+          >
+            {pkg.version}
           </Badge>
         )}
       </Group>
-      <Text size="xs" c="dimmed" lineClamp={2} mt={4}>
-        {stripHtml(pkg.caption || "")}
-      </Text>
     </Card>
   );
 
   return (
-    <Group h="100%" gap={0} wrap="nowrap" style={{ overflow: "hidden" }}>
-      <LoadingOverlay visible={isLoading} />
-
-      {/* LEFT: Package List */}
+    <Stack h="100%" gap={0} style={{ overflow: "hidden" }}>
+      {/* TOP: Package List (70%) */}
       <Stack
-        h="100%"
         gap={0}
         style={{
-          flex: 1,
-          minWidth: 0,
-          borderRight: "1px solid var(--mantine-color-dark-6)",
+          flex: 7,
+          minHeight: 0,
+          borderBottom: "1px solid var(--mantine-color-dark-6)",
         }}
       >
         {/* Header */}
@@ -257,17 +231,36 @@ export const PackageBrowser: React.FC<PackageBrowserProps> = ({ onClose }) => {
               <Title order={4}>CTAN Packages</Title>
               <Badge variant="outline" size="sm">
                 {filteredPackages.length} /{" "}
-                {(ctanData as PackageEntry[]).length}
+                {totalPackages > 0 ? totalPackages : "?"}
               </Badge>
             </Group>
-            <ActionIcon
-              onClick={onClose}
-              variant="subtle"
-              color="gray"
-              size="lg"
-            >
-              <FontAwesomeIcon icon={faTimes} />
-            </ActionIcon>
+            <Group>
+              {selectedPkgs.size > 0 && onInsertPackage && (
+                <Button
+                  size="xs"
+                  color="teal"
+                  variant="filled"
+                  leftSection={<FontAwesomeIcon icon={faPlus} />}
+                  onClick={() => {
+                    const code = Array.from(selectedPkgs)
+                      .map((id) => `\\usepackage{${id}}`)
+                      .join("\n");
+                    onInsertPackage(code + "\n");
+                    setSelectedPkgs(new Set());
+                  }}
+                >
+                  Insert {selectedPkgs.size}
+                </Button>
+              )}
+              <ActionIcon
+                onClick={onClose}
+                variant="subtle"
+                color="gray"
+                size="lg"
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </ActionIcon>
+            </Group>
           </Group>
 
           <TextInput
@@ -320,53 +313,16 @@ export const PackageBrowser: React.FC<PackageBrowserProps> = ({ onClose }) => {
                 {visiblePackages.map((pkg) => (
                   <PackageCard key={pkg.id} pkg={pkg} />
                 ))}
-                {visibleCount < filteredPackages.length && (
-                  <Button
-                    variant="subtle"
-                    size="xs"
-                    onClick={() => setVisibleCount((c) => c + ITEMS_PER_PAGE)}
-                  >
-                    Load{" "}
-                    {Math.min(
-                      ITEMS_PER_PAGE,
-                      filteredPackages.length - visibleCount
-                    )}{" "}
-                    more...
+                {filteredPackages.length < totalPackages && (
+                  <Button variant="subtle" size="xs" onClick={loadMore}>
+                    Load More... ({totalPackages - filteredPackages.length}{" "}
+                    remaining)
                   </Button>
                 )}
               </>
-            ) : (
-              <Accordion variant="separated" radius="sm">
-                {packagesByTopic.map(([key, { label, packages }]) => (
-                  <Accordion.Item key={key} value={key}>
-                    <Accordion.Control>
-                      <Group justify="space-between">
-                        <Text size="sm" fw={600}>
-                          {label}
-                        </Text>
-                        <Badge size="xs" variant="light">
-                          {packages.length}
-                        </Badge>
-                      </Group>
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                      <Stack gap="xs">
-                        {packages.slice(0, 20).map((pkg) => (
-                          <PackageCard key={pkg.id} pkg={pkg} />
-                        ))}
-                        {packages.length > 20 && (
-                          <Text size="xs" c="dimmed" ta="center">
-                            +{packages.length - 20} more packages
-                          </Text>
-                        )}
-                      </Stack>
-                    </Accordion.Panel>
-                  </Accordion.Item>
-                ))}
-              </Accordion>
-            )}
+            ) : null}
 
-            {visiblePackages.length === 0 && !isLoading && (
+            {visiblePackages.length === 0 && (
               <Stack align="center" mt={50}>
                 <FontAwesomeIcon
                   icon={faBoxOpen}
@@ -379,191 +335,163 @@ export const PackageBrowser: React.FC<PackageBrowserProps> = ({ onClose }) => {
         </ScrollArea>
       </Stack>
 
-      {/* RIGHT: Detail Panel */}
+      {/* BOTTOM: Detail Panel (30%) */}
       <Box
-        w={400}
-        h="100%"
+        style={{
+          flex: 3,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
         bg="dark.8"
-        style={{ display: "flex", flexDirection: "column", flexShrink: 0 }}
       >
-        {selectedPackage ? (
-          <>
-            <Box
-              p="md"
-              style={{ borderBottom: "1px solid var(--mantine-color-dark-6)" }}
-            >
-              <Group justify="space-between" align="start">
-                <Box style={{ flex: 1 }}>
-                  <Text fw={700} size="lg">
-                    {selectedPackage.name}
-                  </Text>
-                  <Badge size="sm" radius="sm" mt={4}>
-                    {selectedPackage.id}
-                  </Badge>
-                </Box>
-                <ActionIcon
-                  variant="subtle"
-                  color="gray"
-                  onClick={() => setSelectedPackage(null)}
+        {selectedPackageId ? (
+          (() => {
+            const pkg = filteredPackages.find(
+              (p) => p.id === selectedPackageId
+            );
+            if (!pkg) return null;
+            return (
+              <>
+                <Box
+                  p="md"
+                  style={{
+                    borderBottom: "1px solid var(--mantine-color-dark-6)",
+                  }}
                 >
-                  <FontAwesomeIcon icon={faTimes} />
-                </ActionIcon>
-              </Group>
-            </Box>
-
-            <ScrollArea h="100%" p="md" type="hover" offsetScrollbars>
-              <Stack>
-                {/* Description */}
-                <Box>
-                  <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb={4}>
-                    Description
-                  </Text>
-                  <Text
-                    size="sm"
-                    style={{ whiteSpace: "pre-wrap" }}
-                    dangerouslySetInnerHTML={{
-                      __html: getDescription(selectedPackage),
-                    }}
-                  />
-                </Box>
-
-                <Divider />
-
-                {/* Author */}
-                <Box>
-                  <Group gap="xs" mb={4}>
-                    <FontAwesomeIcon
-                      icon={faUser}
-                      style={{
-                        width: 12,
-                        color: "var(--mantine-color-dimmed)",
-                      }}
-                    />
-                    <Text size="xs" fw={700} c="dimmed" tt="uppercase">
-                      Authors
-                    </Text>
-                  </Group>
-                  <Text size="sm">
-                    {getAuthorString(selectedPackage.authors)}
-                  </Text>
-                </Box>
-
-                {/* License */}
-                <Box>
-                  <Group gap="xs" mb={4}>
-                    <FontAwesomeIcon
-                      icon={faCopyright}
-                      style={{
-                        width: 12,
-                        color: "var(--mantine-color-dimmed)",
-                      }}
-                    />
-                    <Text size="xs" fw={700} c="dimmed" tt="uppercase">
-                      License
-                    </Text>
-                  </Group>
-                  <Text size="sm">
-                    {selectedPackage.license?.name || "Unknown"}
-                  </Text>
-                </Box>
-
-                {/* Version */}
-                {selectedPackage.version && (
-                  <Box>
-                    <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb={4}>
-                      Version
-                    </Text>
-                    <Text size="sm">
-                      {selectedPackage.version.number}
-                      {selectedPackage.version.date &&
-                        ` (${selectedPackage.version.date})`}
-                    </Text>
-                  </Box>
-                )}
-
-                {/* Topics */}
-                {selectedPackage.topics &&
-                  selectedPackage.topics.length > 0 && (
-                    <Box>
-                      <Group gap="xs" mb={8}>
-                        <FontAwesomeIcon
-                          icon={faTag}
-                          style={{
-                            width: 12,
-                            color: "var(--mantine-color-dimmed)",
-                          }}
-                        />
-                        <Text size="xs" fw={700} c="dimmed" tt="uppercase">
-                          Topics
-                        </Text>
-                      </Group>
-                      <Group gap="xs">
-                        {selectedPackage.topics.map((t) => (
-                          <Badge
-                            key={t.key}
-                            size="sm"
-                            variant="light"
-                            color="blue"
-                            style={{ cursor: "pointer" }}
-                            onClick={() => {
-                              setSelectedTopic(t.key);
-                              setViewMode("list");
-                            }}
-                          >
-                            {t.details}
-                          </Badge>
-                        ))}
-                      </Group>
+                  <Group justify="space-between" align="start">
+                    <Box style={{ flex: 1 }}>
+                      <Text fw={700} size="lg">
+                        {pkg.name}
+                      </Text>
+                      <Badge size="sm" radius="sm" mt={4}>
+                        {pkg.id}
+                      </Badge>
                     </Box>
-                  )}
 
-                <Divider />
-
-                {/* Links */}
-                <Stack gap="xs">
-                  {selectedPackage.home && (
-                    <Button
-                      leftSection={<FontAwesomeIcon icon={faExternalLinkAlt} />}
-                      variant="light"
-                      size="sm"
-                      component="a"
-                      href={selectedPackage.home}
-                      target="_blank"
-                      fullWidth
+                    <Group
+                      gap="xs"
+                      style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        justifyContent: "stretch",
+                      }}
                     >
-                      Website
-                    </Button>
-                  )}
-                  {selectedPackage.documentation?.[0] && (
-                    <Button
-                      leftSection={<FontAwesomeIcon icon={faExternalLinkAlt} />}
-                      variant="default"
-                      size="sm"
-                      component="a"
-                      href={selectedPackage.documentation[0].href.replace(
-                        "ctan:",
-                        "https://ctan.org/tex-archive/"
+                      {pkg.home && (
+                        <Tooltip label="Visit Home Page">
+                          <ActionIcon
+                            variant="light"
+                            size="sm"
+                            component="a"
+                            href={pkg.home}
+                            target="_blank"
+                          >
+                            <FontAwesomeIcon icon={faGlobe} />
+                          </ActionIcon>
+                        </Tooltip>
                       )}
-                      target="_blank"
-                      fullWidth
+                      {pkg.ctan && (
+                        <Tooltip label="Visit CTAN Page">
+                          <ActionIcon
+                            variant="default"
+                            size="sm"
+                            component="a"
+                            href={`https://ctan.org/tex-archive${pkg.ctan}`}
+                            target="_blank"
+                          >
+                            <FontAwesomeIcon icon={faExternalLinkAlt} />
+                          </ActionIcon>
+                        </Tooltip>
+                      )}
+                      <Tooltip label={`${pkg.id} Information`}>
+                        <ActionIcon
+                          variant="default"
+                          size="sm"
+                          component="a"
+                          href={`https://ctan.org/pkg/${pkg.id}`}
+                          target="_blank"
+                        >
+                          <FontAwesomeIcon icon={faInfo} />
+                        </ActionIcon>
+                      </Tooltip>
+                    </Group>
+                    <ActionIcon
+                      variant="subtle"
+                      color="gray"
+                      onClick={() => setSelectedPackageId(null)}
                     >
-                      Documentation
-                    </Button>
-                  )}
-                  <Button
-                    variant="default"
-                    size="sm"
-                    component="a"
-                    href={`https://ctan.org/pkg/${selectedPackage.id}`}
-                    target="_blank"
-                    fullWidth
-                  >
-                    View on CTAN
-                  </Button>
-                </Stack>
-              </Stack>
-            </ScrollArea>
-          </>
+                      <FontAwesomeIcon icon={faTimes} />
+                    </ActionIcon>
+                  </Group>
+                </Box>
+
+                <ScrollArea h="100%" p="md" type="hover" offsetScrollbars>
+                  <Stack>
+                    {/* Caption/Description */}
+                    <Box>
+                      <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb={4}>
+                        Description
+                      </Text>
+                      <Text size="sm">{stripHtml(pkg.caption)}</Text>
+                    </Box>
+
+                    {/* Version */}
+                    {pkg.version && (
+                      <Box>
+                        <Text
+                          size="xs"
+                          fw={700}
+                          c="dimmed"
+                          tt="uppercase"
+                          mb={4}
+                        >
+                          Version
+                        </Text>
+                        <Text size="sm">{pkg.version}</Text>
+                      </Box>
+                    )}
+
+                    <Divider />
+
+                    {/* Insert Package Button */}
+                    {onInsertPackage && (
+                      <Button
+                        leftSection={<FontAwesomeIcon icon={faPlus} />}
+                        variant="gradient"
+                        gradient={{ from: "teal", to: "cyan" }}
+                        size="sm"
+                        fullWidth
+                        onClick={() =>
+                          onInsertPackage(`\\usepackage{${pkg.id}}\n`)
+                        }
+                      >
+                        Insert \usepackage{`{${pkg.id}}`}
+                      </Button>
+                    )}
+
+                    {pkg.hasWizard && (
+                      <Badge
+                        color="violet"
+                        variant="light"
+                        size="lg"
+                        fullWidth
+                        leftSection={
+                          <FontAwesomeIcon icon={faWandMagicSparkles} />
+                        }
+                      >
+                        Wizard Available
+                      </Badge>
+                    )}
+
+                    <Divider />
+
+                    {/* Links */}
+                  </Stack>
+                </ScrollArea>
+              </>
+            );
+          })()
         ) : (
           <Stack align="center" justify="center" h="100%" c="dimmed">
             <FontAwesomeIcon
@@ -574,6 +502,6 @@ export const PackageBrowser: React.FC<PackageBrowserProps> = ({ onClose }) => {
           </Stack>
         )}
       </Box>
-    </Group>
+    </Stack>
   );
 };

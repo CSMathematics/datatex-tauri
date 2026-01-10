@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 // ============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FileMetadata {
     pub file_type_id: Option<String>,
     pub field_id: Option<String>,
@@ -34,6 +35,7 @@ pub struct FileMetadata {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DocumentMetadata {
     pub title: Option<String>,
     pub document_type_id: Option<String>,
@@ -55,6 +57,7 @@ pub struct DocumentMetadata {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct IncludedFile {
     pub file_id: String,
     pub order_index: i32,
@@ -63,6 +66,7 @@ pub struct IncludedFile {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TableMetadata {
     pub table_type_id: Option<String>,
     pub date: Option<String>,
@@ -74,6 +78,7 @@ pub struct TableMetadata {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FigureMetadata {
     pub plot_type_id: Option<String>,
     pub environment: Option<String>,
@@ -89,6 +94,7 @@ pub struct FigureMetadata {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CommandMetadata {
     pub name: Option<String>,
     pub file_type_id: Option<String>,
@@ -101,6 +107,7 @@ pub struct CommandMetadata {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PackageMetadata {
     pub name: Option<String>,
     pub topic_id: Option<String>,
@@ -113,6 +120,7 @@ pub struct PackageMetadata {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PreambleMetadata {
     pub name: Option<String>,
     pub file_type_id: Option<String>,
@@ -125,6 +133,7 @@ pub struct PreambleMetadata {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ClassMetadata {
     pub name: Option<String>,
     pub file_type_id: Option<String>,

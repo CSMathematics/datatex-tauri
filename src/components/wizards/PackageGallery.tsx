@@ -15,6 +15,9 @@ import {
   Switch,
   Textarea,
   SegmentedControl,
+  Checkbox,
+  Badge,
+  Divider,
 } from "@mantine/core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -27,6 +30,8 @@ import {
   faFileCode,
   faCog,
   faPalette,
+  faDatabase,
+  faSearch,
 } from "@fortawesome/free-solid-svg-icons";
 import { ViewType } from "../layout/Sidebar";
 
@@ -38,6 +43,7 @@ import {
   CustomListDef,
 } from "./preamble/LanguageDb";
 import { PACKAGES_DB, LatexPackage } from "./preamble/packages";
+import { getAllPackages, ListPackage } from "../../services/packageService";
 
 import { TikzWizard } from "./TikzWizard";
 import { TableWizard } from "./TableWizard";
@@ -50,6 +56,7 @@ interface PackageGalleryProps {
   onInsert: (code: string) => void;
   onClose: () => void;
   onOpenWizard: (view: ViewType) => void;
+  onOpenPackageBrowser?: () => void;
 }
 
 // --- Sub-Configurators ---
@@ -280,12 +287,31 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({
   selectedPkgId,
   onInsert,
   onOpenWizard,
+  onOpenPackageBrowser,
 }) => {
   const [generatedCode, setGeneratedCode] = useState("");
 
-  // --- LOCAL STATES FOR WIZARDS ---
+  // --- PACKAGE DATABASE STATE ---
+  const [showPackageDB, setShowPackageDB] = useState(false);
+  const [selectedPackages, setSelectedPackages] = useState<Set<string>>(
+    new Set()
+  );
+  const [pkgSearch, setPkgSearch] = useState("");
+  const [dbPackages, setDbPackages] = useState<ListPackage[]>([]);
 
-  // 1. XColor State
+  // Fetch packages when database view is shown and search changes
+  useEffect(() => {
+    if (showPackageDB) {
+      // Debounce if needed, but for now simple
+      const timeout = setTimeout(() => {
+        getAllPackages(pkgSearch, undefined, 100).then((res) =>
+          setDbPackages(res.packages)
+        );
+      }, 300);
+      return () => clearTimeout(timeout);
+    }
+  }, [showPackageDB, pkgSearch]);
+
   const [colorConfig, setColorConfig] = useState<{
     pkgXcolor: boolean;
     xcolorOptions: string[];
@@ -475,11 +501,136 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({
                 />
               </ActionIcon>
             </Tooltip>
+            {onOpenPackageBrowser && (
+              <Button
+                variant="subtle"
+                color="gray"
+                size="xs"
+                onClick={onOpenPackageBrowser}
+              >
+                Browse All Packages
+              </Button>
+            )}
+            <Button
+              variant={showPackageDB ? "filled" : "light"}
+              color="teal"
+              size="xs"
+              leftSection={
+                <FontAwesomeIcon
+                  icon={faDatabase}
+                  style={{ width: 12, height: 12 }}
+                />
+              }
+              onClick={() => setShowPackageDB(!showPackageDB)}
+            >
+              {showPackageDB ? "Hide" : "Add Packages"}
+            </Button>
           </Group>
         </Group>
       </Box>
 
-      {isEmbeddedWizard ? (
+      {/* PACKAGE DATABASE VIEW */}
+      {showPackageDB ? (
+        <Box
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
+        >
+          <Box
+            p="xs"
+            style={{
+              borderBottom: "1px solid var(--mantine-color-default-border)",
+            }}
+          >
+            <Group justify="space-between">
+              <TextInput
+                placeholder="Search packages..."
+                leftSection={
+                  <FontAwesomeIcon
+                    icon={faSearch}
+                    style={{ width: 12, height: 12 }}
+                  />
+                }
+                size="xs"
+                value={pkgSearch}
+                onChange={(e) => setPkgSearch(e.currentTarget.value)}
+                style={{ flex: 1 }}
+              />
+              <Badge color="teal" variant="light">
+                {selectedPackages.size} selected
+              </Badge>
+            </Group>
+          </Box>
+          <ScrollArea style={{ flex: 1 }}>
+            <Stack gap={0} p="xs">
+              {dbPackages.map((pkg) => (
+                <Group
+                  key={pkg.id}
+                  p="xs"
+                  style={{
+                    borderBottom: "1px solid var(--mantine-color-dark-6)",
+                    cursor: "pointer",
+                    backgroundColor: selectedPackages.has(pkg.id)
+                      ? "var(--mantine-color-teal-9)"
+                      : undefined,
+                  }}
+                  onClick={() => {
+                    const newSet = new Set(selectedPackages);
+                    if (newSet.has(pkg.id)) {
+                      newSet.delete(pkg.id);
+                    } else {
+                      newSet.add(pkg.id);
+                    }
+                    setSelectedPackages(newSet);
+                  }}
+                >
+                  <Checkbox
+                    checked={selectedPackages.has(pkg.id)}
+                    onChange={() => {}}
+                    size="xs"
+                  />
+                  <Box style={{ flex: 1, minWidth: 0 }}>
+                    <Text size="sm" fw={500} truncate>
+                      {pkg.name}
+                    </Text>
+                    <Text size="xs" c="dimmed" lineClamp={1}>
+                      {pkg.caption}
+                    </Text>
+                  </Box>
+                </Group>
+              ))}
+            </Stack>
+          </ScrollArea>
+          <Divider />
+          <Box p="xs">
+            <Button
+              fullWidth
+              color="teal"
+              disabled={selectedPackages.size === 0}
+              leftSection={
+                <FontAwesomeIcon
+                  icon={faCheck}
+                  style={{ width: 14, height: 14 }}
+                />
+              }
+              onClick={() => {
+                const code = Array.from(selectedPackages)
+                  .map((id) => `\\usepackage{${id}}`)
+                  .join("\n");
+                onInsert(code + "\n");
+                setSelectedPackages(new Set());
+                setShowPackageDB(false);
+              }}
+            >
+              Insert {selectedPackages.size} Package
+              {selectedPackages.size !== 1 ? "s" : ""}
+            </Button>
+          </Box>
+        </Box>
+      ) : isEmbeddedWizard ? (
         <Box style={{ flex: 1, overflow: "hidden" }}>
           {(selectedPkgId === "tikz" || selectedPkgId === "pgfplots") && (
             <TikzWizard onInsert={onInsert} />

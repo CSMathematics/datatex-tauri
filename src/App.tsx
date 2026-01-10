@@ -3,6 +3,7 @@ import {
   AppShell,
   Box,
   Group,
+  Stack,
   MantineProvider,
   Text,
   CSSVariablesResolver,
@@ -10,6 +11,7 @@ import {
 } from "@mantine/core";
 import { invoke } from "@tauri-apps/api/core";
 import { debounce, throttle } from "lodash";
+import { ScrollArea, Code, Button } from "@mantine/core";
 import {
   DndContext,
   DragEndEvent,
@@ -17,6 +19,8 @@ import {
   useSensors,
   PointerSensor,
 } from "@dnd-kit/core";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import * as FaIcons from "@fortawesome/free-solid-svg-icons"; // Import all for dynamic icons
 
 // --- Custom Theme ---
 import { getTheme } from "./themes/ui-themes";
@@ -45,8 +49,10 @@ import { PstricksWizard } from "./components/wizards/PstricksWizard";
 import { PackageGallery } from "./components/wizards/PackageGallery";
 import { SettingsPanel } from "./components/settings/SettingsPanel";
 import { DatabaseView } from "./components/database/DatabaseView";
+
 import { ResourceInspector } from "./components/database/ResourceInspector";
 import { PackageBrowser } from "./components/tools/PackageBrowser";
+import { templates, getTemplateById } from "./services/templateService";
 
 import {
   latexLanguage,
@@ -116,12 +122,16 @@ export default function App() {
   // --- Resizing State (from custom hook) ---
   // Note: sidebarWidth/rightPanelWidth are applied via CSS variables in the hook
   const {
-    databasePanelWidth,
+    sidebarWidth,
     isResizing,
     ghostRef,
     startResizeSidebar,
     startResizeRightPanel,
-  } = useAppPanelResize();
+    startResizeDatabase,
+    startResizeDatabaseHeight,
+  } = useAppPanelResize({
+    isSidebarOpen,
+  });
 
   // --- Editor State (from Zustand) ---
   const tabs = useTabsStore((state) => state.tabs);
@@ -188,9 +198,19 @@ export default function App() {
 
   // --- Database Panel State ---
   const [showDatabasePanel, setShowDatabasePanel] = useState(false);
+  const [databasePanelPosition, setDatabasePanelPosition] = useState<
+    "bottom" | "left"
+  >("bottom");
 
   // --- Right Sidebar (ResourceInspector) State ---
+  // --- Right Sidebar (ResourceInspector) State ---
   const [showRightSidebar, setShowRightSidebar] = useState(false);
+
+  // --- Template Modal State ---
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
+    null
+  );
 
   // --- Derived State (from Zustand selectors) ---
   const activeTab = useActiveTab();
@@ -255,12 +275,17 @@ export default function App() {
   });
 
   const isWizardActive = useMemo(
-    () => activeView.startsWith("wizard-") || activeView === "gallery",
+    () =>
+      activeView.startsWith("wizard-") ||
+      activeView === "gallery" ||
+      activeView === "package-browser",
     [activeView]
   );
   const showRightPanel = useMemo(
     () =>
-      showRightSidebar &&
+      (showRightSidebar ||
+        activeView === "gallery" ||
+        activeView === "package-browser") &&
       (isWizardActive || activeView === "editor" || activeView === "database"),
     [showRightSidebar, isWizardActive, activeView]
   );
@@ -459,6 +484,28 @@ export default function App() {
     (code: string) => createTabWithContent(code, "Untitled.tex"),
     [createTabWithContent]
   );
+
+  const handleOpenTemplateModal = useCallback(() => {
+    setShowTemplateModal(true);
+    if (templates.length > 0) {
+      setSelectedTemplateId(templates[0].id);
+    }
+  }, []);
+
+  const handleTemplateClick = useCallback((templateId: string) => {
+    setSelectedTemplateId(templateId);
+  }, []);
+
+  const handleCreateSelectedTemplate = useCallback(() => {
+    if (selectedTemplateId) {
+      const template = getTemplateById(selectedTemplateId);
+      if (template) {
+        handleCreateFromTemplate(template.content);
+        setShowTemplateModal(false);
+      }
+    }
+  }, [selectedTemplateId, handleCreateFromTemplate]);
+
   const handleOpenPreambleWizard = useCallback(
     () => setActiveView("wizard-preamble"),
     []
@@ -565,6 +612,30 @@ export default function App() {
       }
     }
   }, [activeActivity, activeTabId, tabs]);
+
+  // Keyboard shortcut: Ctrl+Shift+P for Package Browser
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "p") {
+        e.preventDefault();
+        setActiveView("package-browser");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Keyboard shortcut: Ctrl+Shift+N for New from Template
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        setShowTemplateModal(true);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Throttled cursor position update
   const handleCursorChange = useCallback(
@@ -767,6 +838,7 @@ export default function App() {
           >
             <HeaderContent
               onNewFile={handleRequestNewFile}
+              onNewFromTemplate={handleOpenTemplateModal}
               onSaveFile={() => handleSave()}
               // Left Sidebar
               showLeftSidebar={isSidebarOpen}
@@ -775,6 +847,12 @@ export default function App() {
               showDatabasePanel={showDatabasePanel}
               onToggleDatabasePanel={() =>
                 setShowDatabasePanel(!showDatabasePanel)
+              }
+              databasePanelPosition={databasePanelPosition}
+              onToggleDatabasePosition={() =>
+                setDatabasePanelPosition((pos) =>
+                  pos === "bottom" ? "left" : "bottom"
+                )
               }
               // Right Sidebar
               showRightSidebar={showRightSidebar}
@@ -842,6 +920,8 @@ export default function App() {
               // Build Actions
               onCompile={handleCompile}
               onStopCompile={handleStopCompile}
+              // Package Browser
+              onOpenPackageBrowser={() => setActiveView("package-browser")}
             />
           </AppShell.Header>
 
@@ -889,7 +969,7 @@ export default function App() {
             <Group gap={0} h="calc(100vh - 35px - 24px)" wrap="nowrap">
               {/* 1. SIDEBAR */}
               <Sidebar
-                width={databasePanelWidth}
+                width={sidebarWidth}
                 isOpen={isSidebarOpen}
                 onResizeStart={startResizeSidebar}
                 activeSection={activeActivity} // This assumes activeActivity is of type SidebarSection
@@ -935,10 +1015,6 @@ export default function App() {
                     onUpdateGeneral={updateGeneralSetting}
                     onUpdateUi={setUiTheme}
                   />
-                ) : activeView === "database" ? (
-                  <DatabaseView onOpenFile={handleOpenFileFromTable} />
-                ) : activeView === "package-browser" ? (
-                  <PackageBrowser onClose={() => setActiveView("editor")} />
                 ) : activeView === "wizard-preamble" ? (
                   <WizardWrapper
                     title="Preamble Wizard"
@@ -1000,63 +1076,146 @@ export default function App() {
                       onChange={() => {}}
                     />
                   </WizardWrapper>
-                ) : activeView === "gallery" ? (
-                  <WizardWrapper
-                    title="Package Gallery"
-                    onClose={() => setActiveView("editor")}
-                  >
-                    <PackageGallery
-                      selectedPkgId={activePackageId || ""}
-                      onInsert={(code) => {
-                        handleInsertSnippet(code);
-                        setActiveView("editor");
+                ) : /* Default: EDITOR AREA with optional Database Panel */
+                databasePanelPosition === "left" && showDatabasePanel ? (
+                  /* Horizontal layout: Database left, Editor right */
+                  <Group gap={0} h="100%" wrap="nowrap">
+                    <Box
+                      style={{
+                        width: "var(--database-panel-width)",
+                        minWidth: 250,
+                        maxWidth: 800,
+                        height: "100%",
+                        borderRight: "1px solid var(--mantine-color-dark-6)",
+                        overflow: "hidden",
                       }}
-                      onClose={() => setActiveView("editor")}
-                      onOpenWizard={setActiveView}
+                    >
+                      <DatabaseView onOpenFile={handleOpenFileFromTable} />
+                    </Box>
+                    <ResizerHandle
+                      onMouseDown={startResizeDatabase}
+                      isResizing={isResizing}
+                      orientation="vertical"
                     />
-                  </WizardWrapper>
+                    <Box
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        height: "100%",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <EditorArea
+                        files={tabs}
+                        activeFileId={activeTabId}
+                        onFileSelect={handleTabChange}
+                        onFileClose={handleCloseTab}
+                        onCloseFiles={handleCloseTabs}
+                        onContentChange={handleEditorChange}
+                        onMount={handleEditorDidMount}
+                        showPdf={showRightPanel && activeView === "editor"}
+                        onTogglePdf={handleTogglePdf}
+                        isTexFile={isTexFile}
+                        onCompile={handleCompile}
+                        isCompiling={isCompiling}
+                        onStopCompile={handleStopCompile}
+                        onSave={() => handleSave()}
+                        onCreateEmpty={handleCreateEmpty}
+                        onOpenWizard={handleOpenPreambleWizard}
+                        onCreateFromTemplate={handleCreateFromTemplate}
+                        recentProjects={recentProjects}
+                        onOpenRecent={handleOpenRecent}
+                        onOpenDatabase={() => setShowDatabasePanel(true)}
+                        onOpenPackageBrowser={() =>
+                          setActiveView("package-browser")
+                        }
+                        onOpenExamGenerator={() => {}}
+                        editorSettings={editorSettingsMemo}
+                        logEntries={logEntries}
+                        showLogPanel={showLogPanel}
+                        onCloseLogPanel={handleCloseLogPanel}
+                        onJumpToLine={handleRevealLine}
+                        onCursorChange={handleCursorChange}
+                        onSyncTexForward={handleSyncTexForward}
+                        spellCheckEnabled={spellCheckEnabled}
+                        onOpenFileFromTable={handleOpenFileFromTable}
+                        lspClient={lspClientRef.current}
+                      />
+                    </Box>
+                  </Group>
                 ) : (
-                  /* Default: EDITOR AREA */
-                  <EditorArea
-                    files={tabs}
-                    activeFileId={activeTabId}
-                    onFileSelect={handleTabChange}
-                    onFileClose={handleCloseTab}
-                    onCloseFiles={handleCloseTabs}
-                    onContentChange={handleEditorChange}
-                    onMount={handleEditorDidMount}
-                    showPdf={showRightPanel && activeView === "editor"}
-                    onTogglePdf={handleTogglePdf}
-                    isTexFile={isTexFile}
-                    onCompile={handleCompile}
-                    isCompiling={isCompiling}
-                    onStopCompile={handleStopCompile}
-                    onSave={() => handleSave()}
-                    onCreateEmpty={handleCreateEmpty}
-                    onOpenWizard={handleOpenPreambleWizard}
-                    onCreateFromTemplate={handleCreateFromTemplate}
-                    recentProjects={recentProjects}
-                    onOpenRecent={handleOpenRecent}
-                    onOpenDatabase={() => setActiveView("database")}
-                    onOpenPackageBrowser={() =>
-                      setActiveView("package-browser")
-                    }
-                    onOpenExamGenerator={() => {}}
-                    editorSettings={editorSettingsMemo}
-                    logEntries={logEntries}
-                    showLogPanel={showLogPanel}
-                    onCloseLogPanel={handleCloseLogPanel}
-                    onJumpToLine={handleRevealLine}
-                    onCursorChange={handleCursorChange}
-                    onSyncTexForward={handleSyncTexForward}
-                    spellCheckEnabled={spellCheckEnabled}
-                    onOpenFileFromTable={handleOpenFileFromTable}
-                    lspClient={lspClientRef.current}
-                  />
+                  /* Vertical layout: Editor top, Database bottom (or no database) */
+                  <Stack gap={0} h="100%">
+                    <Box
+                      style={{
+                        flex: 1,
+                        minHeight: 0,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <EditorArea
+                        files={tabs}
+                        activeFileId={activeTabId}
+                        onFileSelect={handleTabChange}
+                        onFileClose={handleCloseTab}
+                        onCloseFiles={handleCloseTabs}
+                        onContentChange={handleEditorChange}
+                        onMount={handleEditorDidMount}
+                        showPdf={showRightPanel && activeView === "editor"}
+                        onTogglePdf={handleTogglePdf}
+                        isTexFile={isTexFile}
+                        onCompile={handleCompile}
+                        isCompiling={isCompiling}
+                        onStopCompile={handleStopCompile}
+                        onSave={() => handleSave()}
+                        onCreateEmpty={handleCreateEmpty}
+                        onOpenWizard={handleOpenPreambleWizard}
+                        onCreateFromTemplate={handleCreateFromTemplate}
+                        recentProjects={recentProjects}
+                        onOpenRecent={handleOpenRecent}
+                        onOpenDatabase={() => setShowDatabasePanel(true)}
+                        onOpenPackageBrowser={() =>
+                          setActiveView("package-browser")
+                        }
+                        onOpenExamGenerator={() => {}}
+                        onOpenTemplateModal={handleOpenTemplateModal}
+                        editorSettings={editorSettingsMemo}
+                        logEntries={logEntries}
+                        showLogPanel={showLogPanel}
+                        onCloseLogPanel={handleCloseLogPanel}
+                        onJumpToLine={handleRevealLine}
+                        onCursorChange={handleCursorChange}
+                        onSyncTexForward={handleSyncTexForward}
+                        spellCheckEnabled={spellCheckEnabled}
+                        onOpenFileFromTable={handleOpenFileFromTable}
+                        lspClient={lspClientRef.current}
+                      />
+                    </Box>
+                    {showDatabasePanel && (
+                      <>
+                        <ResizerHandle
+                          onMouseDown={startResizeDatabaseHeight}
+                          isResizing={isResizing}
+                          orientation="horizontal"
+                        />
+                        <Box
+                          style={{
+                            height: "var(--database-panel-height)",
+                            minHeight: 100,
+                            maxHeight: "80%",
+                            borderTop: "1px solid var(--mantine-color-dark-6)",
+                            overflow: "hidden",
+                          }}
+                        >
+                          <DatabaseView onOpenFile={handleOpenFileFromTable} />
+                        </Box>
+                      </>
+                    )}
+                  </Stack>
                 )}
               </Box>
 
-              {/* 3. RIGHT PANEL (PDF / Inspectors) */}
+              {/* 3. RIGHT PANEL (PDF / Inspectors / Gallery) */}
               {showRightPanel && (
                 <>
                   <ResizerHandle
@@ -1065,7 +1224,8 @@ export default function App() {
                   />
                   <Box
                     style={{
-                      width: 500, // Or use a variable
+                      width: "var(--right-panel-width)",
+                      height: "100%",
                       borderLeft: "1px solid var(--mantine-color-dark-6)",
                       backgroundColor: "var(--app-panel-bg)",
                       display: "flex",
@@ -1073,10 +1233,55 @@ export default function App() {
                       overflow: "hidden",
                     }}
                   >
-                    <ResourceInspector
-                      mainEditorPdfUrl={pdfUrl}
-                      syncTexCoords={syncTexCoords}
-                    />
+                    {activeView === "gallery" ? (
+                      <PackageGallery
+                        selectedPkgId={activePackageId || ""}
+                        onInsert={(code) => {
+                          handleInsertSnippet(code);
+                        }}
+                        onClose={() => setActiveView("editor")}
+                        onOpenWizard={setActiveView}
+                        onOpenPackageBrowser={() =>
+                          setActiveView("package-browser")
+                        }
+                      />
+                    ) : activeView === "package-browser" ? (
+                      <PackageBrowser
+                        compact={true}
+                        onClose={() => setActiveView("editor")}
+                        onInsertPackage={(code) => {
+                          handleInsertSnippet(code);
+                          // Don't close immediately if bulk inserting?
+                          // User requested easy access. Maybe keep it open or close?
+                          // Let's keep existing behavior: close after insert.
+                          // Actually, bulk insert usually implies we might want to stay open?
+                          // But PackageBrowser onClose prop is tied to "X" button.
+                          // handleInsert call inside PackageBrowser closes it?
+                          // In PackageBrowser I wrote: onInsertPackage(code); setSelectedPkgs(new Set());
+                          // It does NOT call onClose automatically.
+                          // So here I don't need to setActiveView('editor') unless I want to auto-close.
+                          // Let's NOT auto-close for now to allow multiple inserts if needed,
+                          // OR follows standard pattern.
+                          // Previous code: setActiveView("editor").
+                          // Let's keep it to be safe, or remove it to keep panel open.
+                          // User said "always appear in right panel".
+                          // If I remove setActiveView("editor"), it stays open.
+                          // Let's try removing it for better UX?
+                          // But if I insert, focus goes to editor?
+                          // handleInsertSnippet focuses editor usually.
+                          // Let's stick to closing it for now to match other wizards,
+                          // or maybe just keep it open.
+                          // Let's keep it open! The user wants it as a "database browser".
+                          // So I will NOT call setActiveView("editor") here.
+                          handleInsertSnippet(code);
+                        }}
+                      />
+                    ) : (
+                      <ResourceInspector
+                        mainEditorPdfUrl={pdfUrl}
+                        syncTexCoords={syncTexCoords}
+                      />
+                    )}
                   </Box>
                 </>
               )}
@@ -1105,6 +1310,175 @@ export default function App() {
             <Text style={{ whiteSpace: "pre-wrap", fontFamily: "monospace" }}>
               {wordCountResult}
             </Text>
+          </Modal>
+
+          {/* Template Modal */}
+          <Modal
+            opened={showTemplateModal}
+            onClose={() => setShowTemplateModal(false)}
+            title="Create New Document from Template"
+            size="xl"
+            centered
+            styles={{
+              body: { height: "70vh", overflow: "hidden" },
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                height: "100%",
+                gap: "1rem",
+              }}
+            >
+              {/* LEFT COLUMN: Template List */}
+              <div
+                style={{
+                  width: "35%",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem",
+                }}
+              >
+                <ScrollArea h="100%">
+                  <Stack gap="sm">
+                    {templates.map((template) => {
+                      const isSelected = selectedTemplateId === template.id;
+                      return (
+                        <div
+                          key={template.id}
+                          onClick={() => handleTemplateClick(template.id)}
+                          onDoubleClick={() => {
+                            handleTemplateClick(template.id);
+                            handleCreateSelectedTemplate();
+                          }}
+                          style={{
+                            padding: "1rem",
+                            border: `1px solid ${
+                              isSelected
+                                ? "var(--mantine-primary-color-filled)"
+                                : "var(--mantine-color-default-border)"
+                            }`,
+                            borderRadius: "var(--mantine-radius-md)",
+                            cursor: "pointer",
+                            backgroundColor: isSelected
+                              ? "var(--mantine-color-default-hover)"
+                              : "transparent",
+                            transition: "all 0.2s",
+                          }}
+                        >
+                          <Group mb="xs" wrap="nowrap">
+                            {/* @ts-ignore */}
+                            <FontAwesomeIcon
+                              icon={
+                                FaIcons[
+                                  (() => {
+                                    switch (template.icon) {
+                                      case "file-pen":
+                                        return "faPenToSquare";
+                                      case "list-check":
+                                        return "faListCheck";
+                                      case "book-open":
+                                        return "faBookOpen";
+                                      case "person-chalkboard":
+                                        return "faChalkboardUser";
+                                      case "newspaper":
+                                        return "faNewspaper";
+                                      case "graduation-cap":
+                                        return "faGraduationCap";
+                                      case "book":
+                                        return "faBook";
+                                      case "image":
+                                        return "faImage";
+                                      default:
+                                        return "faFile";
+                                    }
+                                  })()
+                                ] || FaIcons.faFile
+                              }
+                              style={{
+                                width: "1.25rem",
+                                height: "1.25rem",
+                                color: isSelected
+                                  ? "var(--mantine-primary-color-filled)"
+                                  : "var(--mantine-color-dimmed)",
+                              }}
+                            />
+                            <div style={{ flex: 1 }}>
+                              <Text
+                                fw={600}
+                                size="sm"
+                                c={isSelected ? "bright" : "dimmed"}
+                                style={{
+                                  color: isSelected
+                                    ? "var(--mantine-color-text)"
+                                    : undefined,
+                                }}
+                              >
+                                {template.name}
+                              </Text>
+                              <Text size="xs" c="dimmed" lineClamp={2}>
+                                {template.description}
+                              </Text>
+                            </div>
+                          </Group>
+                        </div>
+                      );
+                    })}
+                  </Stack>
+                </ScrollArea>
+              </div>
+
+              {/* RIGHT COLUMN: Preview & Action */}
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                  borderLeft: "1px solid var(--mantine-color-default-border)",
+                  paddingLeft: "1rem",
+                }}
+              >
+                <Text fw={600} mb="xs">
+                  Template Preview:
+                </Text>
+                <ScrollArea
+                  flex={1}
+                  type="auto"
+                  style={{
+                    border: "1px solid var(--mantine-color-default-border)",
+                    borderRadius: "var(--mantine-radius-md)",
+                    backgroundColor: "var(--mantine-color-default-active)",
+                  }}
+                >
+                  <Code
+                    block
+                    style={{
+                      backgroundColor: "transparent",
+                      minHeight: "100%",
+                      fontFamily: "monospace",
+                      fontSize: "0.85rem",
+                    }}
+                  >
+                    {selectedTemplateId
+                      ? getTemplateById(selectedTemplateId)?.content
+                      : "Select a template to view code..."}
+                  </Code>
+                </ScrollArea>
+
+                <Group justify="flex-end" mt="md">
+                  <Button
+                    variant="default"
+                    onClick={() => setShowTemplateModal(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleCreateSelectedTemplate}>
+                    Create Document
+                  </Button>
+                </Group>
+              </div>
+            </div>
           </Modal>
         </AppShell>
       </DndContext>

@@ -1,4 +1,19 @@
-export type Category = 'math' | 'graphics' | 'colors' | 'tables' | 'code' | 'layout' | 'misc';
+/**
+ * Legacy Package Database
+ *
+ * This file is kept for backward compatibility.
+ * The source of truth is now:
+ * - CTAN data: src/assets/CTANpackageDatabase.json
+ * - Wizard config: ./wizardRegistry.ts
+ * - Merged data: src/services/packageService.ts
+ *
+ * New code should use packageService.ts instead.
+ */
+
+import { WIZARD_REGISTRY, WizardCategory } from "./wizardRegistry";
+
+// Re-export types for backward compatibility
+export type Category = WizardCategory;
 
 export interface LatexPackage {
   id: string;
@@ -9,31 +24,17 @@ export interface LatexPackage {
   hasWizard?: boolean;
 }
 
-export const PACKAGES_DB: LatexPackage[] = [
-  // COLORS
-  { id: 'xcolor', name: 'XColor', category: 'colors', description: 'Driver-independent color extensions.', hasWizard: true },
-
-  // LAYOUT
-  { id: 'geometry', name: 'Geometry', category: 'layout', description: 'Page dimensions and margins.', hasWizard: true },
-  { id: 'fancyhdr', name: 'Fancyhdr', category: 'layout', description: 'Custom headers and footers.', command: '\\usepackage{fancyhdr}', hasWizard: true },
-  { id: 'enumitem', name: 'Enumitem', category: 'layout', description: 'Custom lists, spacing and labels.', hasWizard: true },
-
-  // MATH
-  { id: 'amsmath', name: 'AMS Math', category: 'math', description: 'Equations, matrices, and alignment.', command: '\\usepackage{amsmath}' },
-  // AMS Symbols removed from here as it is moved to Sidebar
-  { id: 'siunitx', name: 'SI Unitx', category: 'math', description: 'SI units and number formatting.', command: '\\usepackage{siunitx}' },
-
-  // GRAPHICS
-  { id: 'tikz', name: 'TikZ', category: 'graphics', description: 'Create graphics programmatically.', hasWizard: true },
-  { id: 'pstricks', name: 'PSTricks', category: 'graphics', description: 'PostScript macros for graphics.', hasWizard: true },
-  { id: 'pgfplots', name: 'PGFPlots', category: 'graphics', description: 'Create plots and charts.', hasWizard: true },
-  { id: 'graphicx', name: 'Graphicx', category: 'graphics', description: 'Include external images.', command: '\\usepackage{graphicx}' },
-
-  // TABLES
-  { id: 'booktabs', name: 'Booktabs', category: 'tables', description: 'Professional table layout.', hasWizard: true },
-  { id: 'multirow', name: 'Multirow', category: 'tables', description: 'Cells spanning multiple rows.', hasWizard: true },
-
-  // CODE
-  { id: 'listings', name: 'Listings', category: 'code', description: 'Source code printing (Native LaTeX).', command: '\\usepackage{listings}' },
-  { id: 'minted', name: 'Minted', category: 'code', description: 'Highlighted source code (Requires Pygments).', command: '\\usepackage{minted}' },
-];
+/**
+ * @deprecated Use packageService for async data. This contains only local wizard metadata.
+ * Legacy list of packages with wizard support
+ */
+export const PACKAGES_DB: LatexPackage[] = Object.entries(WIZARD_REGISTRY).map(
+  ([id, config]) => ({
+    id,
+    name: config.displayName || id,
+    category: config.category,
+    description: "Configurable package", // Placeholder as we don't have descriptions synchronously
+    command: `\\usepackage{${id}}`,
+    hasWizard: true,
+  })
+);
