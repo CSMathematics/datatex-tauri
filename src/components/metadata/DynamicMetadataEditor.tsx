@@ -128,6 +128,7 @@ export const DynamicMetadataEditor: React.FC<DynamicMetadataEditorProps> = ({
         return <PackageMetadataForm {...formProps} />;
       case "preamble":
         return <PreambleMetadataForm {...formProps} />;
+      case "class":
         return <ClassMetadataForm {...formProps} />;
       case "bibliography":
         return <BibliographyMetadataForm {...formProps} />;

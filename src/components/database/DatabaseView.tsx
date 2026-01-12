@@ -17,8 +17,6 @@ import {
   ActionIcon,
   Box,
   Menu,
-  Modal,
-  Grid,
   Select,
   Checkbox,
 } from "@mantine/core";

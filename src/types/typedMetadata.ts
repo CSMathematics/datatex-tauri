@@ -98,7 +98,7 @@ export interface TableMetadata {
 // ============================================================================
 
 export interface FigureMetadata {
-  plotTypeId?: string;
+  figureTypeId?: string;
   environment?: string;
   date?: string;
   content?: string;
@@ -106,9 +106,23 @@ export interface FigureMetadata {
   preambleId?: string;
   buildCommand?: string;
   description?: string;
+  // Layout & Dimensions
+  width?: string;
+  height?: string;
+  options?: string;
+  tikzStyle?: string;
+  label?: string;
+  placement?: string;
+  alignment?: string;
   // Arrays
   requiredPackages?: string[];
   customTags?: string[];
+}
+
+export interface FigureType {
+  id: string;
+  name: string;
+  description?: string;
 }
 
 // ============================================================================
@@ -117,13 +131,22 @@ export interface FigureMetadata {
 
 export interface CommandMetadata {
   name?: string;
-  fileTypeId?: string;
+  commandTypeId?: string;
+  argumentsNum?: number;
+  optionalArgument?: string;
   content?: string;
+  example?: string;
   description?: string;
   builtIn?: boolean;
-  macroCommandTypeId?: string;
   // Arrays
   requiredPackages?: string[];
+  customTags?: string[];
+}
+
+export interface CommandType {
+  id: string;
+  name: string;
+  description?: string;
 }
 
 // ============================================================================
@@ -136,9 +159,15 @@ export interface PackageMetadata {
   date?: string;
   content?: string;
   description?: string;
+  options?: string;
+  builtIn?: boolean;
+  documentation?: string;
+  example?: string;
   // Arrays
-  dependencies?: string[];
+  requiredPackages?: string[];
   topics?: string[];
+  providedCommands?: string[];
+  customTags?: string[];
 }
 
 // ============================================================================
@@ -147,13 +176,33 @@ export interface PackageMetadata {
 
 export interface PreambleMetadata {
   name?: string;
-  fileTypeId?: string;
+  preambleTypeId?: string;
   content?: string;
   description?: string;
   builtIn?: boolean;
+  // Enriched fields
+  engines?: string;
+  date?: string;
+  className?: string; // Mapped from 'class' in DB
+  paperSize?: string;
+  fontSize?: number;
+  options?: string;
+  languages?: string;
+  geometry?: string;
+  author?: string;
+  title?: string;
+  // Booleans
+  useBibliography?: boolean;
+  bibCompileEngine?: string;
+  makeIndex?: boolean;
+  makeGlossaries?: boolean;
+  hasToc?: boolean;
+  hasLot?: boolean;
+  hasLof?: boolean;
   // Arrays
   requiredPackages?: string[];
   commandTypes?: string[];
+  providedCommands?: string[];
 }
 
 // ============================================================================
@@ -166,8 +215,17 @@ export interface ClassMetadata {
   date?: string;
   content?: string;
   description?: string;
+  // Enriched fields
+  engines?: string;
+  paperSize?: string;
+  fontSize?: number;
+  geometry?: string;
+  options?: string;
+  languages?: string;
   // Arrays
   customTags?: string[];
+  requiredPackages?: string[];
+  providedCommands?: string[];
 }
 
 // ============================================================================
@@ -301,6 +359,12 @@ export interface TableType {
 export interface CustomTag {
   tag: string;
   createdAt?: string;
+}
+
+export interface PreambleType {
+  id: string;
+  name: string;
+  description?: string;
 }
 
 export interface TeXLivePackage {

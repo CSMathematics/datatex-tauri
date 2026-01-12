@@ -5,7 +5,7 @@
 
 CREATE TABLE IF NOT EXISTS resource_figures (
     resource_id TEXT PRIMARY KEY NOT NULL,
-    plot_type_id TEXT,  -- FK to file_types
+    figure_type_id TEXT,  -- FK to file_types
     environment TEXT,  -- tikzpicture, axis, includegraphics
     date DATE,
     content TEXT,  -- LaTeX/TikZ code
@@ -16,11 +16,11 @@ CREATE TABLE IF NOT EXISTS resource_figures (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(resource_id) REFERENCES resources(id) ON DELETE CASCADE,
-    FOREIGN KEY(plot_type_id) REFERENCES file_types(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    FOREIGN KEY(figure_type_id) REFERENCES file_types(id) ON UPDATE CASCADE ON DELETE SET NULL,
     FOREIGN KEY(preamble_id) REFERENCES resources(id) ON DELETE SET NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_resource_figures_type ON resource_figures(plot_type_id);
+CREATE INDEX IF NOT EXISTS idx_resource_figures_type ON resource_figures(figure_type_id);
 CREATE INDEX IF NOT EXISTS idx_resource_figures_environment ON resource_figures(environment);
 
 -- ============================================================================

@@ -26,29 +26,74 @@ impl DatabaseManager {
         // Load all schema files in numeric order
         // New migrations should be added at the end with incrementing numbers
         let schemas = [
-            include_str!("../../migrations/init.sql"), // Base schema
-            include_str!("../../migrations/002_common_infrastructure.sql"), // Fields, chapters, sections, subsections, types
-            include_str!("../../migrations/003_resource_files.sql"),        // File resources
-            include_str!("../../migrations/004_resource_documents.sql"),    // Document resources
-            include_str!("../../migrations/005_resource_tables.sql"),       // Table resources
-            include_str!("../../migrations/006_resource_figures.sql"),      // Figure resources
-            include_str!("../../migrations/007_resource_commands.sql"), // Command/macro resources
-            include_str!("../../migrations/008_resource_packages.sql"), // Package resources
-            include_str!("../../migrations/009_resource_preambles.sql"), // Preamble resources
-            include_str!("../../migrations/010_resource_classes.sql"),  // Class resources
-            include_str!("../../migrations/011_migrate_json_to_typed.sql"), // Migration from JSON to typed
-            include_str!("../../migrations/017_resource_bibliographies.sql"), // Detailed Bibliography metadata
-            include_str!("../../migrations/018_enrich_resource_tables.sql"), // Enrich Table metadata
-            include_str!("../../migrations/019_resource_table_types.sql"),   // Table Types
+            include_str!("../../migrations/init.sql"), // 0
+            include_str!("../../migrations/002_common_infrastructure.sql"), // 1
+            include_str!("../../migrations/003_resource_files.sql"), // 2
+            include_str!("../../migrations/004_resource_documents.sql"), // 3
+            include_str!("../../migrations/005_resource_tables.sql"), // 4
+            include_str!("../../migrations/006_resource_figures.sql"), // 5
+            include_str!("../../migrations/007_resource_commands.sql"), // 6
+            include_str!("../../migrations/008_resource_packages.sql"), // 7
+            include_str!("../../migrations/009_resource_preambles.sql"), // 8
+            include_str!("../../migrations/010_resource_classes.sql"), // 9
+            include_str!("../../migrations/011_migrate_json_to_typed.sql"), // 10
+            include_str!("../../migrations/017_resource_bibliographies.sql"), // 11
+            include_str!("../../migrations/018_enrich_resource_tables.sql"), // 12
+            include_str!("../../migrations/019_resource_table_types.sql"), // 13
+            include_str!("../../migrations/020_enrich_resource_figures.sql"), // 14
+            include_str!("../../migrations/021_enrich_resource_commands.sql"), // 15
+            include_str!("../../migrations/022_enrich_resource_packages.sql"), // 16
+            include_str!("../../migrations/023_enrich_resource_classes.sql"), // 17
+            include_str!("../../migrations/024_enrich_resource_preambles.sql"), // 18
+            include_str!("../../migrations/025_preamble_types.sql"), // 19
         ];
 
-        for init_script in schemas {
+        // Check current version
+        let version_row: (i32,) = sqlx::query_as("PRAGMA user_version")
+            .fetch_one(pool)
+            .await
+            .unwrap_or((0,));
+        let mut current_version = version_row.0 as usize;
+
+        // Legacy detection: If version is 0 but tables exist, try to guess version to avoid destructive re-runs
+        if current_version == 0 {
+            // Check for preamble_types explicitly to avoid closure lifetime issues
+            let has_preamble_types: (i32,) = sqlx::query_as(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='preamble_types'",
+            )
+            .fetch_one(pool)
+            .await
+            .unwrap_or((0,));
+
+            if has_preamble_types.0 > 0 {
+                println!("Detected legacy DB with preamble_types. Setting version to 20.");
+                current_version = 20;
+                sqlx::query(&format!("PRAGMA user_version = {}", current_version))
+                    .execute(pool)
+                    .await?;
+            }
+        }
+
+        for (i, init_script) in schemas.iter().enumerate() {
+            if i < current_version {
+                continue;
+            }
+
+            println!("Aplicating migration {}...", i);
+
             let mut statements = Vec::new();
             let mut current_stmt = String::new();
             let mut in_block = 0;
 
             for line in init_script.lines() {
                 let trimmed = line.trim();
+                // Simple comment skipping (naive)
+                if trimmed.starts_with("--") {
+                    // Check if it's strictly a comment line, or inline?
+                    // The original code skipped empty or starts_with --.
+                    // We'll keep original logic but careful with strings.
+                }
+
                 if trimmed.is_empty() || trimmed.starts_with("--") {
                     continue;
                 }
@@ -75,10 +120,18 @@ impl DatabaseManager {
                 let stmt = stmt.trim();
                 if !stmt.is_empty() {
                     if let Err(e) = sqlx::query(stmt).execute(pool).await {
-                        eprintln!("SQL Warning: {}", e);
+                        eprintln!("SQL Warning in migration {}: {}", i, e);
+                        // Depending on policy, we might want to stop here.
+                        // But for now, detailed logging is good.
                     }
                 }
             }
+
+            // Update version after success
+            let new_version = i + 1;
+            sqlx::query(&format!("PRAGMA user_version = {}", new_version))
+                .execute(pool)
+                .await?;
         }
         Ok(())
     }

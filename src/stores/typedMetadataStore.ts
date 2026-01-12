@@ -21,8 +21,11 @@ import type {
   FileType,
   DocumentType,
   TableType,
+  FigureType,
   PackageTopic,
   MacroCommandType,
+  CommandType,
+  PreambleType,
   ResourceType,
 } from "../types/typedMetadata";
 
@@ -36,8 +39,11 @@ interface TypedMetadataState {
   fileTypes: FileType[];
   documentTypes: DocumentType[];
   tableTypes: TableType[];
+  figureTypes: FigureType[];
   packageTopics: PackageTopic[];
   macroCommandTypes: MacroCommandType[];
+  commandTypes: CommandType[];
+  preambleTypes: PreambleType[];
 
   // Loading states
   isLoadingLookupData: boolean;
@@ -51,8 +57,11 @@ interface TypedMetadataState {
   loadFileTypes: () => Promise<void>;
   loadDocumentTypes: () => Promise<void>;
   loadTableTypes: () => Promise<void>;
+  loadFigureTypes: () => Promise<void>;
   loadPackageTopics: () => Promise<void>;
   loadMacroCommandTypes: () => Promise<void>;
+  loadCommandTypes: () => Promise<void>;
+  loadPreambleTypes: () => Promise<void>;
   loadAllLookupData: () => Promise<void>;
 
   // Create Actions (for creatable dropdowns)
@@ -64,8 +73,11 @@ interface TypedMetadataState {
   createExerciseType: (name: string) => Promise<ExerciseType>;
   createDocumentType: (name: string) => Promise<DocumentType>;
   createTableType: (name: string) => Promise<TableType>;
+  createFigureType: (name: string) => Promise<FigureType>;
   createPackageTopic: (name: string) => Promise<PackageTopic>;
   createMacroCommandType: (name: string) => Promise<MacroCommandType>;
+  createCommandType: (name: string) => Promise<CommandType>;
+  createPreambleType: (name: string) => Promise<PreambleType>;
 
   // Delete Actions
   deleteField: (id: string) => Promise<void>;
@@ -76,6 +88,9 @@ interface TypedMetadataState {
   deleteExerciseType: (id: string) => Promise<void>;
   deleteDocumentType: (id: string) => Promise<void>;
   deleteTableType: (id: string) => Promise<void>;
+  deleteFigureType: (id: string) => Promise<void>;
+  deleteCommandType: (id: string) => Promise<void>;
+  deletePreambleType: (id: string) => Promise<void>;
 
   // Rename Actions
   renameField: (id: string, name: string) => Promise<void>;
@@ -86,6 +101,9 @@ interface TypedMetadataState {
   renameExerciseType: (id: string, name: string) => Promise<void>;
   renameDocumentType: (id: string, name: string) => Promise<void>;
   renameTableType: (id: string, name: string) => Promise<void>;
+  renameFigureType: (id: string, name: string) => Promise<void>;
+  renameCommandType: (id: string, name: string) => Promise<void>;
+  renamePreambleType: (id: string, name: string) => Promise<void>;
 
   saveTypedMetadata: (
     resourceId: string,
@@ -121,8 +139,11 @@ export const useTypedMetadataStore = create<TypedMetadataState>((set, get) => ({
   fileTypes: [],
   documentTypes: [],
   tableTypes: [],
+  figureTypes: [],
   packageTopics: [],
   macroCommandTypes: [],
+  commandTypes: [],
+  preambleTypes: [],
   isLoadingLookupData: false,
 
   // Load fields
@@ -221,6 +242,17 @@ export const useTypedMetadataStore = create<TypedMetadataState>((set, get) => ({
     }
   },
 
+  // Load figure types
+  loadFigureTypes: async () => {
+    try {
+      const figureTypes = await invoke<FigureType[]>("get_figure_types_cmd");
+      set({ figureTypes });
+    } catch (error) {
+      console.error("Failed to load figure types:", error);
+      throw error;
+    }
+  },
+
   // Load package topics
   loadPackageTopics: async () => {
     try {
@@ -247,6 +279,30 @@ export const useTypedMetadataStore = create<TypedMetadataState>((set, get) => ({
     }
   },
 
+  // Load command types
+  loadCommandTypes: async () => {
+    try {
+      const commandTypes = await invoke<CommandType[]>("get_command_types_cmd");
+      set({ commandTypes });
+    } catch (error) {
+      console.error("Failed to load command types:", error);
+      throw error;
+    }
+  },
+
+  // Load preamble types
+  loadPreambleTypes: async () => {
+    try {
+      const preambleTypes = await invoke<PreambleType[]>(
+        "get_preamble_types_cmd"
+      );
+      set({ preambleTypes });
+    } catch (error) {
+      console.error("Failed to load preamble types:", error);
+      throw error;
+    }
+  },
+
   // Load all lookup data
   loadAllLookupData: async () => {
     set({ isLoadingLookupData: true });
@@ -259,8 +315,11 @@ export const useTypedMetadataStore = create<TypedMetadataState>((set, get) => ({
         get().loadFileTypes(),
         get().loadDocumentTypes(),
         get().loadTableTypes(),
+        get().loadFigureTypes(),
         get().loadPackageTopics(),
         get().loadMacroCommandTypes(),
+        get().loadCommandTypes(),
+        get().loadPreambleTypes(),
       ]);
     } finally {
       set({ isLoadingLookupData: false });
@@ -386,6 +445,22 @@ export const useTypedMetadataStore = create<TypedMetadataState>((set, get) => ({
     }
   },
 
+  // Create new figure type
+  createFigureType: async (name: string) => {
+    try {
+      const figureType = await invoke<FigureType>("create_figure_type_cmd", {
+        name,
+      });
+      set((state) => ({
+        figureTypes: [...state.figureTypes, figureType],
+      }));
+      return figureType;
+    } catch (error) {
+      console.error("Failed to create figure type:", error);
+      throw error;
+    }
+  },
+
   // Create new package topic
   createPackageTopic: async (name: string) => {
     try {
@@ -413,6 +488,38 @@ export const useTypedMetadataStore = create<TypedMetadataState>((set, get) => ({
       return type;
     } catch (error) {
       console.error("Failed to create macro command type:", error);
+      throw error;
+    }
+  },
+
+  // Create new command type
+  createCommandType: async (name: string) => {
+    try {
+      const type = await invoke<CommandType>("create_command_type_cmd", {
+        name,
+      });
+      set((state) => ({
+        commandTypes: [...state.commandTypes, type],
+      }));
+      return type;
+    } catch (error) {
+      console.error("Failed to create command type:", error);
+      throw error;
+    }
+  },
+
+  // Create new preamble type
+  createPreambleType: async (name: string) => {
+    try {
+      const type = await invoke<PreambleType>("create_preamble_type_cmd", {
+        name,
+      });
+      set((state) => ({
+        preambleTypes: [...state.preambleTypes, type],
+      }));
+      return type;
+    } catch (error) {
+      console.error("Failed to create preamble type:", error);
       throw error;
     }
   },
@@ -546,6 +653,57 @@ export const useTypedMetadataStore = create<TypedMetadataState>((set, get) => ({
     set((state) => ({
       tableTypes: state.tableTypes.map((tt) =>
         tt.id === id ? { ...tt, name } : tt
+      ),
+    }));
+  },
+
+  // FigureType Rename/Delete Actions
+  deleteFigureType: async (id: string) => {
+    await invoke("delete_figure_type_cmd", { id });
+    set((state) => ({
+      figureTypes: state.figureTypes.filter((ft) => ft.id !== id),
+    }));
+  },
+
+  renameFigureType: async (id: string, name: string) => {
+    await invoke("rename_figure_type_cmd", { id, name });
+    set((state) => ({
+      figureTypes: state.figureTypes.map((ft) =>
+        ft.id === id ? { ...ft, name } : ft
+      ),
+    }));
+  },
+
+  // CommandType Rename/Delete Actions
+  deleteCommandType: async (id: string) => {
+    await invoke("delete_command_type_cmd", { id });
+    set((state) => ({
+      commandTypes: state.commandTypes.filter((ct) => ct.id !== id),
+    }));
+  },
+
+  renameCommandType: async (id: string, name: string) => {
+    await invoke("rename_command_type_cmd", { id, name });
+    set((state) => ({
+      commandTypes: state.commandTypes.map((ct) =>
+        ct.id === id ? { ...ct, name } : ct
+      ),
+    }));
+  },
+
+  // PreambleType Rename/Delete Actions
+  deletePreambleType: async (id: string) => {
+    await invoke("delete_preamble_type_cmd", { id });
+    set((state) => ({
+      preambleTypes: state.preambleTypes.filter((pt) => pt.id !== id),
+    }));
+  },
+
+  renamePreambleType: async (id: string, name: string) => {
+    await invoke("rename_preamble_type_cmd", { id, name });
+    set((state) => ({
+      preambleTypes: state.preambleTypes.map((pt) =>
+        pt.id === id ? { ...pt, name } : pt
       ),
     }));
   },

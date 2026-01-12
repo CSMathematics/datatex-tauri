@@ -78,7 +78,6 @@ INSERT OR IGNORE INTO resource_documents (
     content,
     preamble_id,
     build_command,
-    needs_update,
     bibliography,
     description,
     solution_document_id
@@ -94,7 +93,6 @@ SELECT
     json_extract(r.metadata, '$.content'),
     json_extract(r.metadata, '$.preambleId'),
     json_extract(r.metadata, '$.buildCommand'),
-    CASE WHEN json_extract(r.metadata, '$.needsUpdate') = 'true' THEN 1 ELSE 0 END,
     json_extract(r.metadata, '$.bibliography'),
     json_extract(r.metadata, '$.description'),
     json_extract(r.metadata, '$.solutionDocument')
@@ -129,7 +127,7 @@ AND r.id NOT IN (SELECT resource_id FROM resource_tables);
 
 INSERT OR IGNORE INTO resource_figures (
     resource_id,
-    plot_type_id,
+    figure_type_id,
     environment,
     date,
     content,

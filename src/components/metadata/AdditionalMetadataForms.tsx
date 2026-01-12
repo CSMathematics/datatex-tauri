@@ -735,6 +735,16 @@ export const FigureMetadataForm: React.FC<FigureMetadataFormProps> = ({
   onChange,
 }) => {
   const [metadata, setMetadata] = useState<FigureMetadata>(initialMetadata);
+  const figureTypes = useTypedMetadataStore((state) => state.figureTypes);
+  const createFigureType = useTypedMetadataStore(
+    (state) => state.createFigureType
+  );
+  const renameFigureType = useTypedMetadataStore(
+    (state) => state.renameFigureType
+  );
+  const deleteFigureType = useTypedMetadataStore(
+    (state) => state.deleteFigureType
+  );
 
   const handleChange = <K extends keyof FigureMetadata>(
     field: K,
@@ -747,18 +757,6 @@ export const FigureMetadataForm: React.FC<FigureMetadataFormProps> = ({
 
   return (
     <Stack gap="md">
-      <Select
-        label="Environment"
-        placeholder="Select environment"
-        data={[
-          { value: "tikzpicture", label: "tikzpicture" },
-          { value: "axis", label: "axis" },
-          { value: "includegraphics", label: "includegraphics" },
-        ]}
-        value={metadata.environment}
-        onChange={(value) => handleChange("environment", value || undefined)}
-        clearable
-      />
       <TextInput
         label="Caption"
         placeholder="Figure caption"
@@ -767,15 +765,145 @@ export const FigureMetadataForm: React.FC<FigureMetadataFormProps> = ({
           handleChange("caption", e.currentTarget.value || undefined)
         }
       />
+
       <Textarea
         label="Description"
-        placeholder="Figure description..."
+        placeholder="Internal description..."
         value={metadata.description || ""}
         onChange={(e) =>
           handleChange("description", e.currentTarget.value || undefined)
         }
         autosize
         minRows={2}
+      />
+
+      <Group grow>
+        <ManageableSelect
+          label="Figure Type"
+          placeholder="Select Type..."
+          data={[...figureTypes]}
+          value={metadata.figureTypeId}
+          onChange={(val) => handleChange("figureTypeId", val)}
+          onCreate={createFigureType}
+          onRename={renameFigureType}
+          onDelete={deleteFigureType}
+        />
+        <TextInput
+          label="Date"
+          type="date"
+          value={metadata.date || ""}
+          onChange={(e) =>
+            handleChange("date", e.currentTarget.value || undefined)
+          }
+        />
+      </Group>
+
+      <Group grow>
+        <Select
+          label="Environment"
+          placeholder="Select environment"
+          data={[
+            { value: "tikzpicture", label: "tikzpicture" },
+            { value: "axis", label: "pgfplots (axis)" },
+            { value: "pspicture", label: "pspicture" },
+            { value: "includegraphics", label: "includegraphics" },
+            { value: "figure", label: "figure" },
+          ]}
+          value={metadata.environment}
+          onChange={(value) => handleChange("environment", value || undefined)}
+          searchable
+          clearable
+        />
+        <TextInput
+          label="Label"
+          placeholder="fig:my_plot"
+          value={metadata.label || ""}
+          onChange={(e) =>
+            handleChange("label", e.currentTarget.value || undefined)
+          }
+        />
+      </Group>
+
+      <Group grow>
+        <TextInput
+          label="Options"
+          placeholder="[scale=0.5, domain=0:10]"
+          value={metadata.options || ""}
+          onChange={(e) =>
+            handleChange("options", e.currentTarget.value || undefined)
+          }
+        />
+        <TextInput
+          label="TikZ Style"
+          placeholder="myStyle"
+          value={metadata.tikzStyle || ""}
+          onChange={(e) =>
+            handleChange("tikzStyle", e.currentTarget.value || undefined)
+          }
+        />
+      </Group>
+
+      <Group grow>
+        <TextInput
+          label="Width"
+          placeholder="0.8\textwidth"
+          value={metadata.width || ""}
+          onChange={(e) =>
+            handleChange("width", e.currentTarget.value || undefined)
+          }
+        />
+        <TextInput
+          label="Height"
+          placeholder="5cm"
+          value={metadata.height || ""}
+          onChange={(e) =>
+            handleChange("height", e.currentTarget.value || undefined)
+          }
+        />
+      </Group>
+
+      <Group grow>
+        <TextInput
+          label="Placement"
+          placeholder="htbp"
+          value={metadata.placement || ""}
+          onChange={(e) =>
+            handleChange("placement", e.currentTarget.value || undefined)
+          }
+        />
+        <TextInput
+          label="Alignment"
+          placeholder="\centering"
+          value={metadata.alignment || ""}
+          onChange={(e) =>
+            handleChange("alignment", e.currentTarget.value || undefined)
+          }
+        />
+      </Group>
+
+      <MultiSelect
+        label="Required Packages"
+        placeholder="e.g., tikz, pgfplots"
+        data={metadata.requiredPackages || []}
+        value={metadata.requiredPackages || []}
+        onChange={(value) =>
+          handleChange("requiredPackages", value.length > 0 ? value : undefined)
+        }
+        searchable
+      />
+
+      <CreatableMultiSelect
+        label="Custom Tags"
+        placeholder="Type and create custom tags..."
+        data={(metadata.customTags || []).map((tag) => ({
+          id: tag,
+          name: tag,
+        }))}
+        value={metadata.customTags || []}
+        onChange={(value) =>
+          handleChange("customTags", value.length > 0 ? value : undefined)
+        }
+        onCreate={async (name) => ({ id: name, name })}
       />
     </Stack>
   );
@@ -794,6 +922,18 @@ export const CommandMetadataForm: React.FC<CommandMetadataFormProps> = ({
 }) => {
   const [metadata, setMetadata] = useState<CommandMetadata>(initialMetadata);
 
+  // Store hooks
+  const commandTypes = useTypedMetadataStore((state) => state.commandTypes);
+  const createCommandType = useTypedMetadataStore(
+    (state) => state.createCommandType
+  );
+  const renameCommandType = useTypedMetadataStore(
+    (state) => state.renameCommandType
+  );
+  const deleteCommandType = useTypedMetadataStore(
+    (state) => state.deleteCommandType
+  );
+
   const handleChange = <K extends keyof CommandMetadata>(
     field: K,
     value: CommandMetadata[K]
@@ -805,14 +945,72 @@ export const CommandMetadataForm: React.FC<CommandMetadataFormProps> = ({
 
   return (
     <Stack gap="md">
-      <TextInput
-        label="Command Name"
-        placeholder="e.g., \\mycommand"
-        value={metadata.name || ""}
+      <Group grow>
+        <TextInput
+          label="Command Name"
+          placeholder="e.g., \\mycommand"
+          value={metadata.name || ""}
+          onChange={(e) =>
+            handleChange("name", e.currentTarget.value || undefined)
+          }
+        />
+        <ManageableSelect
+          label="Command Type"
+          placeholder="Select Type..."
+          data={[...commandTypes]}
+          value={metadata.commandTypeId}
+          onChange={(val) => handleChange("commandTypeId", val)}
+          onCreate={createCommandType}
+          onRename={renameCommandType}
+          onDelete={deleteCommandType}
+        />
+      </Group>
+
+      <Group grow>
+        <NumberInput
+          label="Number of Arguments"
+          min={0}
+          max={9}
+          value={metadata.argumentsNum}
+          onChange={(val) =>
+            handleChange(
+              "argumentsNum",
+              typeof val === "number" ? val : undefined
+            )
+          }
+        />
+        <TextInput
+          label="Optional Argument"
+          placeholder="Default value"
+          value={metadata.optionalArgument || ""}
+          onChange={(e) =>
+            handleChange("optionalArgument", e.currentTarget.value || undefined)
+          }
+        />
+      </Group>
+
+      <Textarea
+        label="Example Usage"
+        placeholder="\\mycommand{arg}"
+        value={metadata.example || ""}
         onChange={(e) =>
-          handleChange("name", e.currentTarget.value || undefined)
+          handleChange("example", e.currentTarget.value || undefined)
         }
+        autosize
+        minRows={2}
       />
+
+      <Textarea
+        label="Content/Definition"
+        placeholder="Definition body..."
+        value={metadata.content || ""}
+        onChange={(e) =>
+          handleChange("content", e.currentTarget.value || undefined)
+        }
+        autosize
+        minRows={2}
+      />
+
       <Textarea
         label="Description"
         placeholder="Command description..."
@@ -823,6 +1021,32 @@ export const CommandMetadataForm: React.FC<CommandMetadataFormProps> = ({
         autosize
         minRows={2}
       />
+
+      <MultiSelect
+        label="Required Packages"
+        placeholder="e.g., xcolor"
+        data={metadata.requiredPackages || []}
+        value={metadata.requiredPackages || []}
+        onChange={(value) =>
+          handleChange("requiredPackages", value.length > 0 ? value : undefined)
+        }
+        searchable
+      />
+
+      <CreatableMultiSelect
+        label="Custom Tags"
+        placeholder="Type and create custom tags..."
+        data={(metadata.customTags || []).map((tag) => ({
+          id: tag,
+          name: tag,
+        }))}
+        value={metadata.customTags || []}
+        onChange={(value) =>
+          handleChange("customTags", value.length > 0 ? value : undefined)
+        }
+        onCreate={async (name) => ({ id: name, name })}
+      />
+
       <Checkbox
         label="Built-in Command"
         checked={metadata.builtIn || false}
@@ -886,19 +1110,67 @@ export const PackageMetadataForm: React.FC<PackageMetadataFormProps> = ({
         }
         onCreate={createPackageTopic}
       />
+
+      <TextInput
+        label="Options"
+        placeholder="e.g., [utf8]"
+        value={metadata.options || ""}
+        onChange={(e) =>
+          handleChange("options", e.currentTarget.value || undefined)
+        }
+      />
+
+      <TextInput
+        label="Documentation URL/Path"
+        placeholder="https://ctan.org/pkg/..."
+        value={metadata.documentation || ""}
+        onChange={(e) =>
+          handleChange("documentation", e.currentTarget.value || undefined)
+        }
+      />
+
       <CreatableMultiSelect
-        label="Dependencies"
-        placeholder="Type and create package dependencies..."
-        data={(metadata.dependencies || []).map((dep) => ({
-          id: dep,
-          name: dep,
+        label="Provided Commands"
+        placeholder="Type and create provided commands..."
+        data={(metadata.providedCommands || []).map((c) => ({
+          id: c,
+          name: c,
         }))}
-        value={metadata.dependencies || []}
+        value={metadata.providedCommands || []}
         onChange={(value) =>
-          handleChange("dependencies", value.length > 0 ? value : undefined)
+          handleChange("providedCommands", value.length > 0 ? value : undefined)
         }
         onCreate={async (name) => ({ id: name, name })}
       />
+
+      <CreatableMultiSelect
+        label="Required Packages"
+        placeholder="Type and create required packages..."
+        data={(metadata.requiredPackages || []).map((dep) => ({
+          id: dep,
+          name: dep,
+        }))}
+        value={metadata.requiredPackages || []}
+        onChange={(value) =>
+          handleChange("requiredPackages", value.length > 0 ? value : undefined)
+        }
+        onCreate={async (name) => ({ id: name, name })}
+      />
+
+      <CreatableMultiSelect
+        label="Custom Tags"
+        placeholder="Type and create custom tags..."
+        data={(metadata.customTags || []).map((tag) => ({
+          id: tag,
+          name: tag,
+        }))}
+        value={metadata.customTags || []}
+        onChange={(value) =>
+          handleChange("customTags", value.length > 0 ? value : undefined)
+        }
+        onCreate={async (name) => ({ id: name, name })}
+      />
+
       <Textarea
         label="Description"
         placeholder="Package description..."
@@ -908,6 +1180,12 @@ export const PackageMetadataForm: React.FC<PackageMetadataFormProps> = ({
         }
         autosize
         minRows={2}
+      />
+
+      <Checkbox
+        label="Built-in Package"
+        checked={metadata.builtIn || false}
+        onChange={(e) => handleChange("builtIn", e.currentTarget.checked)}
       />
     </Stack>
   );
@@ -925,7 +1203,17 @@ export const PreambleMetadataForm: React.FC<PreambleMetadataFormProps> = ({
   onChange,
 }) => {
   const [metadata, setMetadata] = useState<PreambleMetadata>(initialMetadata);
-  const fileTypes = useTypedMetadataStore((state) => state.fileTypes);
+  const preambleTypes = useTypedMetadataStore((state) => state.preambleTypes);
+  const createPreambleType = useTypedMetadataStore(
+    (state) => state.createPreambleType
+  );
+  const renamePreambleType = useTypedMetadataStore(
+    (state) => state.renamePreambleType
+  );
+  const deletePreambleType = useTypedMetadataStore(
+    (state) => state.deletePreambleType
+  );
+
   const macroCommandTypes = useTypedMetadataStore(
     (state) => state.macroCommandTypes
   );
@@ -944,22 +1232,175 @@ export const PreambleMetadataForm: React.FC<PreambleMetadataFormProps> = ({
 
   return (
     <Stack gap="md">
-      <TextInput
-        label="Name"
-        placeholder="Preamble name"
-        value={metadata.name || ""}
-        onChange={(e) =>
-          handleChange("name", e.currentTarget.value || undefined)
-        }
-      />
-      <Select
-        label="File Type"
-        placeholder="Select type"
-        data={fileTypes.map((ft) => ({ value: ft.id, label: ft.name }))}
-        value={metadata.fileTypeId}
-        onChange={(value) => handleChange("fileTypeId", value || undefined)}
-        clearable
-      />
+      <Group grow>
+        <TextInput
+          label="Name"
+          placeholder="Preamble name"
+          value={metadata.name || ""}
+          onChange={(e) =>
+            handleChange("name", e.currentTarget.value || undefined)
+          }
+        />
+        <ManageableSelect
+          label="Preamble Type"
+          placeholder="Select type"
+          data={preambleTypes}
+          value={metadata.preambleTypeId}
+          onChange={(value) =>
+            handleChange("preambleTypeId", value || undefined)
+          }
+          onCreate={createPreambleType}
+          onDelete={deletePreambleType}
+          onRename={renamePreambleType}
+        />
+      </Group>
+
+      <Group grow>
+        <TextInput
+          label="Engines"
+          placeholder="e.g., [pdflatex, xelatex]"
+          value={metadata.engines || ""}
+          onChange={(e) =>
+            handleChange("engines", e.currentTarget.value || undefined)
+          }
+        />
+        <TextInput
+          label="Date"
+          placeholder="YYYY-MM-DD"
+          value={metadata.date || ""}
+          onChange={(e) =>
+            handleChange("date", e.currentTarget.value || undefined)
+          }
+        />
+      </Group>
+
+      <Group grow>
+        <TextInput
+          label="Document Class"
+          placeholder="e.g., article"
+          value={metadata.className || ""}
+          onChange={(e) =>
+            handleChange("className", e.currentTarget.value || undefined)
+          }
+        />
+        <TextInput
+          label="Paper Size"
+          placeholder="e.g., a4paper"
+          value={metadata.paperSize || ""}
+          onChange={(e) =>
+            handleChange("paperSize", e.currentTarget.value || undefined)
+          }
+        />
+        <NumberInput
+          label="Font Size (pt)"
+          placeholder="e.g., 10"
+          value={metadata.fontSize}
+          onChange={(value) =>
+            handleChange(
+              "fontSize",
+              typeof value === "number" ? value : undefined
+            )
+          }
+        />
+      </Group>
+
+      <Group grow>
+        <TextInput
+          label="Geometry"
+          placeholder="e.g., margin=2cm"
+          value={metadata.geometry || ""}
+          onChange={(e) =>
+            handleChange("geometry", e.currentTarget.value || undefined)
+          }
+        />
+        <TextInput
+          label="Options"
+          placeholder="e.g., [twoside]"
+          value={metadata.options || ""}
+          onChange={(e) =>
+            handleChange("options", e.currentTarget.value || undefined)
+          }
+        />
+      </Group>
+
+      <Group grow>
+        <TextInput
+          label="Author"
+          placeholder="Author name"
+          value={metadata.author || ""}
+          onChange={(e) =>
+            handleChange("author", e.currentTarget.value || undefined)
+          }
+        />
+        <TextInput
+          label="Title"
+          placeholder="Document title"
+          value={metadata.title || ""}
+          onChange={(e) =>
+            handleChange("title", e.currentTarget.value || undefined)
+          }
+        />
+        <TextInput
+          label="Languages"
+          placeholder="e.g., [english, greek]"
+          value={metadata.languages || ""}
+          onChange={(e) =>
+            handleChange("languages", e.currentTarget.value || undefined)
+          }
+        />
+      </Group>
+
+      <Group>
+        <Checkbox
+          label="Use Bibliography"
+          checked={metadata.useBibliography || false}
+          onChange={(e) =>
+            handleChange("useBibliography", e.currentTarget.checked)
+          }
+        />
+        <Checkbox
+          label="Make Index"
+          checked={metadata.makeIndex || false}
+          onChange={(e) => handleChange("makeIndex", e.currentTarget.checked)}
+        />
+        <Checkbox
+          label="Make Glossaries"
+          checked={metadata.makeGlossaries || false}
+          onChange={(e) =>
+            handleChange("makeGlossaries", e.currentTarget.checked)
+          }
+        />
+      </Group>
+      {metadata.useBibliography && (
+        <Select
+          label="Bib Compile Engine"
+          placeholder="Select engine"
+          data={["bibtex", "biber"]}
+          value={metadata.bibCompileEngine}
+          onChange={(value) =>
+            handleChange("bibCompileEngine", value || undefined)
+          }
+        />
+      )}
+
+      <Group>
+        <Checkbox
+          label="Table of Contents"
+          checked={metadata.hasToc || false}
+          onChange={(e) => handleChange("hasToc", e.currentTarget.checked)}
+        />
+        <Checkbox
+          label="List of Tables"
+          checked={metadata.hasLot || false}
+          onChange={(e) => handleChange("hasLot", e.currentTarget.checked)}
+        />
+        <Checkbox
+          label="List of Figures"
+          checked={metadata.hasLof || false}
+          onChange={(e) => handleChange("hasLof", e.currentTarget.checked)}
+        />
+      </Group>
+
       <CreatableMultiSelect
         label="Command Types"
         placeholder="Select or create command types..."
@@ -970,6 +1411,21 @@ export const PreambleMetadataForm: React.FC<PreambleMetadataFormProps> = ({
         }
         onCreate={createMacroCommandType}
       />
+
+      <CreatableMultiSelect
+        label="Provided Commands"
+        placeholder="Type and create provided commands..."
+        data={(metadata.providedCommands || []).map((c) => ({
+          id: c,
+          name: c,
+        }))}
+        value={metadata.providedCommands || []}
+        onChange={(value) =>
+          handleChange("providedCommands", value.length > 0 ? value : undefined)
+        }
+        onCreate={async (name) => ({ id: name, name })}
+      />
+
       <CreatableMultiSelect
         label="Required Packages"
         placeholder="Type and create required packages..."
@@ -1043,6 +1499,93 @@ export const ClassMetadataForm: React.FC<ClassMetadataFormProps> = ({
         onChange={(value) => handleChange("fileTypeId", value || undefined)}
         clearable
       />
+
+      <TextInput
+        label="Engines"
+        placeholder="e.g., [pdflatex, xelatex]"
+        value={metadata.engines || ""}
+        onChange={(e) =>
+          handleChange("engines", e.currentTarget.value || undefined)
+        }
+      />
+
+      <Group grow>
+        <TextInput
+          label="Paper Size"
+          placeholder="e.g., a4paper"
+          value={metadata.paperSize || ""}
+          onChange={(e) =>
+            handleChange("paperSize", e.currentTarget.value || undefined)
+          }
+        />
+        <NumberInput
+          label="Font Size (pt)"
+          placeholder="e.g., 10"
+          value={metadata.fontSize}
+          onChange={(value) =>
+            handleChange(
+              "fontSize",
+              typeof value === "number" ? value : undefined
+            )
+          }
+        />
+      </Group>
+
+      <TextInput
+        label="Geometry Options"
+        placeholder="e.g., margin=2cm"
+        value={metadata.geometry || ""}
+        onChange={(e) =>
+          handleChange("geometry", e.currentTarget.value || undefined)
+        }
+      />
+
+      <TextInput
+        label="Default Options"
+        placeholder="e.g., [twoside]"
+        value={metadata.options || ""}
+        onChange={(e) =>
+          handleChange("options", e.currentTarget.value || undefined)
+        }
+      />
+
+      <TextInput
+        label="Languages"
+        placeholder="e.g., [english, greek]"
+        value={metadata.languages || ""}
+        onChange={(e) =>
+          handleChange("languages", e.currentTarget.value || undefined)
+        }
+      />
+
+      <CreatableMultiSelect
+        label="Provided Commands"
+        placeholder="Type and create provided commands..."
+        data={(metadata.providedCommands || []).map((c) => ({
+          id: c,
+          name: c,
+        }))}
+        value={metadata.providedCommands || []}
+        onChange={(value) =>
+          handleChange("providedCommands", value.length > 0 ? value : undefined)
+        }
+        onCreate={async (name) => ({ id: name, name })}
+      />
+
+      <CreatableMultiSelect
+        label="Required Packages"
+        placeholder="Type and create required packages..."
+        data={(metadata.requiredPackages || []).map((dep) => ({
+          id: dep,
+          name: dep,
+        }))}
+        value={metadata.requiredPackages || []}
+        onChange={(value) =>
+          handleChange("requiredPackages", value.length > 0 ? value : undefined)
+        }
+        onCreate={async (name) => ({ id: name, name })}
+      />
+
       <CreatableMultiSelect
         label="Custom Tags"
         placeholder="Type and create custom tags..."
