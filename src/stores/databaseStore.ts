@@ -89,6 +89,7 @@ interface DatabaseState {
     relationType?: string
   ) => Promise<Resource[]>;
   updateResourceKind: (id: string, kind: string) => Promise<void>;
+  moveResource: (id: string, newCollection: string) => Promise<void>;
   compileResource: (id: string) => Promise<string>; // Returns PDF path
 
   // Graph
@@ -378,6 +379,31 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       });
     } catch (err: any) {
       set({ error: err.toString() });
+    }
+  },
+
+  moveResource: async (id: string, newCollection: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      await invoke("update_cell_cmd", {
+        tableName: "resources",
+        id,
+        column: "collection",
+        value: newCollection,
+      });
+
+      // Update local state
+      const { resources, allLoadedResources } = get();
+      const update = (r: Resource) =>
+        r.id === id ? { ...r, collection: newCollection } : r;
+
+      set({
+        resources: resources.map(update),
+        allLoadedResources: allLoadedResources.map(update),
+        isLoading: false,
+      });
+    } catch (err: any) {
+      set({ error: err.toString(), isLoading: false });
     }
   },
 

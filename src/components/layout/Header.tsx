@@ -19,6 +19,7 @@ import {
   faFilePdf,
   faTableList,
   faColumns,
+  faImage,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   IconLayoutSidebarRightCollapseFilled,
@@ -66,6 +67,7 @@ interface HeaderProps {
   onCompile?: () => void;
   onStopCompile?: () => void;
   onOpenPackageBrowser?: () => void;
+  onInsertImage?: () => void;
 }
 
 export const HeaderContent: React.FC<HeaderProps> = ({
@@ -103,6 +105,7 @@ export const HeaderContent: React.FC<HeaderProps> = ({
   onCompile,
   onStopCompile,
   onOpenPackageBrowser,
+  onInsertImage,
 }) => (
   <Group
     h="100%"
@@ -272,6 +275,35 @@ export const HeaderContent: React.FC<HeaderProps> = ({
               rightSection={<Text size="xs">Ctrl+F</Text>}
             >
               Find
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+
+        {/* INSERT MENU */}
+        <Menu shadow="md" width={200}>
+          <Menu.Target>
+            <Button
+              variant="subtle"
+              color="gray"
+              size="compact-xs"
+              radius="sm"
+              fw={400}
+              style={{ fontSize: 12 }}
+            >
+              Insert
+            </Button>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item
+              leftSection={
+                <FontAwesomeIcon
+                  icon={faImage}
+                  style={{ width: 14, height: 14 }}
+                />
+              }
+              onClick={onInsertImage}
+            >
+              Image (Figure)
             </Menu.Item>
           </Menu.Dropdown>
         </Menu>
@@ -486,7 +518,7 @@ export const HeaderContent: React.FC<HeaderProps> = ({
           <ActionIcon
             variant="subtle"
             size="sm"
-            color={showLeftSidebar ? "blue" : "gray"}
+            color={showLeftSidebar ? "blue" : "gray.7"}
             onClick={onToggleLeftSidebar}
           >
             <IconLayoutSidebarFilled size={16} />
@@ -504,7 +536,7 @@ export const HeaderContent: React.FC<HeaderProps> = ({
           <ActionIcon
             variant="subtle"
             size="sm"
-            color={showDatabasePanel ? "blue" : "gray"}
+            color={showDatabasePanel ? "blue" : "gray.7"}
             onClick={onToggleDatabasePanel}
           >
             <IconDatabase size={16} />
@@ -524,7 +556,7 @@ export const HeaderContent: React.FC<HeaderProps> = ({
           <ActionIcon
             variant="subtle"
             size="sm"
-            color="gray"
+            color="gray.7"
             onClick={onToggleDatabasePosition}
           >
             <FontAwesomeIcon
@@ -545,7 +577,7 @@ export const HeaderContent: React.FC<HeaderProps> = ({
           <ActionIcon
             variant="subtle"
             size="sm"
-            color={showRightSidebar ? "blue" : "gray"}
+            color={showRightSidebar ? "blue" : "gray.7"}
             onClick={onToggleRightSidebar}
           >
             {showRightSidebar ? (

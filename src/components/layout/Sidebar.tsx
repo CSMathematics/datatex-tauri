@@ -289,11 +289,11 @@ export const Sidebar = React.memo<SidebarProps>(
             zIndex: 20,
           }}
         >
-          <Stack gap={4} align="center">
+          <Stack gap={12} align="center">
             {/* Database button now first since Explorer is merged into it */}
             <Tooltip label="Database" position="right">
               <ActionIcon
-                size="md"
+                size="sm"
                 variant={getVariant("database")}
                 color={getColor("database")}
                 onClick={() => onToggleSection("database")}
@@ -306,7 +306,7 @@ export const Sidebar = React.memo<SidebarProps>(
             </Tooltip>
             <Tooltip label="Structure" position="right">
               <ActionIcon
-                size="md"
+                size="sm"
                 variant={getVariant("outline")}
                 color={getColor("outline")}
                 onClick={() => onToggleSection("outline")}
@@ -319,7 +319,7 @@ export const Sidebar = React.memo<SidebarProps>(
             </Tooltip>
             <Tooltip label="AMS Symbols" position="right">
               <ActionIcon
-                size="md"
+                size="sm"
                 variant={getVariant("symbols")}
                 color={getColor("symbols")}
                 onClick={() => onToggleSection("symbols")}
@@ -332,7 +332,7 @@ export const Sidebar = React.memo<SidebarProps>(
             </Tooltip>
             <Tooltip label="Package Gallery" position="right">
               <ActionIcon
-                size="md"
+                size="sm"
                 variant={getVariant("gallery")}
                 color={getColor("gallery")}
                 onClick={() => onToggleSection("gallery")}
@@ -345,7 +345,7 @@ export const Sidebar = React.memo<SidebarProps>(
             </Tooltip>
             <Tooltip label="Search" position="right">
               <ActionIcon
-                size="md"
+                size="sm"
                 variant={getVariant("search")}
                 color={getColor("search")}
                 onClick={() => onToggleSection("search")}
@@ -358,7 +358,7 @@ export const Sidebar = React.memo<SidebarProps>(
             </Tooltip>
             <Tooltip label="Source Control" position="right">
               <ActionIcon
-                size="md"
+                size="sm"
                 variant={getVariant("git")}
                 color={getColor("git")}
                 onClick={() => onToggleSection("git")}
@@ -373,7 +373,7 @@ export const Sidebar = React.memo<SidebarProps>(
           <Stack gap={4} align="center">
             <Tooltip label="Settings" position="right">
               <ActionIcon
-                size="lg"
+                size="sm"
                 variant={getVariant("settings")}
                 color={getColor("settings")}
                 onClick={() => onToggleSection("settings")}

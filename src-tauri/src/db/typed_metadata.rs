@@ -112,8 +112,8 @@ pub fn save_document_metadata(
         "INSERT OR REPLACE INTO resource_documents (
             resource_id, title, document_type_id, basic_folder, sub_folder,
             subsub_folder, date, content, preamble_id, build_command,
-            needs_update, bibliography, description, solution_document_id
-        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+            bibliography, description, solution_document_id
+        ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
         params![
             resource_id,
             metadata.title,
@@ -125,7 +125,6 @@ pub fn save_document_metadata(
             metadata.content,
             metadata.preamble_id,
             metadata.build_command,
-            metadata.needs_update,
             metadata.bibliography,
             metadata.description,
             metadata.solution_document_id,
@@ -242,7 +241,7 @@ pub fn load_document_metadata(
 ) -> Result<Option<DocumentMetadata>> {
     let mut stmt = conn.prepare(
         "SELECT title, document_type_id, basic_folder, sub_folder, subsub_folder,
-                date, content, preamble_id, build_command, needs_update,
+                date, content, preamble_id, build_command,
                 bibliography, description, solution_document_id
          FROM resource_documents WHERE resource_id = ?1",
     )?;
@@ -259,13 +258,16 @@ pub fn load_document_metadata(
                 content: row.get(6)?,
                 preamble_id: row.get(7)?,
                 build_command: row.get(8)?,
-                needs_update: row.get(9)?,
-                bibliography: row.get(10)?,
-                description: row.get(11)?,
-                solution_document_id: row.get(12)?,
+                bibliography: row.get(9)?,
+                description: row.get(10)?,
+                solution_document_id: row.get(11)?,
                 included_files: None,
                 custom_tags: None,
                 bib_entries: None,
+                field_id: None,
+                chapters: None,
+                sections: None,
+                subsections: None,
             })
         })
         .optional()?;

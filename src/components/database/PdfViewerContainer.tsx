@@ -81,7 +81,7 @@ const PdfToolbar = memo(
       <Group
         justify="space-between"
         p="xs"
-        bg="var(--mantine-color-dark-7)"
+        bg="var(--mantine-color-default)"
         style={{
           borderBottom: "1px solid var(--mantine-color-default-border)",
         }}
@@ -461,7 +461,7 @@ export const PdfViewerContainer = memo(
           style={{
             flex: 1,
             overflow: "auto",
-            backgroundColor: "var(--mantine-color-dark-7)",
+            backgroundColor: "var(--mantine-color-default)",
           }}
           onClick={handlePageClick}
         >

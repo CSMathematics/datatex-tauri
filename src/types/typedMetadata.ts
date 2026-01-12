@@ -43,14 +43,20 @@ export interface IncludedFile {
 export interface DocumentMetadata {
   title?: string;
   documentTypeId?: string;
+  // Hierarchy fields (replacing basicFolder/subFolder/subsubFolder)
+  fieldId?: string;
+  chapters?: string[];
+  sections?: string[];
+  subsections?: string[];
+  // Legacy folder fields (kept for backwards compatibility, auto-filled)
   basicFolder?: string;
   subFolder?: string;
   subsubFolder?: string;
+  // Other fields
   date?: string;
   content?: string;
   preambleId?: string;
   buildCommand?: string;
-  needsUpdate?: boolean;
   bibliography?: string;
   description?: string;
   solutionDocumentId?: string;
@@ -69,6 +75,19 @@ export interface TableMetadata {
   date?: string;
   content?: string;
   caption?: string;
+  description?: string;
+
+  // LaTeX specifics
+  environment?: string; // tabular, tabularx, longtable, tabularray
+  placement?: string;
+  label?: string;
+  width?: string;
+  alignment?: string;
+
+  // Dimensions
+  rows?: number;
+  columns?: number;
+
   // Arrays
   requiredPackages?: string[];
   customTags?: string[];
@@ -152,12 +171,72 @@ export interface ClassMetadata {
 }
 
 // ============================================================================
+// Bibliography Metadata
+// ============================================================================
+
+export interface BibliographyPerson {
+  role: "author" | "editor" | "translator";
+  fullName: string;
+}
+
+export interface BibliographyMetadata {
+  entryType?: string; // article, book, etc.
+  citationKey?: string;
+
+  // Periodic / Series
+  journal?: string;
+  volume?: string;
+  series?: string;
+  number?: string;
+  issue?: string;
+
+  // Date
+  year?: string;
+  month?: string;
+
+  // Publication
+  publisher?: string;
+  edition?: string;
+  institution?: string;
+  school?: string;
+  organization?: string;
+  address?: string;
+  location?: string;
+
+  // Identification
+  isbn?: string;
+  issn?: string;
+  doi?: string;
+  url?: string;
+  language?: string;
+
+  // Content
+  title?: string;
+  subtitle?: string;
+  booktitle?: string;
+  chapter?: string;
+  pages?: string;
+  abstract?: string;
+  note?: string; // Description/Note
+  crossref?: string;
+
+  // Lists
+  authors?: string[]; // Simplified for UI, mapped to persons in DB
+  editors?: string[];
+  translators?: string[];
+
+  // Extras
+  extras?: Record<string, string>; // Custom fields
+}
+
+// ============================================================================
 // Unified TypedMetadata Union
 // ============================================================================
 
 export type TypedMetadata =
   | { type: "file"; data: FileMetadata }
   | { type: "document"; data: DocumentMetadata }
+  | { type: "bibliography"; data: BibliographyMetadata } // Added bibliography
   | { type: "table"; data: TableMetadata }
   | { type: "figure"; data: FigureMetadata }
   | { type: "command"; data: CommandMetadata }
@@ -204,6 +283,18 @@ export interface FileType {
   name: string;
   folderName?: string;
   solvable?: boolean;
+  description?: string;
+}
+
+export interface DocumentType {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+export interface TableType {
+  id: string;
+  name: string;
   description?: string;
 }
 
@@ -264,6 +355,8 @@ export type MetadataByType<T extends ResourceType> = T extends "file"
   ? FileMetadata
   : T extends "document"
   ? DocumentMetadata
+  : T extends "bibliography"
+  ? BibliographyMetadata
   : T extends "table"
   ? TableMetadata
   : T extends "figure"

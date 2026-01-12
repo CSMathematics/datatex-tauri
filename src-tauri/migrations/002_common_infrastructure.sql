@@ -48,6 +48,22 @@ CREATE INDEX IF NOT EXISTS idx_sections_chapter ON sections(chapter_id);
 CREATE INDEX IF NOT EXISTS idx_sections_name ON sections(name);
 
 -- ============================================================================
+-- SUBSECTIONS (Organized by Section)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS subsections (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    section_id TEXT NOT NULL,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(name, section_id),
+    FOREIGN KEY(section_id) REFERENCES sections(id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_subsections_section ON subsections(section_id);
+CREATE INDEX IF NOT EXISTS idx_subsections_name ON subsections(name);
+
+-- ============================================================================
 -- EXERCISE TYPES
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS exercise_types (
@@ -78,7 +94,7 @@ BEGIN
 END;
 
 -- ============================================================================
--- FILE TYPES (Resource Type Taxonomy)
+-- FILE TYPES (For File Resources - Theorem, Definition, Exercise, etc.)
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS file_types (
     id TEXT PRIMARY KEY NOT NULL,
@@ -91,6 +107,18 @@ CREATE TABLE IF NOT EXISTS file_types (
 );
 
 CREATE INDEX IF NOT EXISTS idx_file_types_name ON file_types(name);
+
+-- ============================================================================
+-- DOCUMENT TYPES (For Document Resources - Exam, Notes, Article, etc.)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS document_types (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_document_types_name ON document_types(name);
 
 -- ============================================================================
 -- CUSTOM TAGS (User-defined tags)
@@ -112,7 +140,7 @@ CREATE TABLE IF NOT EXISTS texlive_packages (
 CREATE INDEX IF NOT EXISTS idx_texlive_packages_id ON texlive_packages(id);
 
 -- ============================================================================
--- HIERARCHICAL FOLDERS (for Documents)
+-- HIERARCHICAL FOLDERS (Legacy - for Documents)
 -- ============================================================================
 
 -- Basic (top-level) folders
@@ -197,6 +225,21 @@ INSERT OR IGNORE INTO file_types (id, name, folder_name, solvable, description) 
     ('example', 'Example', 'Examples', 0, 'Worked examples'),
     ('other', 'Other', 'Miscellaneous', 0, 'Other file types');
 
+-- Default Document Types
+INSERT OR IGNORE INTO document_types (id, name, description) VALUES 
+    ('exam', 'Διαγώνισμα', 'Examination paper'),
+    ('exam-solution', 'Λύσεις Διαγωνίσματος', 'Exam solutions'),
+    ('notes', 'Σημειώσεις', 'Lecture notes or study notes'),
+    ('exercises', 'Συλλογή Ασκήσεων', 'Collection of exercises'),
+    ('homework', 'Εργασία', 'Homework assignment'),
+    ('article', 'Article', 'Academic article'),
+    ('book', 'Book', 'Book or textbook'),
+    ('book-chapter', 'Book Chapter', 'Chapter of a book'),
+    ('report', 'Report', 'Technical or academic report'),
+    ('presentation', 'Presentation', 'Slides or presentation'),
+    ('worksheet', 'Φύλλο Εργασίας', 'Worksheet'),
+    ('other', 'Other', 'Other document type');
+
 -- Default Exercise Types
 INSERT OR IGNORE INTO exercise_types (id, name, description) VALUES 
     ('multiple-choice', 'Multiple Choice', 'Multiple choice questions'),
@@ -206,5 +249,10 @@ INSERT OR IGNORE INTO exercise_types (id, name, description) VALUES
     ('calculation', 'Calculation', 'Numerical calculations'),
     ('other', 'Other', 'Other exercise types');
 
--- Default basic folder
+-- Default folders (legacy)
 INSERT OR IGNORE INTO basic_folders (name) VALUES ('General');
+INSERT OR IGNORE INTO sub_folders (name) VALUES ('');
+INSERT OR IGNORE INTO sub_folders (name) VALUES ('General');
+INSERT OR IGNORE INTO sub_folders_per_basic (sub_id, basic_id) VALUES ('', 'General');
+INSERT OR IGNORE INTO sub_folders_per_basic (sub_id, basic_id) VALUES ('General', 'General');
+

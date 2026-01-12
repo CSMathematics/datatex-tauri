@@ -62,6 +62,8 @@ import {
 import { dataTexDarkTheme } from "./themes/monaco-theme";
 import { dataTexLightTheme } from "./themes/monaco-light";
 import { dataTexHCTheme } from "./themes/monaco-hc";
+import { monokaiTheme } from "./themes/monaco-monokai";
+import { nordTheme } from "./themes/monaco-nord";
 import { useSettings } from "./hooks/useSettings";
 
 import { TexlabLspClient } from "./services/lspClient";
@@ -72,6 +74,7 @@ import {
 } from "./stores/useTabsStore";
 
 import { useProjectStore } from "./stores/projectStore";
+import { useDatabaseStore } from "./stores/databaseStore";
 import { useAppPanelResize } from "./hooks/useAppPanelResize";
 import { useProjectFiles } from "./hooks/useProjectFiles";
 import { useCompilation } from "./hooks/useCompilation";
@@ -203,8 +206,34 @@ export default function App() {
   >("bottom");
 
   // --- Right Sidebar (ResourceInspector) State ---
-  // --- Right Sidebar (ResourceInspector) State ---
   const [showRightSidebar, setShowRightSidebar] = useState(false);
+
+  // --- Database Logic: Auto-open table when collection checked ---
+  const loadedCollections = useDatabaseStore(
+    (state) => state.loadedCollections
+  );
+  const prevLoadedCountRef = useRef(loadedCollections.length);
+
+  useEffect(() => {
+    // If collection count increased, it means user checked one -> Open Panel
+    if (loadedCollections.length > prevLoadedCountRef.current) {
+      setShowDatabasePanel(true);
+    }
+    prevLoadedCountRef.current = loadedCollections.length;
+  }, [loadedCollections]);
+
+  // --- Resource Inspector Logic: Auto-close when no relevant tabs ---
+  useEffect(() => {
+    // Only keep right sidebar open if there are editor or table tabs
+    // "start-page" and "settings" do not need the resource inspector
+    const hasContentTabs = tabs.some(
+      (t) => t.type === "editor" || t.type === "table"
+    );
+
+    if (!hasContentTabs) {
+      setShowRightSidebar(false);
+    }
+  }, [tabs]);
 
   // --- Template Modal State ---
   const [showTemplateModal, setShowTemplateModal] = useState(false);
@@ -692,6 +721,8 @@ export default function App() {
         monaco.editor.defineTheme("data-tex-dark", dataTexDarkTheme);
         monaco.editor.defineTheme("data-tex-light", dataTexLightTheme);
         monaco.editor.defineTheme("data-tex-hc", dataTexHCTheme);
+        monaco.editor.defineTheme("data-tex-monokai", monokaiTheme);
+        monaco.editor.defineTheme("data-tex-nord", nordTheme);
       }
       // settings is a dependency here
       monaco.editor.setTheme(settings.editor.theme);
@@ -782,6 +813,9 @@ export default function App() {
         children: [],
       };
       handleOpenFileNode(node);
+
+      // Auto-open Resource Inspector when file selected from Table
+      setShowRightSidebar(true);
     },
     [handleOpenFileNode]
   );
@@ -922,6 +956,55 @@ export default function App() {
               onStopCompile={handleStopCompile}
               // Package Browser
               onOpenPackageBrowser={() => setActiveView("package-browser")}
+              // Insert Actions
+              onInsertImage={async () => {
+                if (editorRef.current) {
+                  try {
+                    // @ts-ignore
+                    const { open } = await import("@tauri-apps/plugin-dialog");
+                    const selectedPath = await open({
+                      multiple: false,
+                      title: "Select Image",
+                      filters: [
+                        {
+                          name: "Images",
+                          extensions: [
+                            "png",
+                            "jpg",
+                            "jpeg",
+                            "gif",
+                            "pdf",
+                            "eps",
+                            "svg",
+                          ],
+                        },
+                      ],
+                    });
+
+                    if (selectedPath && typeof selectedPath === "string") {
+                      const imageCode = `\\begin{figure}[h]
+    \\centering
+    \\includegraphics[width=0.8\\textwidth]{${selectedPath}}
+    \\caption{Caption here}
+    \\label{fig:label}
+\\end{figure}`;
+                      const selection = editorRef.current.getSelection();
+                      if (selection) {
+                        editorRef.current.executeEdits("header-menu", [
+                          {
+                            range: selection,
+                            text: imageCode,
+                            forceMoveMarkers: true,
+                          },
+                        ]);
+                        editorRef.current.focus();
+                      }
+                    }
+                  } catch (e) {
+                    console.error("Failed to open image dialog:", e);
+                  }
+                }
+              }}
             />
           </AppShell.Header>
 
@@ -1086,7 +1169,8 @@ export default function App() {
                         minWidth: 250,
                         maxWidth: 800,
                         height: "100%",
-                        borderRight: "1px solid var(--mantine-color-dark-6)",
+                        borderRight:
+                          "1px solid var(--mantine-color-default-border)",
                         overflow: "hidden",
                       }}
                     >
@@ -1139,6 +1223,7 @@ export default function App() {
                         onSyncTexForward={handleSyncTexForward}
                         spellCheckEnabled={spellCheckEnabled}
                         onOpenFileFromTable={handleOpenFileFromTable}
+                        onOpenFile={(path) => handleOpenFileFromTable(path)}
                         lspClient={lspClientRef.current}
                       />
                     </Box>
@@ -1188,6 +1273,7 @@ export default function App() {
                         onSyncTexForward={handleSyncTexForward}
                         spellCheckEnabled={spellCheckEnabled}
                         onOpenFileFromTable={handleOpenFileFromTable}
+                        onOpenFile={(path) => handleOpenFileFromTable(path)}
                         lspClient={lspClientRef.current}
                       />
                     </Box>
@@ -1203,7 +1289,8 @@ export default function App() {
                             height: "var(--database-panel-height)",
                             minHeight: 100,
                             maxHeight: "80%",
-                            borderTop: "1px solid var(--mantine-color-dark-6)",
+                            borderTop:
+                              "1px solid var(--mantine-color-default-border)",
                             overflow: "hidden",
                           }}
                         >
@@ -1226,7 +1313,8 @@ export default function App() {
                     style={{
                       width: "var(--right-panel-width)",
                       height: "100%",
-                      borderLeft: "1px solid var(--mantine-color-dark-6)",
+                      borderLeft:
+                        "1px solid var(--mantine-color-default-border)",
                       backgroundColor: "var(--app-panel-bg)",
                       display: "flex",
                       flexDirection: "column",

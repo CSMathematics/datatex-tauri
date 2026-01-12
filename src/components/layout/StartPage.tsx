@@ -1,7 +1,6 @@
 import React from "react";
 import {
   Container,
-  Title,
   Text,
   SimpleGrid,
   Card,
@@ -57,7 +56,7 @@ export const StartPage: React.FC<StartPageProps> = ({
         padding="lg"
         radius="md"
         withBorder
-        bg="dark.7"
+        bg="var(--mantine-color-default)"
         style={{
           transition: "transform 0.2s, border-color 0.2s",
           height: "100%",
@@ -72,7 +71,7 @@ export const StartPage: React.FC<StartPageProps> = ({
             <FontAwesomeIcon icon={icon} style={{ width: 24, height: 24 }} />
           </ThemeIcon>
           <Stack gap={4} style={{ flex: 1 }}>
-            <Text size="md" fw={700} c="white">
+            <Text size="md" fw={700}>
               {title}
             </Text>
             <Text size="xs" c="dimmed">
@@ -96,7 +95,7 @@ export const StartPage: React.FC<StartPageProps> = ({
         style={{
           borderRadius: 8,
           transition: "0.2s",
-          ":hover": { backgroundColor: "var(--mantine-color-dark-6)" },
+          ":hover": { backgroundColor: "var(--mantine-color-default-hover)" },
         }}
       >
         <Group gap="xs">
@@ -112,14 +111,18 @@ export const StartPage: React.FC<StartPageProps> = ({
         </Group>
         <FontAwesomeIcon
           icon={faChevronRight}
-          style={{ width: 14, height: 14, color: "#5c5f66" }}
+          style={{
+            width: 14,
+            height: 14,
+            color: "var(--mantine-color-dimmed)",
+          }}
         />
       </Group>
     </UnstyledButton>
   );
 
   return (
-    <ScrollArea h="100%" bg="dark.8">
+    <ScrollArea h="100%" bg="var(--mantine-color-body)">
       <Container size="xl" py={50}>
         <Stack gap={40}>
           {/* Hero Section */}
@@ -240,7 +243,7 @@ export const StartPage: React.FC<StartPageProps> = ({
               <Divider label="RECENT PROJECTS" labelPosition="left" my="xs" />
 
               {recentProjects.length > 0 ? (
-                <Card withBorder bg="dark.7" p={0}>
+                <Card withBorder bg="var(--mantine-color-default)" p={0}>
                   <Stack gap={0}>
                     {recentProjects.map((path, idx) => (
                       <UnstyledButton
@@ -250,11 +253,12 @@ export const StartPage: React.FC<StartPageProps> = ({
                         style={{
                           borderBottom:
                             idx < recentProjects.length - 1
-                              ? "1px solid var(--mantine-color-dark-6)"
+                              ? "1px solid var(--mantine-color-default-border)"
                               : "none",
                           transition: "background-color 0.2s",
                           ":hover": {
-                            backgroundColor: "var(--mantine-color-dark-6)",
+                            backgroundColor:
+                              "var(--mantine-color-default-hover)",
                           },
                         }}
                       >
@@ -266,7 +270,7 @@ export const StartPage: React.FC<StartPageProps> = ({
                             />
                           </ThemeIcon>
                           <Box style={{ flex: 1, overflow: "hidden" }}>
-                            <Text size="sm" fw={500} c="white" truncate>
+                            <Text size="sm" fw={500} truncate>
                               {path.split(/[/\\]/).pop()}
                             </Text>
                             <Text size="xs" c="dimmed" truncate>
@@ -300,7 +304,7 @@ export const StartPage: React.FC<StartPageProps> = ({
               >
                 Quick Resources
               </Text>
-              <Card withBorder bg="dark.7" padding="sm">
+              <Card withBorder bg="var(--mantine-color-default)" padding="sm">
                 <Stack gap={4}>
                   <QuickLink
                     title="LaTeX Cheatsheet"
@@ -340,7 +344,7 @@ export const StartPage: React.FC<StartPageProps> = ({
                     <Card
                       withBorder
                       padding="xs"
-                      bg="dark.7"
+                      bg="var(--mantine-color-default)"
                       style={{
                         transition: "0.2s",
                         ":hover": {

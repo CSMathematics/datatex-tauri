@@ -327,7 +327,7 @@ export const DatabaseSidebar = ({
 
   // Get current view title and actions
   const currentTitle =
-    activeView === "collections" ? "COLLECTIONS" : "PROJECT FOLDERS";
+    activeView === "collections" ? "Collections" : "Project Folders";
   const currentActions =
     activeView === "collections" ? collectionsToolbarActions : [];
   const showExpandToggle = activeView !== "collections";

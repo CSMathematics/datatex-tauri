@@ -376,7 +376,7 @@ export const VisualGraphView = ({ onOpenFile }: VisualGraphViewProps) => {
             width: 220, // Slightly wider for layout select
             maxHeight: "calc(100% - 80px)", // Prevent overflow
             overflowY: "auto",
-            backgroundColor: "rgba(25, 25, 25, 0.95)",
+            backgroundColor: "var(--mantine-color-body)",
           }}
         >
           <Stack gap="xs">
@@ -499,7 +499,7 @@ export const VisualGraphView = ({ onOpenFile }: VisualGraphViewProps) => {
             top: 60,
             left: 10,
             zIndex: 100,
-            backgroundColor: "rgba(25, 25, 25, 0.95)",
+            backgroundColor: "var(--mantine-color-body)",
             pointerEvents: "none", // Allow clicking through if needed, but usually legend is info only
           }}
         >
@@ -693,7 +693,7 @@ export const VisualGraphView = ({ onOpenFile }: VisualGraphViewProps) => {
             if (link.type === "image") return [4, 2];
             return null; // Solid
           }}
-          backgroundColor={theme.colors.dark[7]}
+          backgroundColor="var(--mantine-color-body)"
         />
       </div>
 

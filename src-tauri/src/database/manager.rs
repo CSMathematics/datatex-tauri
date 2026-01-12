@@ -27,7 +27,7 @@ impl DatabaseManager {
         // New migrations should be added at the end with incrementing numbers
         let schemas = [
             include_str!("../../migrations/init.sql"), // Base schema
-            include_str!("../../migrations/002_common_infrastructure.sql"), // Fields, chapters, sections, etc
+            include_str!("../../migrations/002_common_infrastructure.sql"), // Fields, chapters, sections, subsections, types
             include_str!("../../migrations/003_resource_files.sql"),        // File resources
             include_str!("../../migrations/004_resource_documents.sql"),    // Document resources
             include_str!("../../migrations/005_resource_tables.sql"),       // Table resources
@@ -37,7 +37,9 @@ impl DatabaseManager {
             include_str!("../../migrations/009_resource_preambles.sql"), // Preamble resources
             include_str!("../../migrations/010_resource_classes.sql"),  // Class resources
             include_str!("../../migrations/011_migrate_json_to_typed.sql"), // Migration from JSON to typed
-            include_str!("../../migrations/012_subsections.sql"), // Subsections (4th hierarchy level)
+            include_str!("../../migrations/017_resource_bibliographies.sql"), // Detailed Bibliography metadata
+            include_str!("../../migrations/018_enrich_resource_tables.sql"), // Enrich Table metadata
+            include_str!("../../migrations/019_resource_table_types.sql"),   // Table Types
         ];
 
         for init_script in schemas {

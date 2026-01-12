@@ -13,6 +13,7 @@ import {
 import { useTypedMetadataStore } from "../../stores/typedMetadataStore";
 import type { FileMetadata } from "../../types/typedMetadata";
 import { HierarchyEditor } from "./HierarchyEditor";
+import { ManageableSelect, ManageableMultiSelect } from "./ManageableSelect";
 
 // ============================================================================
 // Reusable Creatable Select Component
@@ -205,8 +206,16 @@ export const FileMetadataForm: React.FC<FileMetadataFormProps> = ({
   const fileTypes = useTypedMetadataStore((state) => state.fileTypes);
   const exerciseTypes = useTypedMetadataStore((state) => state.exerciseTypes);
   const createFileType = useTypedMetadataStore((state) => state.createFileType);
+  const renameFileType = useTypedMetadataStore((state) => state.renameFileType);
+  const deleteFileType = useTypedMetadataStore((state) => state.deleteFileType);
   const createExerciseType = useTypedMetadataStore(
     (state) => state.createExerciseType
+  );
+  const renameExerciseType = useTypedMetadataStore(
+    (state) => state.renameExerciseType
+  );
+  const deleteExerciseType = useTypedMetadataStore(
+    (state) => state.deleteExerciseType
   );
 
   const handleChange = <K extends keyof FileMetadata>(
@@ -220,14 +229,16 @@ export const FileMetadataForm: React.FC<FileMetadataFormProps> = ({
 
   return (
     <Stack gap="md">
-      {/* File Type - Creatable */}
-      <CreatableSelect
+      {/* File Type - Manageable with Edit/Delete */}
+      <ManageableSelect
         label="File Type"
         placeholder="Select or create file type..."
         data={fileTypes}
         value={metadata.fileTypeId}
         onChange={(value) => handleChange("fileTypeId", value)}
         onCreate={createFileType}
+        onRename={renameFileType}
+        onDelete={deleteFileType}
       />
 
       {/* Hierarchical Category Selection (Tree View) */}
@@ -255,8 +266,8 @@ export const FileMetadataForm: React.FC<FileMetadataFormProps> = ({
         mode="edit"
       />
 
-      {/* Exercise Types - Creatable MultiSelect */}
-      <CreatableMultiSelect
+      {/* Exercise Types - Manageable MultiSelect with Edit/Delete */}
+      <ManageableMultiSelect
         label="Exercise Types"
         placeholder="Select or create exercise types..."
         data={exerciseTypes}
@@ -265,6 +276,8 @@ export const FileMetadataForm: React.FC<FileMetadataFormProps> = ({
           handleChange("exerciseTypes", value.length > 0 ? value : undefined)
         }
         onCreate={createExerciseType}
+        onRename={renameExerciseType}
+        onDelete={deleteExerciseType}
       />
 
       <NumberInput

@@ -196,6 +196,7 @@ const HierarchyTreeNode: React.FC<HierarchyTreeNodeProps> = ({
 
   const handleStartCreate = useCallback(() => {
     setIsCreating(true);
+    setExpanded(true);
     setNewName("");
   }, []);
 
@@ -272,7 +273,7 @@ const HierarchyTreeNode: React.FC<HierarchyTreeNodeProps> = ({
           borderRadius: 4,
           cursor: "pointer",
           backgroundColor: isHovered
-            ? "var(--mantine-color-dark-6)"
+            ? "var(--mantine-color-default-hover)"
             : "transparent",
         }}
         onMouseEnter={() => setIsHovered(true)}

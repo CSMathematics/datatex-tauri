@@ -38,6 +38,7 @@ import {
   faProjectDiagram,
   faTable,
   faColumns,
+  faExchangeAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import { useDatabaseStore } from "../../stores/databaseStore";
 import { invoke } from "@tauri-apps/api/core";
@@ -77,6 +78,8 @@ export const DatabaseView = React.memo(
       (state) => state.activeResourceId
     );
     const deleteResource = useDatabaseStore((state) => state.deleteResource);
+    const moveResource = useDatabaseStore((state) => state.moveResource);
+    const fullCollections = useDatabaseStore((state) => state.collections); // Get all collections for move list
     const [globalSearch, setGlobalSearch] = useState("");
     const [columnFilters, setColumnFilters] = useState<Record<string, string>>(
       {}
@@ -121,8 +124,12 @@ export const DatabaseView = React.memo(
 
     // Filter resources by kind first, then by .tex extension
     const filteredByKind = useMemo(() => {
-      let result = allLoadedResources.filter((r) =>
-        r.path.toLowerCase().endsWith(".tex")
+      let result = allLoadedResources.filter(
+        (r) =>
+          r.path.toLowerCase().endsWith(".tex") ||
+          r.path.toLowerCase().endsWith(".bib") ||
+          r.path.toLowerCase().endsWith(".sty") ||
+          r.path.toLowerCase().endsWith(".cls")
       );
       if (kindFilter && kindFilter !== "all") {
         result = result.filter((r) => r.kind === kindFilter);
@@ -481,7 +488,7 @@ export const DatabaseView = React.memo(
                 <Group
                   gap="2px"
                   style={{
-                    backgroundColor: "var(--mantine-color-dark-7)",
+                    backgroundColor: "var(--mantine-color-default)",
                     padding: "4px 8px",
                     borderRadius: "4px",
                   }}
@@ -574,6 +581,35 @@ export const DatabaseView = React.memo(
                       />
                     </ActionIcon>
                   </Tooltip>
+
+                  <Menu shadow="md" width={200}>
+                    <Tooltip label="Move to Collection">
+                      <Menu.Target>
+                        <ActionIcon variant="subtle" size="xs" color="gray.7">
+                          <FontAwesomeIcon
+                            icon={faExchangeAlt}
+                            style={{ height: 12 }}
+                          />
+                        </ActionIcon>
+                      </Menu.Target>
+                    </Tooltip>
+                    <Menu.Dropdown>
+                      <Menu.Label>Move to...</Menu.Label>
+                      {activeResource &&
+                        fullCollections
+                          .filter((c) => c.name !== activeResource.collection)
+                          .map((c) => (
+                            <Menu.Item
+                              key={c.name}
+                              onClick={() =>
+                                moveResource(activeResource.id, c.name)
+                              }
+                            >
+                              {c.name}
+                            </Menu.Item>
+                          ))}
+                    </Menu.Dropdown>
+                  </Menu>
                   <Tooltip label="Remove from Database">
                     <ActionIcon
                       variant="subtle"
@@ -647,7 +683,7 @@ export const DatabaseView = React.memo(
                               />
                             </Box>
                             <TextInput
-                              placeholder={`Filter ${col.label}`}
+                              placeholder={`${col.label}...`}
                               size="xs"
                               value={columnFilters[col.key] || ""}
                               onChange={(e) =>

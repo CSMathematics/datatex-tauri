@@ -19,6 +19,8 @@ import type {
   Subsection,
   ExerciseType,
   FileType,
+  DocumentType,
+  TableType,
   PackageTopic,
   MacroCommandType,
   ResourceType,
@@ -32,6 +34,8 @@ interface TypedMetadataState {
   subsections: Subsection[];
   exerciseTypes: ExerciseType[];
   fileTypes: FileType[];
+  documentTypes: DocumentType[];
+  tableTypes: TableType[];
   packageTopics: PackageTopic[];
   macroCommandTypes: MacroCommandType[];
 
@@ -45,6 +49,8 @@ interface TypedMetadataState {
   loadSubsections: (sectionId?: string) => Promise<void>;
   loadExerciseTypes: () => Promise<void>;
   loadFileTypes: () => Promise<void>;
+  loadDocumentTypes: () => Promise<void>;
+  loadTableTypes: () => Promise<void>;
   loadPackageTopics: () => Promise<void>;
   loadMacroCommandTypes: () => Promise<void>;
   loadAllLookupData: () => Promise<void>;
@@ -56,6 +62,8 @@ interface TypedMetadataState {
   createSubsection: (name: string, sectionId: string) => Promise<Subsection>;
   createFileType: (name: string) => Promise<FileType>;
   createExerciseType: (name: string) => Promise<ExerciseType>;
+  createDocumentType: (name: string) => Promise<DocumentType>;
+  createTableType: (name: string) => Promise<TableType>;
   createPackageTopic: (name: string) => Promise<PackageTopic>;
   createMacroCommandType: (name: string) => Promise<MacroCommandType>;
 
@@ -64,12 +72,20 @@ interface TypedMetadataState {
   deleteChapter: (id: string) => Promise<void>;
   deleteSection: (id: string) => Promise<void>;
   deleteSubsection: (id: string) => Promise<void>;
+  deleteFileType: (id: string) => Promise<void>;
+  deleteExerciseType: (id: string) => Promise<void>;
+  deleteDocumentType: (id: string) => Promise<void>;
+  deleteTableType: (id: string) => Promise<void>;
 
   // Rename Actions
   renameField: (id: string, name: string) => Promise<void>;
   renameChapter: (id: string, name: string) => Promise<void>;
   renameSection: (id: string, name: string) => Promise<void>;
   renameSubsection: (id: string, name: string) => Promise<void>;
+  renameFileType: (id: string, name: string) => Promise<void>;
+  renameExerciseType: (id: string, name: string) => Promise<void>;
+  renameDocumentType: (id: string, name: string) => Promise<void>;
+  renameTableType: (id: string, name: string) => Promise<void>;
 
   saveTypedMetadata: (
     resourceId: string,
@@ -103,6 +119,8 @@ export const useTypedMetadataStore = create<TypedMetadataState>((set, get) => ({
   subsections: [],
   exerciseTypes: [],
   fileTypes: [],
+  documentTypes: [],
+  tableTypes: [],
   packageTopics: [],
   macroCommandTypes: [],
   isLoadingLookupData: false,
@@ -179,6 +197,30 @@ export const useTypedMetadataStore = create<TypedMetadataState>((set, get) => ({
     }
   },
 
+  // Load document types
+  loadDocumentTypes: async () => {
+    try {
+      const documentTypes = await invoke<DocumentType[]>(
+        "get_document_types_cmd"
+      );
+      set({ documentTypes });
+    } catch (error) {
+      console.error("Failed to load document types:", error);
+      throw error;
+    }
+  },
+
+  // Load table types
+  loadTableTypes: async () => {
+    try {
+      const tableTypes = await invoke<TableType[]>("get_table_types_cmd");
+      set({ tableTypes });
+    } catch (error) {
+      console.error("Failed to load table types:", error);
+      throw error;
+    }
+  },
+
   // Load package topics
   loadPackageTopics: async () => {
     try {
@@ -215,6 +257,8 @@ export const useTypedMetadataStore = create<TypedMetadataState>((set, get) => ({
         get().loadSections(),
         get().loadExerciseTypes(),
         get().loadFileTypes(),
+        get().loadDocumentTypes(),
+        get().loadTableTypes(),
         get().loadPackageTopics(),
         get().loadMacroCommandTypes(),
       ]);
@@ -305,6 +349,39 @@ export const useTypedMetadataStore = create<TypedMetadataState>((set, get) => ({
       return exerciseType;
     } catch (error) {
       console.error("Failed to create exercise type:", error);
+      throw error;
+    }
+  },
+
+  // Create new document type
+  createDocumentType: async (name: string) => {
+    try {
+      const documentType = await invoke<DocumentType>(
+        "create_document_type_cmd",
+        { name }
+      );
+      set((state) => ({
+        documentTypes: [...state.documentTypes, documentType],
+      }));
+      return documentType;
+    } catch (error) {
+      console.error("Failed to create document type:", error);
+      throw error;
+    }
+  },
+
+  // Create new table type
+  createTableType: async (name: string) => {
+    try {
+      const tableType = await invoke<TableType>("create_table_type_cmd", {
+        name,
+      });
+      set((state) => ({
+        tableTypes: [...state.tableTypes, tableType],
+      }));
+      return tableType;
+    } catch (error) {
+      console.error("Failed to create table type:", error);
       throw error;
     }
   },
@@ -401,6 +478,74 @@ export const useTypedMetadataStore = create<TypedMetadataState>((set, get) => ({
     set((state) => ({
       subsections: state.subsections.map((ss) =>
         ss.id === id ? { ...ss, name } : ss
+      ),
+    }));
+  },
+
+  // FileType Rename/Delete Actions
+  deleteFileType: async (id: string) => {
+    await invoke("delete_file_type_cmd", { id });
+    set((state) => ({
+      fileTypes: state.fileTypes.filter((ft) => ft.id !== id),
+    }));
+  },
+
+  renameFileType: async (id: string, name: string) => {
+    await invoke("rename_file_type_cmd", { id, name });
+    set((state) => ({
+      fileTypes: state.fileTypes.map((ft) =>
+        ft.id === id ? { ...ft, name } : ft
+      ),
+    }));
+  },
+
+  // ExerciseType Rename/Delete Actions
+  deleteExerciseType: async (id: string) => {
+    await invoke("delete_exercise_type_cmd", { id });
+    set((state) => ({
+      exerciseTypes: state.exerciseTypes.filter((et) => et.id !== id),
+    }));
+  },
+
+  renameExerciseType: async (id: string, name: string) => {
+    await invoke("rename_exercise_type_cmd", { id, name });
+    set((state) => ({
+      exerciseTypes: state.exerciseTypes.map((et) =>
+        et.id === id ? { ...et, name } : et
+      ),
+    }));
+  },
+
+  // DocumentType Rename/Delete Actions
+  deleteDocumentType: async (id: string) => {
+    await invoke("delete_document_type_cmd", { id });
+    set((state) => ({
+      documentTypes: state.documentTypes.filter((dt) => dt.id !== id),
+    }));
+  },
+
+  renameDocumentType: async (id: string, name: string) => {
+    await invoke("rename_document_type_cmd", { id, name });
+    set((state) => ({
+      documentTypes: state.documentTypes.map((dt) =>
+        dt.id === id ? { ...dt, name } : dt
+      ),
+    }));
+  },
+
+  // TableType Rename/Delete Actions
+  deleteTableType: async (id: string) => {
+    await invoke("delete_table_type_cmd", { id });
+    set((state) => ({
+      tableTypes: state.tableTypes.filter((tt) => tt.id !== id),
+    }));
+  },
+
+  renameTableType: async (id: string, name: string) => {
+    await invoke("rename_table_type_cmd", { id, name });
+    set((state) => ({
+      tableTypes: state.tableTypes.map((tt) =>
+        tt.id === id ? { ...tt, name } : tt
       ),
     }));
   },

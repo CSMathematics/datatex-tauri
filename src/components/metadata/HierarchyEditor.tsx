@@ -307,7 +307,7 @@ export const HierarchyEditor: React.FC<HierarchyEditorProps> = ({
       {!compact && (
         <Group justify="space-between" mb="xs">
           <Group gap="xs">
-            <Title order={6}>Hierarchy</Title>
+            <Title order={6}>Fields - Chapters - Sections - Subsections</Title>
             <ActionIcon size="sm" variant="subtle" onClick={handleRefresh}>
               <IconRefresh size={14} />
             </ActionIcon>

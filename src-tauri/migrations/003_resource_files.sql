@@ -61,6 +61,18 @@ CREATE TABLE IF NOT EXISTS resource_file_exercise_types (
     FOREIGN KEY(exercise_type_id) REFERENCES exercise_types(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
+-- Subsections per File (many-to-many)
+CREATE TABLE IF NOT EXISTS resource_file_subsections (
+    resource_id TEXT NOT NULL,
+    subsection_id TEXT NOT NULL,
+    PRIMARY KEY(resource_id, subsection_id),
+    FOREIGN KEY(resource_id) REFERENCES resource_files(resource_id) ON DELETE CASCADE,
+    FOREIGN KEY(subsection_id) REFERENCES subsections(id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_resource_file_subsections_resource ON resource_file_subsections(resource_id);
+CREATE INDEX IF NOT EXISTS idx_resource_file_subsections_subsection ON resource_file_subsections(subsection_id);
+
 -- Required Packages per File (many-to-many)
 CREATE TABLE IF NOT EXISTS resource_file_packages (
     resource_id TEXT NOT NULL,

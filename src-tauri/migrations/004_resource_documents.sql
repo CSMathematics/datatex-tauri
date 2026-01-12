@@ -5,36 +5,81 @@
 
 CREATE TABLE IF NOT EXISTS resource_documents (
     resource_id TEXT PRIMARY KEY NOT NULL,
-    title TEXT NOT NULL,
-    document_type_id TEXT,  -- FK to file_types
-    basic_folder TEXT NOT NULL,
-    sub_folder TEXT NOT NULL,
+    title TEXT,  -- Nullable: document may not have title yet
+    document_type_id TEXT,  -- FK to document_types (NOT file_types)
+    -- Hierarchy (new system)
+    field_id TEXT,  -- FK to fields
+    -- Legacy folder hierarchy (optional, for backwards compatibility)
+    basic_folder TEXT,  -- Nullable now
+    sub_folder TEXT,  -- Nullable now
     subsub_folder TEXT,
+    -- Other metadata
     date DATE,
     content TEXT,  -- Document LaTeX content
     preamble_id TEXT,  -- FK to resources.id
     build_command TEXT,
-    needs_update BOOLEAN DEFAULT FALSE,
     bibliography TEXT,
     description TEXT,
     solution_document_id TEXT,  -- FK to resources.id
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    -- Foreign keys
     FOREIGN KEY(resource_id) REFERENCES resources(id) ON DELETE CASCADE,
-    FOREIGN KEY(document_type_id) REFERENCES file_types(id) ON UPDATE CASCADE ON DELETE SET NULL,
-    FOREIGN KEY(basic_folder) REFERENCES basic_folders(name) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY(sub_folder) REFERENCES sub_folders(name) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY(subsub_folder) REFERENCES subsub_folders(name) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY(document_type_id) REFERENCES document_types(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    FOREIGN KEY(field_id) REFERENCES fields(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    FOREIGN KEY(basic_folder) REFERENCES basic_folders(name) ON UPDATE CASCADE ON DELETE SET NULL,
+    FOREIGN KEY(sub_folder) REFERENCES sub_folders(name) ON UPDATE CASCADE ON DELETE SET NULL,
+    FOREIGN KEY(subsub_folder) REFERENCES subsub_folders(name) ON UPDATE CASCADE ON DELETE SET NULL,
     FOREIGN KEY(preamble_id) REFERENCES resources(id) ON DELETE SET NULL,
     FOREIGN KEY(solution_document_id) REFERENCES resources(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_resource_documents_type ON resource_documents(document_type_id);
+CREATE INDEX IF NOT EXISTS idx_resource_documents_field ON resource_documents(field_id);
 CREATE INDEX IF NOT EXISTS idx_resource_documents_folder ON resource_documents(basic_folder, sub_folder);
-CREATE INDEX IF NOT EXISTS idx_resource_documents_needs_update ON resource_documents(needs_update);
 
 -- ============================================================================
--- JUNCTION TABLES for Documents
+-- HIERARCHY JUNCTION TABLES for Documents
+-- ============================================================================
+
+-- Chapters per Document
+CREATE TABLE IF NOT EXISTS resource_document_chapters (
+    resource_id TEXT NOT NULL,
+    chapter_id TEXT NOT NULL,
+    PRIMARY KEY(resource_id, chapter_id),
+    FOREIGN KEY(resource_id) REFERENCES resource_documents(resource_id) ON DELETE CASCADE,
+    FOREIGN KEY(chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_document_chapters_resource ON resource_document_chapters(resource_id);
+CREATE INDEX IF NOT EXISTS idx_document_chapters_chapter ON resource_document_chapters(chapter_id);
+
+-- Sections per Document
+CREATE TABLE IF NOT EXISTS resource_document_sections (
+    resource_id TEXT NOT NULL,
+    section_id TEXT NOT NULL,
+    PRIMARY KEY(resource_id, section_id),
+    FOREIGN KEY(resource_id) REFERENCES resource_documents(resource_id) ON DELETE CASCADE,
+    FOREIGN KEY(section_id) REFERENCES sections(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_document_sections_resource ON resource_document_sections(resource_id);
+CREATE INDEX IF NOT EXISTS idx_document_sections_section ON resource_document_sections(section_id);
+
+-- Subsections per Document
+CREATE TABLE IF NOT EXISTS resource_document_subsections (
+    resource_id TEXT NOT NULL,
+    subsection_id TEXT NOT NULL,
+    PRIMARY KEY(resource_id, subsection_id),
+    FOREIGN KEY(resource_id) REFERENCES resource_documents(resource_id) ON DELETE CASCADE,
+    FOREIGN KEY(subsection_id) REFERENCES subsections(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_document_subsections_resource ON resource_document_subsections(resource_id);
+CREATE INDEX IF NOT EXISTS idx_document_subsections_subsection ON resource_document_subsections(subsection_id);
+
+-- ============================================================================
+-- OTHER JUNCTION TABLES for Documents
 -- ============================================================================
 
 -- Files included in Document (with source tracking)
@@ -99,7 +144,7 @@ END;
 
 CREATE TRIGGER IF NOT EXISTS create_document_history_on_update
 AFTER UPDATE ON resource_documents
-WHEN OLD.content != NEW.content OR OLD.description != NEW.description
+WHEN OLD.content IS NOT NULL AND NEW.content IS NOT NULL AND OLD.content != NEW.content
 BEGIN
     INSERT INTO resource_document_history (resource_id, modification, content, metadata)
     VALUES (

@@ -577,7 +577,7 @@ export const ResourceInspector = ({
             flex: 1,
             display: "flex",
             flexDirection: "column",
-            backgroundColor: "var(--mantine-color-dark-8)",
+            backgroundColor: "var(--mantine-color-body)",
           }}
         >
           <Tabs.List>
@@ -596,12 +596,15 @@ export const ResourceInspector = ({
                 >
                   Metadata
                 </Tabs.Tab>
-                <Tabs.Tab
-                  value="bibliography"
-                  leftSection={<FontAwesomeIcon icon={faBook} />}
-                >
-                  Bibliography
-                </Tabs.Tab>
+                {/* Hide Bibliography tab for bibliography files as it's redundant */}
+                {resource.kind !== "bibliography" && (
+                  <Tabs.Tab
+                    value="bibliography"
+                    leftSection={<FontAwesomeIcon icon={faBook} />}
+                  >
+                    Bibliography
+                  </Tabs.Tab>
+                )}
               </>
             )}
           </Tabs.List>
@@ -707,8 +710,8 @@ export const ResourceInspector = ({
             </Tabs.Panel>
           )}
 
-          {/* Bibliography Tab - only when resource is selected */}
-          {resource && (
+          {/* Bibliography Tab - only when resource is selected and not bibliography type */}
+          {resource && resource.kind !== "bibliography" && (
             <Tabs.Panel value="bibliography">
               <Box p="md">
                 <Text c="dimmed" size="sm">

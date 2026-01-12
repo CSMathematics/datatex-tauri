@@ -33,6 +33,12 @@ import {
   faSearch,
   faCut,
   faPaste,
+  faDatabase,
+  faPlusCircle,
+  faTrash,
+  faExchangeAlt,
+  faFileCirclePlus,
+  faFolderOpen,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   IconLayoutBottombarCollapseFilled,
@@ -48,6 +54,7 @@ import { EditorSettings } from "../../hooks/useSettings";
 import { LogPanel } from "../ui/LogPanel";
 import { LogEntry } from "../../utils/logParser";
 import { TexlabLspClient } from "../../services/lspClient";
+import { useDatabaseStore } from "../../stores/databaseStore";
 
 interface EditorAreaProps {
   files: AppTab[];
@@ -89,6 +96,7 @@ interface EditorAreaProps {
   onOpenFileFromTable?: (path: string) => void;
   onOpenPackageBrowser?: () => void;
   onOpenTemplateModal?: () => void;
+  onOpenFile?: (path: string) => void;
   lspClient?: TexlabLspClient | null;
 }
 
@@ -187,13 +195,17 @@ const TabItem = React.memo(
             onClick={() => onSelect(file.id)}
             py={6}
             px={12}
-            bg={file.id === activeFileId ? "dark.7" : "transparent"}
+            bg={
+              file.id === activeFileId
+                ? "var(--mantine-color-default)"
+                : "transparent"
+            }
             style={{
               borderTop:
                 file.id === activeFileId
                   ? "2px solid #339af0"
                   : "2px solid transparent",
-              borderRight: "1px solid var(--mantine-color-dark-6)",
+              borderRight: "1px solid var(--mantine-color-default-border)",
               borderTopRightRadius: 1,
               borderTopLeftRadius: 1,
               cursor: "pointer",
@@ -214,14 +226,21 @@ const TabItem = React.memo(
 
             <Group gap={8} wrap="nowrap">
               {getFileIcon(file.title, file.type)}
-              <Text size="xs" c={file.id === activeFileId ? "white" : "dimmed"}>
+              <Text
+                size="xs"
+                c={
+                  file.id === activeFileId
+                    ? "var(--mantine-color-default-text)"
+                    : "dimmed"
+                }
+              >
                 {file.title}
                 {file.isDirty ? " ●" : ""}
               </Text>
               <ActionIcon
                 size="xs"
                 variant="transparent"
-                color="gray"
+                color="var(--mantine-color-default-text)"
                 className="close-tab"
                 onClick={(e) => onClose(file.id, e)}
                 style={{ opacity: file.id === activeFileId ? 1 : 0.5 }}
@@ -308,6 +327,7 @@ export const EditorArea = React.memo<EditorAreaProps>(
     onSyncTexForward,
     spellCheckEnabled,
     onOpenFileFromTable,
+    onOpenFile,
     lspClient: _lspClient, // Prefixed with underscore to indicate intentionally unused
   }) => {
     const activeFile = files.find((f) => f.id === activeFileId);
@@ -336,6 +356,18 @@ export const EditorArea = React.memo<EditorAreaProps>(
       []
     );
     const handleSaveClick = useCallback(() => onSave?.(), [onSave]);
+
+    // Collection Status
+    const allResources = useDatabaseStore((state) => state.allLoadedResources);
+    const collections = useDatabaseStore((state) => state.collections);
+    const deleteResource = useDatabaseStore((state) => state.deleteResource);
+    const moveResource = useDatabaseStore((state) => state.moveResource);
+    const importFile = useDatabaseStore((state) => state.importFile);
+
+    const currentResource = useMemo(
+      () => allResources.find((r) => r.path === activeFileId),
+      [allResources, activeFileId]
+    );
 
     const handleEditorMount: OnMount = (editor, monaco) => {
       setEditorInstance(editor);
@@ -583,15 +615,83 @@ export const EditorArea = React.memo<EditorAreaProps>(
       editorInstance?.trigger("toolbar", "actions.find");
     };
 
+    const handleInsertImage = useCallback(async () => {
+      if (!editorInstance) return;
+      try {
+        // @ts-ignore
+        const { open } = await import("@tauri-apps/plugin-dialog");
+        const selectedPath = await open({
+          multiple: false,
+          title: "Select Image",
+          filters: [
+            {
+              name: "Images",
+              extensions: ["png", "jpg", "jpeg", "gif", "pdf", "eps", "svg"],
+            },
+          ],
+        });
+
+        if (selectedPath && typeof selectedPath === "string") {
+          const imageCode = `\\begin{figure}[h]
+    \\centering
+    \\includegraphics[width=0.8\\textwidth]{${selectedPath}}
+    \\caption{Caption here}
+    \\label{fig:label}
+\\end{figure}`;
+
+          const selection = editorInstance.getSelection();
+          if (selection) {
+            editorInstance.executeEdits("toolbar", [
+              {
+                range: selection,
+                text: imageCode,
+                forceMoveMarkers: true,
+              },
+            ]);
+          }
+          editorInstance.focus();
+        }
+      } catch (e) {
+        console.error("Failed to open image dialog:", e);
+      }
+    }, [editorInstance]);
+
+    const handleOpenFile = useCallback(async () => {
+      try {
+        // @ts-ignore
+        const { open } = await import("@tauri-apps/plugin-dialog");
+        const selectedPath = await open({
+          multiple: false,
+          title: "Open File",
+          filters: [
+            {
+              name: "TeX Files",
+              extensions: ["tex", "sty", "cls", "bib", "dtx", "ins"],
+            },
+            {
+              name: "All Files",
+              extensions: ["*"],
+            },
+          ],
+        });
+
+        if (selectedPath && typeof selectedPath === "string" && onOpenFile) {
+          onOpenFile(selectedPath);
+        }
+      } catch (e) {
+        console.error("Failed to open file dialog:", e);
+      }
+    }, [onOpenFile]);
+
     return (
       <Stack gap={0} h="100%" w="100%" style={{ overflow: "hidden" }}>
         {/* Tabs Bar */}
         <ScrollArea
           type="hover"
           scrollbarSize={6}
-          bg="dark.8"
+          bg="var(--mantine-color-body)"
           style={{
-            borderBottom: "1px solid var(--mantine-color-dark-6)",
+            borderBottom: "1px solid var(--mantine-color-default-border)",
             whiteSpace: "nowrap",
             flexShrink: 0,
           }}
@@ -618,9 +718,11 @@ export const EditorArea = React.memo<EditorAreaProps>(
             <Group
               h={32}
               px="md"
-              bg="dark.7"
+              bg="var(--mantine-color-body)"
               justify="space-between"
-              style={{ borderBottom: "1px solid var(--mantine-color-dark-6)" }}
+              style={{
+                borderBottom: "1px solid var(--mantine-color-default-border)",
+              }}
             >
               <Group gap={4}>
                 <Text size="xs" c="dimmed">
@@ -639,6 +741,48 @@ export const EditorArea = React.memo<EditorAreaProps>(
                 )}
               </Group>
               <Group gap="4px">
+                {/* New File Split Button */}
+                <Menu shadow="md" width={180}>
+                  <Menu.Target>
+                    <Tooltip label="New File">
+                      <ActionIcon size="xs" variant="subtle" color="gray.7">
+                        <FontAwesomeIcon
+                          icon={faFileCirclePlus}
+                          style={{ width: 14, height: 14 }}
+                        />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Menu.Target>
+                  <Menu.Dropdown bg="var(--mantine-color-default)">
+                    <Menu.Item onClick={onCreateEmpty}>
+                      New Empty File
+                    </Menu.Item>
+                    <Menu.Item onClick={onOpenTemplateModal}>
+                      From Template
+                    </Menu.Item>
+                    <Menu.Item onClick={onOpenWizard}>
+                      Preamble Wizard
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
+
+                {/* Open File Button */}
+                <Tooltip label="Open File">
+                  <ActionIcon
+                    size="xs"
+                    variant="subtle"
+                    color="gray.7"
+                    onClick={handleOpenFile}
+                  >
+                    <FontAwesomeIcon
+                      icon={faFolderOpen}
+                      style={{ width: 14, height: 14 }}
+                    />
+                  </ActionIcon>
+                </Tooltip>
+
+                <Box bg="var(--mantine-color-dimmed)" h="16px" w="1px" />
+
                 {/* Compile Split Button */}
                 <Group gap={0} style={{ backgroundColor: "transparent" }}>
                   <Tooltip label={`Compile (${selectedEngine})`}>
@@ -685,7 +829,7 @@ export const EditorArea = React.memo<EditorAreaProps>(
                         />
                       </ActionIcon>
                     </Menu.Target>
-                    <Menu.Dropdown bg="dark.7">
+                    <Menu.Dropdown bg="var(--mantine-color-default)">
                       <Menu.Label>Select Engine</Menu.Label>
                       <Menu.Item
                         onClick={() => handleSelectEngine("pdflatex")}
@@ -796,7 +940,7 @@ export const EditorArea = React.memo<EditorAreaProps>(
                     <ActionIcon
                       size="xs"
                       variant="subtle"
-                      color="gray.4"
+                      color="gray.7"
                       onClick={onTogglePdf}
                     >
                       <FontAwesomeIcon
@@ -813,7 +957,7 @@ export const EditorArea = React.memo<EditorAreaProps>(
                       <ActionIcon
                         size="xs"
                         variant="subtle"
-                        color="gray.4"
+                        color="gray.7"
                         onClick={handleSaveClick}
                       >
                         <FontAwesomeIcon
@@ -822,12 +966,16 @@ export const EditorArea = React.memo<EditorAreaProps>(
                         />
                       </ActionIcon>
                     </Tooltip>
-                    <Box bg="dark.3" h="16px" w="1px"></Box>
+                    <Box
+                      bg="var(--mantine-color-dimmed)"
+                      h="16px"
+                      w="1px"
+                    ></Box>
                     <Tooltip label="Copy">
                       <ActionIcon
                         size="xs"
                         variant="subtle"
-                        color="gray.4"
+                        color="gray.7"
                         onClick={handleCopy}
                       >
                         <FontAwesomeIcon
@@ -840,7 +988,7 @@ export const EditorArea = React.memo<EditorAreaProps>(
                       <ActionIcon
                         size="xs"
                         variant="subtle"
-                        color="gray.4"
+                        color="gray.7"
                         onClick={handleCut}
                       >
                         <FontAwesomeIcon
@@ -853,7 +1001,7 @@ export const EditorArea = React.memo<EditorAreaProps>(
                       <ActionIcon
                         size="xs"
                         variant="subtle"
-                        color="gray.4"
+                        color="gray.7"
                         onClick={handlePaste}
                       >
                         <FontAwesomeIcon
@@ -866,7 +1014,7 @@ export const EditorArea = React.memo<EditorAreaProps>(
                       <ActionIcon
                         size="xs"
                         variant="subtle"
-                        color="gray.4"
+                        color="gray.7"
                         onClick={handleUndo}
                       >
                         <FontAwesomeIcon
@@ -879,7 +1027,7 @@ export const EditorArea = React.memo<EditorAreaProps>(
                       <ActionIcon
                         size="xs"
                         variant="subtle"
-                        color="gray.4"
+                        color="gray.7"
                         onClick={handleRedo}
                       >
                         <FontAwesomeIcon
@@ -892,7 +1040,7 @@ export const EditorArea = React.memo<EditorAreaProps>(
                       <ActionIcon
                         size="xs"
                         variant="subtle"
-                        color="gray.4"
+                        color="gray.7"
                         onClick={handleFind}
                       >
                         <FontAwesomeIcon
@@ -902,7 +1050,163 @@ export const EditorArea = React.memo<EditorAreaProps>(
                       </ActionIcon>
                     </Tooltip>
 
-                    <Box bg="dark.3" h="16px" w="1px"></Box>
+                    {/* Insert Image Button */}
+                    <Tooltip label="Insert Image">
+                      <ActionIcon
+                        size="xs"
+                        variant="subtle"
+                        color="gray.7"
+                        onClick={handleInsertImage}
+                      >
+                        <FontAwesomeIcon
+                          icon={faImage}
+                          style={{ width: 14, height: 14 }}
+                        />
+                      </ActionIcon>
+                    </Tooltip>
+
+                    {/* Collection Status */}
+                    <Box bg="var(--mantine-color-dimmed)" h="16px" w="1px" />
+                    {currentResource ? (
+                      // File IS in a collection
+                      <Menu shadow="md" width={200}>
+                        <Menu.Target>
+                          <Tooltip
+                            label={`In collection: ${currentResource.collection}`}
+                          >
+                            <ActionIcon
+                              variant="light"
+                              size="xs"
+                              color="blue"
+                              w="auto"
+                              px={6}
+                            >
+                              <Group gap={4}>
+                                <FontAwesomeIcon
+                                  icon={faDatabase}
+                                  style={{ fontSize: 10 }}
+                                />
+                                <Text size="xs" fw={700}>
+                                  {currentResource.collection}
+                                </Text>
+                                <FontAwesomeIcon
+                                  icon={faChevronRight}
+                                  style={{
+                                    fontSize: 8,
+                                    opacity: 0.7,
+                                    transform: "rotate(90deg)",
+                                  }}
+                                />
+                              </Group>
+                            </ActionIcon>
+                          </Tooltip>
+                        </Menu.Target>
+                        <Menu.Dropdown
+                          bg="var(--mantine-color-default)"
+                          style={{
+                            border:
+                              "1px solid var(--mantine-color-default-border)",
+                          }}
+                        >
+                          <Menu.Label>Collection Actions</Menu.Label>
+                          <Menu.Item
+                            color="red"
+                            leftSection={
+                              <FontAwesomeIcon
+                                icon={faTrash}
+                                style={{ width: 12 }}
+                              />
+                            }
+                            onClick={async () => {
+                              if (
+                                confirm(
+                                  "Remove file from collection? (File will not be deleted)"
+                                )
+                              ) {
+                                await deleteResource(currentResource.id);
+                              }
+                            }}
+                          >
+                            Remove from Collection
+                          </Menu.Item>
+                          <Menu.Divider />
+                          <Menu.Label>Move to...</Menu.Label>
+                          {collections
+                            .filter(
+                              (c) => c.name !== currentResource.collection
+                            )
+                            .map((c) => (
+                              <Menu.Item
+                                key={c.name}
+                                leftSection={
+                                  <FontAwesomeIcon
+                                    icon={faExchangeAlt}
+                                    style={{ width: 12 }}
+                                  />
+                                }
+                                onClick={async () => {
+                                  await moveResource(
+                                    currentResource.id,
+                                    c.name
+                                  );
+                                }}
+                              >
+                                {c.name}
+                              </Menu.Item>
+                            ))}
+                        </Menu.Dropdown>
+                      </Menu>
+                    ) : (
+                      // File NOT in collection
+                      <Menu shadow="md" width={200}>
+                        <Menu.Target>
+                          <Tooltip label="Add to Collection">
+                            <ActionIcon
+                              variant="subtle"
+                              size="xs"
+                              color="gray.7"
+                            >
+                              <FontAwesomeIcon icon={faPlusCircle} />
+                            </ActionIcon>
+                          </Tooltip>
+                        </Menu.Target>
+                        <Menu.Dropdown
+                          bg="var(--mantine-color-default)"
+                          style={{
+                            border:
+                              "1px solid var(--mantine-color-default-border)",
+                          }}
+                        >
+                          <Menu.Label>Add to Collection...</Menu.Label>
+                          {collections.length > 0 ? (
+                            collections.map((c) => (
+                              <Menu.Item
+                                key={c.name}
+                                leftSection={
+                                  <FontAwesomeIcon
+                                    icon={faDatabase}
+                                    style={{ width: 12 }}
+                                  />
+                                }
+                                onClick={async () => {
+                                  await importFile(activeFileId, c.name);
+                                }}
+                              >
+                                {c.name}
+                              </Menu.Item>
+                            ))
+                          ) : (
+                            <Menu.Item disabled>No collections found</Menu.Item>
+                          )}
+                        </Menu.Dropdown>
+                      </Menu>
+                    )}
+
+                    <Box
+                      bg="var(--mantine-color-dimmed)"
+                      h="16px"
+                      w="1px"
+                    ></Box>
                     <Tooltip
                       label={
                         showTopEditorToolbar
@@ -913,7 +1217,7 @@ export const EditorArea = React.memo<EditorAreaProps>(
                       <ActionIcon
                         size="xs"
                         variant="subtle"
-                        color="gray.4"
+                        color="gray.7"
                         onClick={handleToggleTopToolbar}
                       >
                         <IconLayoutBottombarCollapseFilled
@@ -931,7 +1235,7 @@ export const EditorArea = React.memo<EditorAreaProps>(
                       <ActionIcon
                         size="xs"
                         variant="subtle"
-                        color="gray.4"
+                        color="gray.7"
                         onClick={handleToggleMathToolbar}
                       >
                         <IconLayoutSidebarLeftCollapseFilled />
@@ -1005,7 +1309,7 @@ export const EditorArea = React.memo<EditorAreaProps>(
                   h={200}
                   style={{
                     flexShrink: 0,
-                    borderTop: "1px solid var(--mantine-color-dark-4)",
+                    borderTop: "1px solid var(--mantine-color-default-border)",
                   }}
                 >
                   <LogPanel

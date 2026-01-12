@@ -1085,6 +1085,158 @@ async fn create_exercise_type_cmd(
     Ok(serde_json::json!({"id": id, "name": name}))
 }
 
+// ============================================================================
+// FileType and ExerciseType Rename/Delete Commands
+// ============================================================================
+
+#[tauri::command]
+async fn rename_file_type_cmd(
+    state: State<'_, AppState>,
+    id: String,
+    name: String,
+) -> Result<(), String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    sqlx::query("UPDATE file_types SET name = ? WHERE id = ?")
+        .bind(&name)
+        .bind(&id)
+        .execute(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn delete_file_type_cmd(state: State<'_, AppState>, id: String) -> Result<(), String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    sqlx::query("DELETE FROM file_types WHERE id = ?")
+        .bind(&id)
+        .execute(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn rename_exercise_type_cmd(
+    state: State<'_, AppState>,
+    id: String,
+    name: String,
+) -> Result<(), String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    sqlx::query("UPDATE exercise_types SET name = ? WHERE id = ?")
+        .bind(&name)
+        .bind(&id)
+        .execute(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn delete_exercise_type_cmd(state: State<'_, AppState>, id: String) -> Result<(), String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    sqlx::query("DELETE FROM exercise_types WHERE id = ?")
+        .bind(&id)
+        .execute(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+// ============================================================================
+// Document Types CRUD Commands
+// ============================================================================
+
+#[tauri::command]
+async fn get_document_types_cmd(
+    state: State<'_, AppState>,
+) -> Result<Vec<serde_json::Value>, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let rows = sqlx::query("SELECT id, name, description FROM document_types ORDER BY name")
+        .fetch_all(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let results: Vec<serde_json::Value> = rows
+        .iter()
+        .map(|row| {
+            serde_json::json!({
+                "id": row.try_get::<String, _>("id").unwrap_or_default(),
+                "name": row.try_get::<String, _>("name").unwrap_or_default(),
+                "description": row.try_get::<String, _>("description").ok()
+            })
+        })
+        .collect();
+
+    Ok(results)
+}
+
+#[tauri::command]
+async fn create_document_type_cmd(
+    state: State<'_, AppState>,
+    name: String,
+) -> Result<serde_json::Value, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    sqlx::query("INSERT INTO document_types (id, name) VALUES (?, ?)")
+        .bind(&id)
+        .bind(&name)
+        .execute(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(serde_json::json!({"id": id, "name": name}))
+}
+
+#[tauri::command]
+async fn rename_document_type_cmd(
+    state: State<'_, AppState>,
+    id: String,
+    name: String,
+) -> Result<(), String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    sqlx::query("UPDATE document_types SET name = ? WHERE id = ?")
+        .bind(&name)
+        .bind(&id)
+        .execute(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn delete_document_type_cmd(state: State<'_, AppState>, id: String) -> Result<(), String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    sqlx::query("DELETE FROM document_types WHERE id = ?")
+        .bind(&id)
+        .execute(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
 #[tauri::command]
 async fn create_package_topic_cmd(
     state: State<'_, AppState>,
@@ -1256,6 +1408,79 @@ async fn get_exercise_types_cmd(
         types.push(serde_json::json!({"id": id, "name": name, "description": description}));
     }
     Ok(types)
+}
+
+#[tauri::command]
+async fn get_table_types_cmd(state: State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let rows = sqlx::query("SELECT id, name, description FROM table_types ORDER BY name")
+        .fetch_all(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let mut types = Vec::new();
+    for row in rows {
+        let id: String = row.get("id");
+        let name: String = row.get("name");
+        let description: Option<String> = row.try_get("description").ok();
+        types.push(serde_json::json!({"id": id, "name": name, "description": description}));
+    }
+    Ok(types)
+}
+
+#[tauri::command]
+async fn create_table_type_cmd(
+    state: State<'_, AppState>,
+    name: String,
+) -> Result<serde_json::Value, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    let id = name.trim().to_lowercase().replace(" ", "_");
+
+    sqlx::query("INSERT INTO table_types (id, name) VALUES (?, ?)")
+        .bind(&id)
+        .bind(&name)
+        .execute(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(serde_json::json!({"id": id, "name": name}))
+}
+
+#[tauri::command]
+async fn rename_table_type_cmd(
+    state: State<'_, AppState>,
+    id: String,
+    name: String,
+) -> Result<(), String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    sqlx::query("UPDATE table_types SET name = ? WHERE id = ?")
+        .bind(&name)
+        .bind(&id)
+        .execute(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn delete_table_type_cmd(state: State<'_, AppState>, id: String) -> Result<(), String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    sqlx::query("DELETE FROM table_types WHERE id = ?")
+        .bind(&id)
+        .execute(&manager.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -1467,6 +1692,7 @@ async fn save_typed_metadata_cmd(
             }
         }
         "document" => {
+            // Parse all document metadata fields
             let title: Option<String> = metadata
                 .get("title")
                 .and_then(|v| v.as_str())
@@ -1479,18 +1705,259 @@ async fn save_typed_metadata_cmd(
                 .get("description")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
+            let field_id: Option<String> = metadata
+                .get("fieldId")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let date: Option<String> = metadata
+                .get("date")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let preamble_id: Option<String> = metadata
+                .get("preambleId")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let build_command: Option<String> = metadata
+                .get("buildCommand")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let bibliography: Option<String> = metadata
+                .get("bibliography")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let solution_document_id: Option<String> = metadata
+                .get("solutionDocumentId")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
 
+            // Insert or replace main document record (folder fields are optional now)
             sqlx::query(
-                "INSERT OR REPLACE INTO resource_documents (resource_id, title, document_type_id, description)
-                 VALUES (?, ?, ?, ?)"
+                "INSERT OR REPLACE INTO resource_documents 
+                 (resource_id, title, document_type_id, field_id, date, 
+                  preamble_id, build_command, bibliography, description, solution_document_id)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             )
             .bind(&resource_id)
             .bind(&title)
             .bind(&document_type_id)
+            .bind(&field_id)
+            .bind(&date)
+            .bind(&preamble_id)
+            .bind(&build_command)
+            .bind(&bibliography)
             .bind(&description)
+            .bind(&solution_document_id)
             .execute(&manager.pool)
             .await
             .map_err(|e| e.to_string())?;
+
+            // Save chapters (junction table)
+            if let Some(chapters) = metadata.get("chapters").and_then(|v| v.as_array()) {
+                sqlx::query("DELETE FROM resource_document_chapters WHERE resource_id = ?")
+                    .bind(&resource_id)
+                    .execute(&manager.pool)
+                    .await
+                    .map_err(|e| e.to_string())?;
+
+                for chapter in chapters {
+                    if let Some(chapter_id) = chapter.as_str() {
+                        sqlx::query("INSERT OR IGNORE INTO resource_document_chapters (resource_id, chapter_id) VALUES (?, ?)")
+                            .bind(&resource_id)
+                            .bind(chapter_id)
+                            .execute(&manager.pool)
+                            .await
+                            .map_err(|e| e.to_string())?;
+                    }
+                }
+            }
+
+            // Save sections
+            if let Some(sections) = metadata.get("sections").and_then(|v| v.as_array()) {
+                sqlx::query("DELETE FROM resource_document_sections WHERE resource_id = ?")
+                    .bind(&resource_id)
+                    .execute(&manager.pool)
+                    .await
+                    .map_err(|e| e.to_string())?;
+
+                for section in sections {
+                    if let Some(section_id) = section.as_str() {
+                        sqlx::query("INSERT OR IGNORE INTO resource_document_sections (resource_id, section_id) VALUES (?, ?)")
+                            .bind(&resource_id)
+                            .bind(section_id)
+                            .execute(&manager.pool)
+                            .await
+                            .map_err(|e| e.to_string())?;
+                    }
+                }
+            }
+
+            // Save subsections
+            if let Some(subsections) = metadata.get("subsections").and_then(|v| v.as_array()) {
+                sqlx::query("DELETE FROM resource_document_subsections WHERE resource_id = ?")
+                    .bind(&resource_id)
+                    .execute(&manager.pool)
+                    .await
+                    .map_err(|e| e.to_string())?;
+
+                for subsection in subsections {
+                    if let Some(subsection_id) = subsection.as_str() {
+                        sqlx::query("INSERT OR IGNORE INTO resource_document_subsections (resource_id, subsection_id) VALUES (?, ?)")
+                            .bind(&resource_id)
+                            .bind(subsection_id)
+                            .execute(&manager.pool)
+                            .await
+                            .map_err(|e| e.to_string())?;
+                    }
+                }
+            }
+
+            // Save custom tags
+            if let Some(tags) = metadata.get("customTags").and_then(|v| v.as_array()) {
+                sqlx::query("DELETE FROM resource_document_tags WHERE resource_id = ?")
+                    .bind(&resource_id)
+                    .execute(&manager.pool)
+                    .await
+                    .map_err(|e| e.to_string())?;
+
+                for tag in tags {
+                    if let Some(tag_str) = tag.as_str() {
+                        sqlx::query("INSERT OR IGNORE INTO custom_tags (tag) VALUES (?)")
+                            .bind(tag_str)
+                            .execute(&manager.pool)
+                            .await
+                            .map_err(|e| e.to_string())?;
+
+                        sqlx::query("INSERT OR IGNORE INTO resource_document_tags (resource_id, tag) VALUES (?, ?)")
+                            .bind(&resource_id)
+                            .bind(tag_str)
+                            .execute(&manager.pool)
+                            .await
+                            .map_err(|e| e.to_string())?;
+                    }
+                }
+            }
+        }
+        "bibliography" => {
+            // Helper to get string option
+            let get_str = |key: &str| -> Option<String> {
+                metadata
+                    .get(key)
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+            };
+
+            // 1. Upsert into resource_bibliographies
+            let exists: bool =
+                sqlx::query("SELECT 1 FROM resource_bibliographies WHERE resource_id = ?")
+                    .bind(&resource_id)
+                    .fetch_optional(&manager.pool)
+                    .await
+                    .map_err(|e| e.to_string())?
+                    .is_some();
+
+            let stmt = if exists {
+                "UPDATE resource_bibliographies SET 
+                    entry_type=?, citation_key=?, journal=?, volume=?, series=?, number=?, issue=?,
+                    year=?, month=?, publisher=?, edition=?, institution=?, school=?, organization=?,
+                    address=?, location=?, isbn=?, issn=?, doi=?, url=?, language=?,
+                    title=?, subtitle=?, booktitle=?, chapter=?, pages=?, abstract=?, note=?, crossref=?
+                 WHERE resource_id=?"
+            } else {
+                "INSERT INTO resource_bibliographies (
+                    entry_type, citation_key, journal, volume, series, number, issue,
+                    year, month, publisher, edition, institution, school, organization,
+                    address, location, isbn, issn, doi, url, language,
+                    title, subtitle, booktitle, chapter, pages, abstract, note, crossref,
+                    resource_id
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+            };
+
+            sqlx::query(stmt)
+                .bind(get_str("entryType"))
+                .bind(get_str("citationKey"))
+                .bind(get_str("journal"))
+                .bind(get_str("volume"))
+                .bind(get_str("series"))
+                .bind(get_str("number"))
+                .bind(get_str("issue"))
+                .bind(get_str("year"))
+                .bind(get_str("month"))
+                .bind(get_str("publisher"))
+                .bind(get_str("edition"))
+                .bind(get_str("institution"))
+                .bind(get_str("school"))
+                .bind(get_str("organization"))
+                .bind(get_str("address"))
+                .bind(get_str("location"))
+                .bind(get_str("isbn"))
+                .bind(get_str("issn"))
+                .bind(get_str("doi"))
+                .bind(get_str("url"))
+                .bind(get_str("language"))
+                .bind(get_str("title"))
+                .bind(get_str("subtitle"))
+                .bind(get_str("booktitle"))
+                .bind(get_str("chapter"))
+                .bind(get_str("pages"))
+                .bind(get_str("abstract"))
+                .bind(get_str("note"))
+                .bind(get_str("crossref"))
+                .bind(&resource_id)
+                .execute(&manager.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+
+            // 2. Handle Persons
+            sqlx::query("DELETE FROM resource_bibliography_persons WHERE resource_id = ?")
+                .bind(&resource_id)
+                .execute(&manager.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+
+            let roles = vec![
+                ("authors", "author"),
+                ("editors", "editor"),
+                ("translators", "translator"),
+            ];
+            for (key, role) in roles {
+                if let Some(list) = metadata.get(key).and_then(|v| v.as_array()) {
+                    for (pos, person) in list.iter().enumerate() {
+                        if let Some(name) = person.as_str() {
+                            if !name.trim().is_empty() {
+                                sqlx::query("INSERT INTO resource_bibliography_persons (resource_id, role, full_name, position) VALUES (?, ?, ?, ?)")
+                                    .bind(&resource_id)
+                                    .bind(role)
+                                    .bind(name)
+                                    .bind(pos as i32)
+                                    .execute(&manager.pool)
+                                    .await
+                                    .map_err(|e| e.to_string())?;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. Handle Extras
+            sqlx::query("DELETE FROM resource_bibliography_extras WHERE resource_id = ?")
+                .bind(&resource_id)
+                .execute(&manager.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+
+            if let Some(extras) = metadata.get("extras").and_then(|v| v.as_object()) {
+                for (k, v) in extras {
+                    if let Some(val_str) = v.as_str() {
+                        sqlx::query("INSERT INTO resource_bibliography_extras (resource_id, \"key\", value) VALUES (?, ?, ?)")
+                            .bind(&resource_id)
+                            .bind(k)
+                            .bind(val_str)
+                            .execute(&manager.pool)
+                            .await
+                            .map_err(|e| e.to_string())?;
+                    }
+                }
+            }
         }
         "figure" => {
             let environment: Option<String> = metadata
@@ -1518,22 +1985,7 @@ async fn save_typed_metadata_cmd(
             .await
             .map_err(|e| e.to_string())?;
         }
-        "table" => {
-            let caption: Option<String> = metadata
-                .get("caption")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
 
-            sqlx::query(
-                "INSERT OR REPLACE INTO resource_tables (resource_id, caption)
-                 VALUES (?, ?)",
-            )
-            .bind(&resource_id)
-            .bind(&caption)
-            .execute(&manager.pool)
-            .await
-            .map_err(|e| e.to_string())?;
-        }
         "command" => {
             let name: Option<String> = metadata
                 .get("name")
@@ -1557,9 +2009,108 @@ async fn save_typed_metadata_cmd(
             .await
             .map_err(|e| e.to_string())?;
         }
-        _ => {
-            // For other types, just succeed silently for now
+        "table" => {
+            // Helper to get string option
+            let get_str = |key: &str| -> Option<String> {
+                metadata
+                    .get(key)
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+            };
+            // Helper to get int option
+            let get_int = |key: &str| -> Option<i64> { metadata.get(key).and_then(|v| v.as_i64()) };
+
+            let exists: bool = sqlx::query("SELECT 1 FROM resource_tables WHERE resource_id = ?")
+                .bind(&resource_id)
+                .fetch_optional(&manager.pool)
+                .await
+                .map_err(|e| e.to_string())?
+                .is_some();
+
+            let stmt = if exists {
+                "UPDATE resource_tables SET 
+                    table_type_id=?, date=?, caption=?, description=?, 
+                    environment=?, placement=?, label=?, width=?, alignment=?,
+                    rows=?, columns=?
+                 WHERE resource_id=?"
+            } else {
+                "INSERT INTO resource_tables (
+                    table_type_id, date, caption, description,
+                    environment, placement, label, width, alignment,
+                    rows, columns,
+                    resource_id
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
+            };
+
+            sqlx::query(stmt)
+                .bind(get_str("tableTypeId"))
+                .bind(get_str("date"))
+                .bind(get_str("caption"))
+                .bind(get_str("description"))
+                .bind(get_str("environment"))
+                .bind(get_str("placement"))
+                .bind(get_str("label"))
+                .bind(get_str("width"))
+                .bind(get_str("alignment"))
+                .bind(get_int("rows"))
+                .bind(get_int("columns"))
+                .bind(&resource_id)
+                .execute(&manager.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+
+            // Save required packages
+            if let Some(packages) = metadata.get("requiredPackages").and_then(|v| v.as_array()) {
+                sqlx::query("DELETE FROM resource_table_packages WHERE resource_id = ?")
+                    .bind(&resource_id)
+                    .execute(&manager.pool)
+                    .await
+                    .map_err(|e| e.to_string())?;
+
+                for pkg in packages {
+                    if let Some(pkg_id) = pkg.as_str() {
+                        // Ensure package exists (simple heuristic for now or strict FK)
+                        // Assuming texlive_packages are pre-populated or we ignore errors?
+                        // Actually FK constraint ON DELETE CASCADE usually implies strict.
+                        // For now we assume package_id is valid or we insert it?
+                        // Usually packages are selected from a list.
+                        sqlx::query("INSERT OR IGNORE INTO resource_table_packages (resource_id, package_id) VALUES (?, ?)")
+                            .bind(&resource_id)
+                            .bind(pkg_id)
+                            .execute(&manager.pool)
+                            .await
+                            .map_err(|e| e.to_string())?;
+                    }
+                }
+            }
+
+            // Save custom tags
+            if let Some(tags) = metadata.get("customTags").and_then(|v| v.as_array()) {
+                sqlx::query("DELETE FROM resource_table_tags WHERE resource_id = ?")
+                    .bind(&resource_id)
+                    .execute(&manager.pool)
+                    .await
+                    .map_err(|e| e.to_string())?;
+
+                for tag in tags {
+                    if let Some(tag_str) = tag.as_str() {
+                        sqlx::query("INSERT OR IGNORE INTO custom_tags (tag) VALUES (?)")
+                            .bind(tag_str)
+                            .execute(&manager.pool)
+                            .await
+                            .map_err(|e| e.to_string())?;
+
+                        sqlx::query("INSERT OR IGNORE INTO resource_table_tags (resource_id, tag) VALUES (?, ?)")
+                            .bind(&resource_id)
+                            .bind(tag_str)
+                            .execute(&manager.pool)
+                            .await
+                            .map_err(|e| e.to_string())?;
+                    }
+                }
+            }
         }
+        _ => {}
     }
 
     Ok(())
@@ -1664,7 +2215,9 @@ async fn load_typed_metadata_cmd(
         }
         "document" => {
             let main_row = sqlx::query(
-                "SELECT title, document_type_id, description FROM resource_documents WHERE resource_id = ?"
+                "SELECT title, document_type_id, description, field_id, date, preamble_id, 
+                        build_command, bibliography, solution_document_id 
+                 FROM resource_documents WHERE resource_id = ?",
             )
             .bind(&resource_id)
             .fetch_optional(&manager.pool)
@@ -1672,11 +2225,163 @@ async fn load_typed_metadata_cmd(
             .map_err(|e| e.to_string())?;
 
             if let Some(row) = main_row {
+                // Fetch chapters
+                let chapter_rows = sqlx::query(
+                    "SELECT chapter_id FROM resource_document_chapters WHERE resource_id = ?",
+                )
+                .bind(&resource_id)
+                .fetch_all(&manager.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+                let chapters: Vec<String> = chapter_rows
+                    .iter()
+                    .filter_map(|r| r.try_get("chapter_id").ok())
+                    .collect();
+
+                // Fetch sections
+                let section_rows = sqlx::query(
+                    "SELECT section_id FROM resource_document_sections WHERE resource_id = ?",
+                )
+                .bind(&resource_id)
+                .fetch_all(&manager.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+                let sections: Vec<String> = section_rows
+                    .iter()
+                    .filter_map(|r| r.try_get("section_id").ok())
+                    .collect();
+
+                // Fetch subsections
+                let subsection_rows = sqlx::query(
+                    "SELECT subsection_id FROM resource_document_subsections WHERE resource_id = ?",
+                )
+                .bind(&resource_id)
+                .fetch_all(&manager.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+                let subsections: Vec<String> = subsection_rows
+                    .iter()
+                    .filter_map(|r| r.try_get("subsection_id").ok())
+                    .collect();
+
+                // Fetch custom tags
+                let tag_rows =
+                    sqlx::query("SELECT tag FROM resource_document_tags WHERE resource_id = ?")
+                        .bind(&resource_id)
+                        .fetch_all(&manager.pool)
+                        .await
+                        .map_err(|e| e.to_string())?;
+                let custom_tags: Vec<String> = tag_rows
+                    .iter()
+                    .filter_map(|r| r.try_get("tag").ok())
+                    .collect();
+
                 return Ok(Some(serde_json::json!({
                     "title": row.try_get::<String, _>("title").ok(),
                     "documentTypeId": row.try_get::<String, _>("document_type_id").ok(),
-                    "description": row.try_get::<String, _>("description").ok()
+                    "description": row.try_get::<String, _>("description").ok(),
+                    "fieldId": row.try_get::<String, _>("field_id").ok(),
+                    "date": row.try_get::<String, _>("date").ok(),
+                    "preambleId": row.try_get::<String, _>("preamble_id").ok(),
+                    "buildCommand": row.try_get::<String, _>("build_command").ok(),
+                    "bibliography": row.try_get::<String, _>("bibliography").ok(),
+                    "solutionDocumentId": row.try_get::<String, _>("solution_document_id").ok(),
+                    "chapters": if chapters.is_empty() { None } else { Some(chapters) },
+                    "sections": if sections.is_empty() { None } else { Some(sections) },
+                    "subsections": if subsections.is_empty() { None } else { Some(subsections) },
+                    "customTags": if custom_tags.is_empty() { None } else { Some(custom_tags) }
                 })));
+            }
+        }
+
+        "bibliography" => {
+            // 1. Load Main Fields
+            let main_row =
+                sqlx::query("SELECT * FROM resource_bibliographies WHERE resource_id = ?")
+                    .bind(&resource_id)
+                    .fetch_optional(&manager.pool)
+                    .await
+                    .map_err(|e| e.to_string())?;
+
+            if let Some(row) = main_row {
+                // 2. Load Persons
+                let person_rows = sqlx::query(
+                     "SELECT role, full_name FROM resource_bibliography_persons WHERE resource_id = ? ORDER BY position"
+                 )
+                 .bind(&resource_id)
+                 .fetch_all(&manager.pool)
+                 .await
+                 .map_err(|e| e.to_string())?;
+
+                let mut authors = Vec::new();
+                let mut editors = Vec::new();
+                let mut translators = Vec::new();
+
+                for p in person_rows {
+                    let role: String = p.try_get("role").unwrap_or_default();
+                    let name: String = p.try_get("full_name").unwrap_or_default();
+                    match role.as_str() {
+                        "author" => authors.push(name),
+                        "editor" => editors.push(name),
+                        "translator" => translators.push(name),
+                        _ => {}
+                    }
+                }
+
+                // 3. Load Extras
+                let extra_rows = sqlx::query(
+                    "SELECT \"key\", value FROM resource_bibliography_extras WHERE resource_id = ?",
+                )
+                .bind(&resource_id)
+                .fetch_all(&manager.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+
+                let mut extras_map = serde_json::Map::new();
+                for ex in extra_rows {
+                    let key: String = ex.try_get("key").unwrap_or_default();
+                    let val: String = ex.try_get("value").unwrap_or_default();
+                    extras_map.insert(key, serde_json::Value::String(val));
+                }
+
+                return Ok(Some(serde_json::json!({
+                    "entryType": row.try_get::<String, _>("entry_type").ok(),
+                    "citationKey": row.try_get::<String, _>("citation_key").ok(),
+                    "journal": row.try_get::<String, _>("journal").ok(),
+                    "volume": row.try_get::<String, _>("volume").ok(),
+                    "series": row.try_get::<String, _>("series").ok(),
+                    "number": row.try_get::<String, _>("number").ok(),
+                    "issue": row.try_get::<String, _>("issue").ok(),
+                    "year": row.try_get::<String, _>("year").ok(),
+                    "month": row.try_get::<String, _>("month").ok(),
+                    "publisher": row.try_get::<String, _>("publisher").ok(),
+                    "edition": row.try_get::<String, _>("edition").ok(),
+                    "institution": row.try_get::<String, _>("institution").ok(),
+                    "school": row.try_get::<String, _>("school").ok(),
+                    "organization": row.try_get::<String, _>("organization").ok(),
+                    "address": row.try_get::<String, _>("address").ok(),
+                    "location": row.try_get::<String, _>("location").ok(),
+                    "isbn": row.try_get::<String, _>("isbn").ok(),
+                    "issn": row.try_get::<String, _>("issn").ok(),
+                    "doi": row.try_get::<String, _>("doi").ok(),
+                    "url": row.try_get::<String, _>("url").ok(),
+                    "language": row.try_get::<String, _>("language").ok(),
+                    "title": row.try_get::<String, _>("title").ok(),
+                    "subtitle": row.try_get::<String, _>("subtitle").ok(),
+                    "booktitle": row.try_get::<String, _>("booktitle").ok(),
+                    "chapter": row.try_get::<String, _>("chapter").ok(),
+                    "pages": row.try_get::<String, _>("pages").ok(),
+                    "abstract": row.try_get::<String, _>("abstract").ok(),
+                    "note": row.try_get::<String, _>("note").ok(),
+                    "crossref": row.try_get::<String, _>("crossref").ok(),
+                    "authors": if authors.is_empty() { None } else { Some(authors) },
+                    "editors": if editors.is_empty() { None } else { Some(editors) },
+                    "translators": if translators.is_empty() { None } else { Some(translators) },
+                    "extras": if extras_map.is_empty() { None } else { Some(extras_map) }
+                })));
+            } else {
+                // Fallback if no specific record found? Return empty or basic?
+                return Ok(None);
             }
         }
         "figure" => {
@@ -1696,19 +2401,7 @@ async fn load_typed_metadata_cmd(
                 })));
             }
         }
-        "table" => {
-            let main_row = sqlx::query("SELECT caption FROM resource_tables WHERE resource_id = ?")
-                .bind(&resource_id)
-                .fetch_optional(&manager.pool)
-                .await
-                .map_err(|e| e.to_string())?;
 
-            if let Some(row) = main_row {
-                return Ok(Some(serde_json::json!({
-                    "caption": row.try_get::<String, _>("caption").ok()
-                })));
-            }
-        }
         "command" => {
             let main_row = sqlx::query(
                 "SELECT name, description, built_in FROM resource_commands WHERE resource_id = ?",
@@ -1724,6 +2417,67 @@ async fn load_typed_metadata_cmd(
                     "description": row.try_get::<String, _>("description").ok(),
                     "builtIn": row.try_get::<bool, _>("built_in").ok()
                 })));
+            }
+        }
+        "table" => {
+            // Load main record
+            let main_row = sqlx::query("SELECT * FROM resource_tables WHERE resource_id = ?")
+                .bind(&resource_id)
+                .fetch_optional(&manager.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+
+            if let Some(row) = main_row {
+                // Load packages
+                let pkg_rows = sqlx::query(
+                    "SELECT package_id FROM resource_table_packages WHERE resource_id = ?",
+                )
+                .bind(&resource_id)
+                .fetch_all(&manager.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+                let packages: Vec<String> = pkg_rows.iter().map(|r| r.get("package_id")).collect();
+
+                // Load tags
+                let tag_rows =
+                    sqlx::query("SELECT tag FROM resource_table_tags WHERE resource_id = ?")
+                        .bind(&resource_id)
+                        .fetch_all(&manager.pool)
+                        .await
+                        .map_err(|e| e.to_string())?;
+                let custom_tags: Vec<String> = tag_rows.iter().map(|r| r.get("tag")).collect();
+
+                // Extract fields
+                let table_type_id: Option<String> = row.try_get("table_type_id").ok();
+                let date: Option<String> = row.try_get("date").ok();
+
+                let caption: Option<String> = row.try_get("caption").ok();
+                let description: Option<String> = row.try_get("description").ok();
+                let environment: Option<String> = row.try_get("environment").ok();
+                let placement: Option<String> = row.try_get("placement").ok();
+                let label: Option<String> = row.try_get("label").ok();
+                let width: Option<String> = row.try_get("width").ok();
+                let alignment: Option<String> = row.try_get("alignment").ok();
+                let rows_count: Option<i64> = row.try_get("rows").ok();
+                let cols_count: Option<i64> = row.try_get("columns").ok();
+
+                return Ok(Some(serde_json::json!({
+                    "tableTypeId": table_type_id,
+                    "date": date,
+                    "caption": caption,
+                    "description": description,
+                    "environment": environment,
+                    "placement": placement,
+                    "label": label,
+                    "width": width,
+                    "alignment": alignment,
+                    "rows": rows_count,
+                    "columns": cols_count,
+                    "requiredPackages": packages,
+                    "customTags": custom_tags
+                })));
+            } else {
+                return Ok(None);
             }
         }
         _ => {}
@@ -1846,6 +2600,21 @@ pub fn run() {
             rename_subsection_cmd,
             create_file_type_cmd,
             create_exercise_type_cmd,
+            // Rename/Delete FileType and ExerciseType Commands
+            rename_file_type_cmd,
+            delete_file_type_cmd,
+            rename_exercise_type_cmd,
+            delete_exercise_type_cmd,
+            // Document Types CRUD Commands
+            get_document_types_cmd,
+            create_document_type_cmd,
+            rename_document_type_cmd,
+            delete_document_type_cmd,
+            // Table Types CRUD Commands
+            get_table_types_cmd,
+            create_table_type_cmd,
+            rename_table_type_cmd,
+            delete_table_type_cmd,
             // Typed Metadata CRUD Commands (sqlx-based)
             save_typed_metadata_cmd,
             load_typed_metadata_cmd,

@@ -141,7 +141,11 @@ export const PackageBrowser: React.FC<PackageBrowserProps> = ({
       padding="sm"
       radius="sm"
       withBorder
-      bg={selectedPackageId === pkg.id ? "dark.6" : "dark.7"}
+      bg={
+        selectedPackageId === pkg.id
+          ? "var(--mantine-color-default-hover)"
+          : "var(--mantine-color-default)"
+      }
       style={{
         cursor: "pointer",
         transition: "background-color 0.15s",
@@ -210,14 +214,16 @@ export const PackageBrowser: React.FC<PackageBrowserProps> = ({
         style={{
           flex: 7,
           minHeight: 0,
-          borderBottom: "1px solid var(--mantine-color-dark-6)",
+          borderBottom: "1px solid var(--mantine-color-default-border)",
         }}
       >
         {/* Header */}
         <Box
           p="md"
-          bg="dark.8"
-          style={{ borderBottom: "1px solid var(--mantine-color-dark-6)" }}
+          bg="var(--mantine-color-body)"
+          style={{
+            borderBottom: "1px solid var(--mantine-color-default-border)",
+          }}
         >
           <Group justify="space-between" align="center" mb="sm">
             <Group>
@@ -326,7 +332,7 @@ export const PackageBrowser: React.FC<PackageBrowserProps> = ({
               <Stack align="center" mt={50}>
                 <FontAwesomeIcon
                   icon={faBoxOpen}
-                  style={{ fontSize: 48, color: "var(--mantine-color-dark-4)" }}
+                  style={{ fontSize: 48, color: "var(--mantine-color-dimmed)" }}
                 />
                 <Text c="dimmed">No packages found matching "{search}"</Text>
               </Stack>
@@ -344,7 +350,7 @@ export const PackageBrowser: React.FC<PackageBrowserProps> = ({
           flexDirection: "column",
           overflow: "hidden",
         }}
-        bg="dark.8"
+        bg="var(--mantine-color-body)"
       >
         {selectedPackageId ? (
           (() => {
@@ -357,7 +363,8 @@ export const PackageBrowser: React.FC<PackageBrowserProps> = ({
                 <Box
                   p="md"
                   style={{
-                    borderBottom: "1px solid var(--mantine-color-dark-6)",
+                    borderBottom:
+                      "1px solid var(--mantine-color-default-border)",
                   }}
                 >
                   <Group justify="space-between" align="start">

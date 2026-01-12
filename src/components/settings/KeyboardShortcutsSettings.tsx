@@ -59,8 +59,8 @@ export const KeyboardShortcutsSettings: React.FC = () => {
         fontSize: "11px",
         padding: "4px 8px",
         margin: "0 2px",
-        backgroundColor: "var(--mantine-color-dark-5)",
-        color: "var(--mantine-color-gray-1)",
+        backgroundColor: "var(--mantine-color-default-hover)",
+        color: "var(--mantine-color-text)",
       }}
     >
       {key}

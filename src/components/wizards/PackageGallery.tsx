@@ -571,7 +571,8 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({
                   key={pkg.id}
                   p="xs"
                   style={{
-                    borderBottom: "1px solid var(--mantine-color-dark-6)",
+                    borderBottom:
+                      "1px solid var(--mantine-color-default-border)",
                     cursor: "pointer",
                     backgroundColor: selectedPackages.has(pkg.id)
                       ? "var(--mantine-color-teal-9)"

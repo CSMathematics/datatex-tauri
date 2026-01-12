@@ -239,13 +239,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       case "shortcuts":
         return <KeyboardShortcutsSettings />;
       case "theme":
-        return (
-          <ThemeSettings
-            settings={settings}
-            onUpdateEditor={onUpdateEditor}
-            onUpdateUi={onUpdateUi}
-          />
-        );
+        return <ThemeSettings settings={settings} onUpdateUi={onUpdateUi} />;
       default:
         return (
           <GeneralSettings
