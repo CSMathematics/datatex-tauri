@@ -43,7 +43,7 @@ import { ResizerHandle } from "./components/ui/ResizerHandle";
 import { WizardWrapper } from "./components/wizards/WizardWrapper";
 import { PreambleWizard } from "./components/wizards/PreambleWizard";
 import { UnifiedTableWizard } from "./components/wizards/UnifiedTableWizard";
-import { TikzWizard } from "./components/wizards/TikzWizard";
+import { TikzPgfPlotsWizard } from "./components/wizards/TikzPgfPlotsWizard";
 import { FancyhdrWizard } from "./components/wizards/FancyhdrWizard";
 import { PstricksWizard } from "./components/wizards/PstricksWizard";
 import { MathWizard } from "./components/wizards/MathWizard";
@@ -1374,7 +1374,7 @@ export default function App() {
                         title="TikZ Wizard"
                         onClose={() => setActiveView("editor")}
                       >
-                        <TikzWizard
+                        <TikzPgfPlotsWizard
                           onInsert={(code) => {
                             handleInsertSnippet(code);
                             setActiveView("editor");

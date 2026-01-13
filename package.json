@@ -34,6 +34,7 @@
     "@types/lodash": "^4.17.21",
     "antd": "^6.1.1",
     "lodash": "^4.17.21",
+    "mathjs": "^15.1.0",
     "monaco-editor": "^0.55.1",
     "pdfjs-dist": "^3.11.174",
     "postcss": "^8.5.6",

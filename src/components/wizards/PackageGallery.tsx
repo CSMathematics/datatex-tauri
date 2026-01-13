@@ -45,7 +45,7 @@ import {
 import { PACKAGES_DB, LatexPackage } from "./preamble/packages";
 import { getAllPackages, ListPackage } from "../../services/packageService";
 
-import { TikzWizard } from "./TikzWizard";
+import { TikzPgfPlotsWizard } from "./TikzPgfPlotsWizard";
 import { TableWizard } from "./TableWizard";
 import { PstricksWizard } from "./PstricksWizard";
 import { ColorsTab } from "./preamble/tabs/ColorsTab";
@@ -636,7 +636,7 @@ export const PackageGallery: React.FC<PackageGalleryProps> = ({
       ) : isEmbeddedWizard ? (
         <Box style={{ flex: 1, overflow: "hidden" }}>
           {(selectedPkgId === "tikz" || selectedPkgId === "pgfplots") && (
-            <TikzWizard onInsert={onInsert} />
+            <TikzPgfPlotsWizard onInsert={onInsert} />
           )}
           {(selectedPkgId === "booktabs" || selectedPkgId === "multirow") && (
             <TableWizard onInsert={onInsert} />
