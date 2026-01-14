@@ -1,5 +1,6 @@
 import React from "react";
 import { Stack, Title, Text, Select, NumberInput, Switch } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 import { DatabaseSettings as IDatabaseSettings } from "../../hooks/useSettings";
 import { SettingGroup } from "./SettingGroup";
 
@@ -15,32 +16,45 @@ export const DatabaseSettings: React.FC<DatabaseSettingsProps> = ({
   settings,
   onUpdate,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <Stack gap="md" maw={600}>
-      <Title order={4}>Database Settings</Title>
+      <Title order={4}>{t("settings.database.title")}</Title>
       <Text size="sm" c="dimmed">
-        Customize database view and behavior.
+        {t("settings.database.description")}
       </Text>
 
       <SettingGroup
-        title="View Settings"
-        description="Default views and display options"
+        title={t("settings.database.view.title")}
+        description={t("settings.database.view.description")}
       >
         <Select
-          label="Default View"
-          description="How the database is displayed by default"
+          label={t("settings.database.view.defaultView.label")}
+          description={t("settings.database.view.defaultView.description")}
           data={[
-            { value: "table", label: "Table View" },
-            { value: "graph", label: "Graph View" },
-            { value: "list", label: "List View" },
+            {
+              value: "table",
+              label: t("settings.database.view.defaultView.table"),
+            },
+            {
+              value: "graph",
+              label: t("settings.database.view.defaultView.graph"),
+            },
+            {
+              value: "list",
+              label: t("settings.database.view.defaultView.list"),
+            },
           ]}
           value={settings.defaultView}
           onChange={(val) => val && onUpdate("defaultView", val as any)}
         />
 
         <Switch
-          label="Show Metadata Panel"
-          description="Display metadata panel by default when viewing resources"
+          label={t("settings.database.view.showMetadataPanel.label")}
+          description={t(
+            "settings.database.view.showMetadataPanel.description"
+          )}
           checked={settings.showMetadataPanel}
           onChange={(e) =>
             onUpdate("showMetadataPanel", e.currentTarget.checked)
@@ -48,8 +62,8 @@ export const DatabaseSettings: React.FC<DatabaseSettingsProps> = ({
         />
 
         <NumberInput
-          label="Table Page Size"
-          description="Number of rows per page in table view (10-100)"
+          label={t("settings.database.view.tablePageSize.label")}
+          description={t("settings.database.view.tablePageSize.description")}
           value={settings.tablePageSize}
           onChange={(val) => onUpdate("tablePageSize", Number(val))}
           min={10}
@@ -58,31 +72,33 @@ export const DatabaseSettings: React.FC<DatabaseSettingsProps> = ({
       </SettingGroup>
 
       <SettingGroup
-        title="Graph View"
-        description="Settings for visual graph display"
+        title={t("settings.database.graph.title")}
+        description={t("settings.database.graph.description")}
       >
         <Switch
-          label="Enable Physics Simulation"
-          description="Use force-directed layout for graph visualization"
+          label={t("settings.database.graph.physics.label")}
+          description={t("settings.database.graph.physics.description")}
           checked={settings.graphPhysics}
           onChange={(e) => onUpdate("graphPhysics", e.currentTarget.checked)}
         />
 
         <Switch
-          label="Graph Animation"
-          description="Animate graph transitions and interactions"
+          label={t("settings.database.graph.animation.label")}
+          description={t("settings.database.graph.animation.description")}
           checked={settings.graphAnimation}
           onChange={(e) => onUpdate("graphAnimation", e.currentTarget.checked)}
         />
       </SettingGroup>
 
       <SettingGroup
-        title="Advanced Options"
-        description="Additional database features"
+        title={t("settings.database.advanced.title")}
+        description={t("settings.database.advanced.description")}
       >
         <Switch
-          label="Auto-detect Preambles"
-          description="Automatically identify and categorize preamble files"
+          label={t("settings.database.advanced.autoDetectPreambles.label")}
+          description={t(
+            "settings.database.advanced.autoDetectPreambles.description"
+          )}
           checked={settings.autoDetectPreambles}
           onChange={(e) =>
             onUpdate("autoDetectPreambles", e.currentTarget.checked)
@@ -90,8 +106,10 @@ export const DatabaseSettings: React.FC<DatabaseSettingsProps> = ({
         />
 
         <Switch
-          label="Show File Preview on Hover"
-          description="Display file preview tooltip when hovering over items"
+          label={t("settings.database.advanced.showFilePreview.label")}
+          description={t(
+            "settings.database.advanced.showFilePreview.description"
+          )}
           checked={settings.showFilePreview}
           onChange={(e) => onUpdate("showFilePreview", e.currentTarget.checked)}
         />

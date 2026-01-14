@@ -1,5 +1,6 @@
 import React from "react";
 import { Stack, Title, Text, Select, NumberInput, Switch } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 import { EditorBehaviorSettings as IEditorBehaviorSettings } from "../../hooks/useSettings";
 import { SettingGroup } from "./SettingGroup";
 
@@ -15,20 +16,24 @@ export const EditorBehaviorSettings: React.FC<EditorBehaviorSettingsProps> = ({
   settings,
   onUpdate,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <Stack gap="md" maw={600}>
-      <Title order={4}>Editor Behavior Settings</Title>
+      <Title order={4}>{t("settings.editorBehavior.title")}</Title>
       <Text size="sm" c="dimmed">
-        Customize how the editor responds to your input.
+        {t("settings.editorBehavior.description")}
       </Text>
 
       <SettingGroup
-        title="Formatting"
-        description="Indentation and spacing preferences"
+        title={t("settings.editorBehavior.formatting.title")}
+        description={t("settings.editorBehavior.formatting.description")}
       >
         <NumberInput
-          label="Tab Size"
-          description="Number of spaces per tab"
+          label={t("settings.editorBehavior.formatting.tabSize.label")}
+          description={t(
+            "settings.editorBehavior.formatting.tabSize.description"
+          )}
           value={settings.tabSize}
           onChange={(val) => onUpdate("tabSize", Number(val))}
           min={2}
@@ -36,20 +41,26 @@ export const EditorBehaviorSettings: React.FC<EditorBehaviorSettingsProps> = ({
         />
 
         <Switch
-          label="Insert Spaces"
-          description="Use spaces instead of tab characters"
+          label={t("settings.editorBehavior.formatting.insertSpaces.label")}
+          description={t(
+            "settings.editorBehavior.formatting.insertSpaces.description"
+          )}
           checked={settings.insertSpaces}
           onChange={(e) => onUpdate("insertSpaces", e.currentTarget.checked)}
         />
       </SettingGroup>
 
       <SettingGroup
-        title="Auto Completion"
-        description="Automatic insertion and completion"
+        title={t("settings.editorBehavior.autoCompletion.title")}
+        description={t("settings.editorBehavior.autoCompletion.description")}
       >
         <Switch
-          label="Auto Close Brackets"
-          description="Automatically close (), {}, [], and quotes"
+          label={t(
+            "settings.editorBehavior.autoCompletion.autoCloseBrackets.label"
+          )}
+          description={t(
+            "settings.editorBehavior.autoCompletion.autoCloseBrackets.description"
+          )}
           checked={settings.autoCloseBrackets}
           onChange={(e) =>
             onUpdate("autoCloseBrackets", e.currentTarget.checked)
@@ -57,8 +68,12 @@ export const EditorBehaviorSettings: React.FC<EditorBehaviorSettingsProps> = ({
         />
 
         <Switch
-          label="Auto Close LaTeX Environments"
-          description="Automatically insert \\end{} when typing \\begin{}"
+          label={t(
+            "settings.editorBehavior.autoCompletion.autoCloseLatexEnv.label"
+          )}
+          description={t(
+            "settings.editorBehavior.autoCompletion.autoCloseLatexEnv.description"
+          )}
           checked={settings.autoCloseLatexEnv}
           onChange={(e) =>
             onUpdate("autoCloseLatexEnv", e.currentTarget.checked)
@@ -66,8 +81,12 @@ export const EditorBehaviorSettings: React.FC<EditorBehaviorSettingsProps> = ({
         />
 
         <Switch
-          label="Suggest on Trigger Characters"
-          description="Show IntelliSense suggestions when typing \\"
+          label={t(
+            "settings.editorBehavior.autoCompletion.suggestOnTrigger.label"
+          )}
+          description={t(
+            "settings.editorBehavior.autoCompletion.suggestOnTrigger.description"
+          )}
           checked={settings.suggestOnTrigger}
           onChange={(e) =>
             onUpdate("suggestOnTrigger", e.currentTarget.checked)
@@ -75,8 +94,12 @@ export const EditorBehaviorSettings: React.FC<EditorBehaviorSettingsProps> = ({
         />
 
         <Switch
-          label="Quick Suggestions"
-          description="Show inline suggestions while typing"
+          label={t(
+            "settings.editorBehavior.autoCompletion.quickSuggestions.label"
+          )}
+          description={t(
+            "settings.editorBehavior.autoCompletion.quickSuggestions.description"
+          )}
           checked={settings.quickSuggestions}
           onChange={(e) =>
             onUpdate("quickSuggestions", e.currentTarget.checked)
@@ -85,19 +108,25 @@ export const EditorBehaviorSettings: React.FC<EditorBehaviorSettingsProps> = ({
       </SettingGroup>
 
       <SettingGroup
-        title="Editor Actions"
-        description="Automatic formatting and saving"
+        title={t("settings.editorBehavior.editorActions.title")}
+        description={t("settings.editorBehavior.editorActions.description")}
       >
         <Switch
-          label="Format on Save"
-          description="Automatically format document when saving"
+          label={t("settings.editorBehavior.editorActions.formatOnSave.label")}
+          description={t(
+            "settings.editorBehavior.editorActions.formatOnSave.description"
+          )}
           checked={settings.formatOnSave}
           onChange={(e) => onUpdate("formatOnSave", e.currentTarget.checked)}
         />
 
         <Switch
-          label="Scroll Beyond Last Line"
-          description="Allow scrolling past the end of the document"
+          label={t(
+            "settings.editorBehavior.editorActions.scrollBeyondLastLine.label"
+          )}
+          description={t(
+            "settings.editorBehavior.editorActions.scrollBeyondLastLine.description"
+          )}
           checked={settings.scrollBeyondLastLine}
           onChange={(e) =>
             onUpdate("scrollBeyondLastLine", e.currentTarget.checked)
@@ -105,28 +134,55 @@ export const EditorBehaviorSettings: React.FC<EditorBehaviorSettingsProps> = ({
         />
       </SettingGroup>
 
-      <SettingGroup title="Cursor" description="Cursor appearance and behavior">
+      <SettingGroup
+        title={t("settings.editorBehavior.cursor.title")}
+        description={t("settings.editorBehavior.cursor.description")}
+      >
         <Select
-          label="Cursor Style"
-          description="Visual style of the text cursor"
+          label={t("settings.editorBehavior.cursor.style.label")}
+          description={t("settings.editorBehavior.cursor.style.description")}
           data={[
-            { value: "line", label: "Line (|)" },
-            { value: "block", label: "Block (█)" },
-            { value: "underline", label: "Underline (_)" },
+            {
+              value: "line",
+              label: t("settings.editorBehavior.cursor.style.line"),
+            },
+            {
+              value: "block",
+              label: t("settings.editorBehavior.cursor.style.block"),
+            },
+            {
+              value: "underline",
+              label: t("settings.editorBehavior.cursor.style.underline"),
+            },
           ]}
           value={settings.cursorStyle}
           onChange={(val) => val && onUpdate("cursorStyle", val as any)}
         />
 
         <Select
-          label="Cursor Blinking"
-          description="Animation style for the cursor"
+          label={t("settings.editorBehavior.cursor.blinking.label")}
+          description={t("settings.editorBehavior.cursor.blinking.description")}
           data={[
-            { value: "blink", label: "Blink" },
-            { value: "smooth", label: "Smooth" },
-            { value: "phase", label: "Phase" },
-            { value: "expand", label: "Expand" },
-            { value: "solid", label: "Solid (No Blink)" },
+            {
+              value: "blink",
+              label: t("settings.editorBehavior.cursor.blinking.blink"),
+            },
+            {
+              value: "smooth",
+              label: t("settings.editorBehavior.cursor.blinking.smooth"),
+            },
+            {
+              value: "phase",
+              label: t("settings.editorBehavior.cursor.blinking.phase"),
+            },
+            {
+              value: "expand",
+              label: t("settings.editorBehavior.cursor.blinking.expand"),
+            },
+            {
+              value: "solid",
+              label: t("settings.editorBehavior.cursor.blinking.solid"),
+            },
           ]}
           value={settings.cursorBlinking}
           onChange={(val) => val && onUpdate("cursorBlinking", val as any)}

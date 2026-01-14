@@ -1,0 +1,606 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "open": "Open",
+    "close": "Close",
+    "search": "Search",
+    "settings": "Settings",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "refresh": "Refresh",
+    "filterFiles": "Filter files...",
+    "newFile": "New File",
+    "newFolder": "New Folder",
+    "empty": "Empty"
+  },
+  "settings": {
+    "title": "Settings",
+    "searchPlaceholder": "Search settings...",
+    "noSettingsFound": "No settings found",
+    "categories": {
+      "general": "General",
+      "tex": "TeX Engines",
+      "compilation": "Compilation",
+      "editor": "Editor Appearance",
+      "editorBehavior": "Editor Behavior",
+      "pdfViewer": "PDF Viewer",
+      "database": "Database",
+      "accessibility": "Accessibility",
+      "shortcuts": "Keyboard Shortcuts",
+      "theme": "Theme"
+    },
+    "general": {
+      "title": "General Settings",
+      "description": "Global application settings.",
+      "startupBehavior": {
+        "label": "Startup Behavior",
+        "description": "What to show when the application starts",
+        "restore": "Restore Last Session",
+        "welcome": "Show Welcome Screen",
+        "empty": "Empty Workspace"
+      },
+      "confirmOnExit": {
+        "label": "Confirm on Exit",
+        "description": "Ask for confirmation before closing with unsaved changes"
+      },
+      "language": {
+        "label": "Language",
+        "description": "Select Language"
+      },
+      "autoSave": {
+        "label": "Auto Save",
+        "description": "Automatically save changes (Coming Soon)."
+      }
+    },
+    "tex": {
+      "title": "TeX Engine Configuration",
+      "description": "Configure how your LaTeX documents are compiled.",
+      "defaultEngine": {
+        "label": "Default Engine",
+        "description": "The engine used when no specific magic comment is found."
+      },
+      "pdflatexPath": { "label": "pdfLaTeX Path" },
+      "xelatexPath": { "label": "XeLaTeX Path" },
+      "lualatexPath": { "label": "LuaLaTeX Path" },
+      "outputDirectory": {
+        "label": "Output Directory",
+        "description": "Directory for auxiliary files (relative to document)."
+      },
+      "shellEscape": {
+        "label": "Enable Shell Escape (--shell-escape)",
+        "description": "Allows execution of external commands (e.g., for minted)."
+      },
+      "synctex": {
+        "label": "Enable SyncTeX",
+        "description": "Required for forward/inverse search."
+      },
+      "bibtex": {
+        "label": "Run BibTeX/Biber",
+        "description": "Automatically run bibliography processor."
+      }
+    },
+    "compilation": {
+      "title": "Compilation Settings",
+      "description": "Advanced compilation behavior and output management.",
+      "buildBehavior": {
+        "title": "Build Behavior",
+        "description": "When and how files are compiled",
+        "compileOnSave": {
+          "label": "Compile on Save",
+          "description": "Automatically compile documents when saving"
+        },
+        "timeout": {
+          "label": "Compilation Timeout",
+          "description": "Maximum time in seconds for compilation (30-300)"
+        }
+      },
+      "outputDirectory": {
+        "title": "Output Directory",
+        "description": "Where compilation artifacts are stored",
+        "buildDirectory": {
+          "label": "Build Directory",
+          "description": "Location for auxiliary and output files",
+          "source": "Same as Source File",
+          "custom": "Custom Path"
+        },
+        "customBuildPath": {
+          "label": "Custom Build Path",
+          "description": "Relative or absolute path for build output"
+        },
+        "cleanAuxFiles": {
+          "label": "Clean Auxiliary Files",
+          "description": "Remove .aux, .log, .toc files after successful compilation"
+        }
+      },
+      "errorHandling": {
+        "title": "Error Handling",
+        "description": "How compilation errors are displayed",
+        "showLogOnError": {
+          "label": "Show Log Panel on Error",
+          "description": "Automatically open the log panel when errors occur"
+        },
+        "maxErrors": {
+          "label": "Maximum Errors to Display",
+          "description": "Limit the number of errors shown (10-100)"
+        }
+      }
+    },
+    "editor": {
+      "title": "Editor Settings",
+      "description": "Customize the code editor experience.",
+      "fontSize": {
+        "label": "Font Size",
+        "description": "Controls the font size in pixels."
+      },
+      "fontFamily": {
+        "label": "Font Family",
+        "description": "The font family used in the editor.",
+        "notFound": "No fonts found"
+      },
+      "wordWrap": {
+        "label": "Word Wrap",
+        "description": "Controls how lines should wrap."
+      },
+      "theme": {
+        "label": "Editor Theme",
+        "description": "Color scheme for the code editor."
+      },
+      "lineNumbers": {
+        "label": "Line Numbers",
+        "description": "Controls the display of line numbers.",
+        "relative": "Relative"
+      },
+      "minimap": {
+        "label": "Minimap",
+        "description": "Controls whether the minimap is shown."
+      }
+    },
+    "editorBehavior": {
+      "title": "Editor Behavior Settings",
+      "description": "Customize how the editor responds to your input.",
+      "formatting": {
+        "title": "Formatting",
+        "description": "Indentation and spacing preferences",
+        "tabSize": {
+          "label": "Tab Size",
+          "description": "Number of spaces per tab"
+        },
+        "insertSpaces": {
+          "label": "Insert Spaces",
+          "description": "Use spaces instead of tab characters"
+        }
+      },
+      "autoCompletion": {
+        "title": "Auto Completion",
+        "description": "Automatic insertion and completion",
+        "autoCloseBrackets": {
+          "label": "Auto Close Brackets",
+          "description": "Automatically close (), {}, [], and quotes"
+        },
+        "autoCloseLatexEnv": {
+          "label": "Auto Close LaTeX Environments",
+          "description": "Automatically insert \\end{} when typing \\begin{}"
+        },
+        "suggestOnTrigger": {
+          "label": "Suggest on Trigger Characters",
+          "description": "Show IntelliSense suggestions when typing \\"
+        },
+        "quickSuggestions": {
+          "label": "Quick Suggestions",
+          "description": "Show inline suggestions while typing"
+        }
+      },
+      "editorActions": {
+        "title": "Editor Actions",
+        "description": "Automatic formatting and saving",
+        "formatOnSave": {
+          "label": "Format on Save",
+          "description": "Automatically format document when saving"
+        },
+        "scrollBeyondLastLine": {
+          "label": "Scroll Beyond Last Line",
+          "description": "Allow scrolling past the end of the document"
+        }
+      },
+      "cursor": {
+        "title": "Cursor",
+        "description": "Cursor appearance and behavior",
+        "style": {
+          "label": "Cursor Style",
+          "description": "Visual style of the text cursor",
+          "line": "Line (|)",
+          "block": "Block (█)",
+          "underline": "Underline (_)"
+        },
+        "blinking": {
+          "label": "Cursor Blinking",
+          "description": "Animation style for the cursor",
+          "blink": "Blink",
+          "smooth": "Smooth",
+          "phase": "Phase",
+          "expand": "Expand",
+          "solid": "Solid (No Blink)"
+        }
+      }
+    },
+    "pdfViewer": {
+      "title": "PDF Viewer Settings",
+      "description": "Customize the PDF viewer behavior and appearance.",
+      "display": {
+        "title": "Display Settings",
+        "description": "Control how PDFs are displayed",
+        "defaultZoom": {
+          "label": "Default Zoom Level",
+          "description": "How PDFs should be displayed by default",
+          "fitPage": "Fit to Page",
+          "fitWidth": "Fit to Width",
+          "actual": "Actual Size (100%)"
+        },
+        "splitViewMode": {
+          "label": "Split View Mode",
+          "description": "How the editor and PDF are arranged",
+          "horizontal": "Horizontal (Side by Side)",
+          "vertical": "Vertical (Top and Bottom)",
+          "auto": "Auto (Based on Window Size)"
+        }
+      },
+      "behavior": {
+        "title": "Behavior Settings",
+        "description": "Automatic actions and features",
+        "showByDefault": {
+          "label": "Show PDF by Default",
+          "description": "Automatically show PDF panel when opening .tex files"
+        },
+        "autoRefresh": {
+          "label": "Auto Refresh PDF",
+          "description": "Automatically reload PDF after successful compilation"
+        }
+      },
+      "synctex": {
+        "title": "SyncTeX Settings",
+        "description": "Synchronization between source and PDF",
+        "highlight": {
+          "label": "SyncTeX Highlighting",
+          "description": "Highlight the corresponding position in PDF during forward sync"
+        },
+        "scrollSync": {
+          "label": "Scroll Synchronization",
+          "description": "Sync scrolling between editor and PDF viewer"
+        }
+      }
+    },
+    "database": {
+      "title": "Database Settings",
+      "description": "Customize database view and behavior.",
+      "view": {
+        "title": "View Settings",
+        "description": "Default views and display options",
+        "defaultView": {
+          "label": "Default View",
+          "description": "How the database is displayed by default",
+          "table": "Table View",
+          "graph": "Graph View",
+          "list": "List View"
+        },
+        "showMetadataPanel": {
+          "label": "Show Metadata Panel",
+          "description": "Display metadata panel by default when viewing resources"
+        },
+        "tablePageSize": {
+          "label": "Table Page Size",
+          "description": "Number of rows per page in table view (10-100)"
+        }
+      },
+      "graph": {
+        "title": "Graph View",
+        "description": "Settings for visual graph display",
+        "physics": {
+          "label": "Enable Physics Simulation",
+          "description": "Use force-directed layout for graph visualization"
+        },
+        "animation": {
+          "label": "Graph Animation",
+          "description": "Animate graph transitions and interactions"
+        }
+      },
+      "advanced": {
+        "title": "Advanced Options",
+        "description": "Additional database features",
+        "autoDetectPreambles": {
+          "label": "Auto-detect Preambles",
+          "description": "Automatically identify and categorize preamble files"
+        },
+        "showFilePreview": {
+          "label": "Show File Preview on Hover",
+          "description": "Display file preview tooltip when hovering over items"
+        }
+      }
+    },
+    "accessibility": {
+      "title": "Accessibility Settings",
+      "description": "Improve readability and reduce visual strain.",
+      "visual": {
+        "title": "Visual Enhancements",
+        "description": "Settings for better visibility",
+        "highContrast": {
+          "label": "High Contrast Mode",
+          "description": "Increase contrast for better visibility"
+        },
+        "fontLigatures": {
+          "label": "Font Ligatures",
+          "description": "Use special character combinations (→, ≤, etc.)"
+        },
+        "letterSpacing": {
+          "label": "Letter Spacing",
+          "description": "Additional space between letters in pixels (0-2)"
+        },
+        "lineHeight": {
+          "label": "Line Height",
+          "description": "Vertical space between lines (1.0-2.0)"
+        },
+        "renderWhitespace": {
+          "label": "Render Whitespace",
+          "description": "Show invisible whitespace characters",
+          "none": "None",
+          "boundary": "Boundary (Trailing/Leading)",
+          "selection": "Selection Only",
+          "all": "All Whitespace"
+        }
+      },
+      "motion": {
+        "title": "Motion & Animation",
+        "description": "Control movement and transitions",
+        "smoothScrolling": {
+          "label": "Smooth Scrolling",
+          "description": "Enable smooth scrolling animations"
+        },
+        "animationSpeed": {
+          "label": "Animation Speed",
+          "description": "Speed of UI animations and transitions",
+          "slow": "Slow (Relaxed)",
+          "normal": "Normal",
+          "fast": "Fast (Snappy)",
+          "none": "None (Instant)"
+        },
+        "reduceMotion": {
+          "label": "Reduce Motion",
+          "description": "Minimize animations for motion sensitivity (overrides animation speed)"
+        }
+      }
+    },
+    "theme": {
+      "title": "Theme Settings",
+      "description": "Customize the look and feel of the application.",
+      "uiTheme": {
+        "label": "UI Theme",
+        "description": "Color theme for the application interface.",
+        "custom": "Custom",
+        "light": "Light",
+        "dark": "Dark"
+      },
+      "advanced": {
+        "title": "Advanced Theme Editor",
+        "description": "Override specific colors of the current theme. Changes are applied immediately.",
+        "appBg": { "label": "App Background", "description": "Main background behind the editor" },
+        "sidebarBg": { "label": "Sidebar Background", "description": "Left sidebar (activity bar)" },
+        "headerBg": { "label": "Header Background", "description": "Top navigation bar" },
+        "panelBg": { "label": "Panel Background", "description": "Side panels (files, database)" },
+        "statusBarBg": { "label": "Status Bar Background", "description": "Bottom status bar" },
+        "primaryColor": { "label": "Primary Color", "description": "Main accent color (buttons, highlights)" },
+        "accentColor": { "label": "Accent Color", "description": "Secondary accent (icons, active states)" },
+        "borderColor": { "label": "Border Color", "description": "Global border color" },
+        "actions": "Actions",
+        "resetOverrides": "Reset Overrides",
+        "newThemeName": "New Theme Name",
+        "saveAsTheme": "Save as Theme"
+      }
+    },
+    "shortcuts": {
+      "title": "Keyboard Shortcuts",
+      "description": "Customize keyboard shortcuts for frequent actions.",
+      "resetAll": "Reset All to Defaults",
+      "categories": {
+        "general": "General",
+        "editor": "Editor",
+        "compilation": "Compilation",
+        "navigation": "Navigation"
+      },
+      "actions": {
+        "file.save": { "description": "Save current file" },
+        "file.saveAll": { "description": "Save all files" },
+        "file.closeTab": { "description": "Close current tab" },
+        "file.newTemplate": { "description": "New file from template" },
+        "view.openSettings": { "description": "Open Settings" },
+        "editor.find": { "description": "Find in file" },
+        "editor.replace": { "description": "Find and replace" },
+        "compilation.build": { "description": "Compile current document" },
+        "view.toggleSidebar": { "description": "Toggle sidebar" },
+        "tools.packageBrowser": { "description": "Open Package Browser" }
+      },
+      "modified": "Modified",
+      "edit": "Edit Shortcut",
+      "reset": "Reset to Default",
+      "editModal": {
+        "title": "Edit Shortcut",
+        "instruction": "Press the desired key combination for:",
+        "listening": "Listening for keys...",
+        "save": "Save Shortcut"
+      }
+    },
+    "common": {
+      "on": "On",
+      "off": "Off"
+    }
+  },
+  "menu": {
+    "file": {
+      "label": "File",
+      "newFile": "New File",
+      "newFromTemplate": "New from Template",
+      "open": "Open",
+      "save": "Save",
+      "exportPdf": "Export to PDF",
+      "exit": "Exit"
+    },
+    "edit": {
+      "label": "Edit",
+      "undo": "Undo",
+      "redo": "Redo",
+      "cut": "Cut",
+      "copy": "Copy",
+      "paste": "Paste",
+      "find": "Find"
+    },
+    "insert": {
+      "label": "Insert",
+      "image": "Image (Figure)"
+    },
+    "view": {
+      "label": "View",
+      "databasePanel": "Database Panel",
+      "rightSidebar": "Right Sidebar (PDF)",
+      "wordCount": "Word Count",
+      "zoomIn": "Zoom In",
+      "zoomOut": "Zoom Out"
+    },
+    "database": {
+      "label": "Database",
+      "open": "Open Database / Folder",
+      "addCollection": "Add Collection (Folder)",
+      "refresh": "Refresh Database"
+    },
+    "tools": {
+      "label": "Tools",
+      "wizards": "Wizards",
+      "preambleWizard": "Preamble Wizard",
+      "tableWizard": "Table Wizard",
+      "tikzWizard": "TikZ Wizard",
+      "fancyhdrWizard": "FancyHDR Wizard",
+      "pstricksWizard": "PSTricks Wizard",
+      "packageGallery": "Package Gallery",
+      "packageBrowser": "Package Browser",
+      "settings": "Settings"
+    },
+    "build": {
+      "label": "Build",
+      "compile": "Compile",
+      "stop": "Stop Build"
+    },
+    "help": {
+      "label": "Help",
+      "about": "About DataTex"
+    }
+  },
+  "sidebar": {
+    "database": "Database",
+    "structure": "Structure",
+    "symbols": "AMS Symbols",
+    "gallery": "Package Gallery",
+    "search": "Search",
+    "git": "Source Control",
+    "settings": "Settings",
+    "openPackageDatabase": "Open Package Database",
+    "selectCategory": "Select a category",
+    "noStructure": "No structure found.",
+    "projectFiles": "Project Folders",
+    "quickTools": "QUICK TOOLS",
+    "noFolderOpened": "No folder opened",
+    "openFolder": "Open Folder"
+  },
+  "header": {
+    "searchPlaceholder": "DataTex Search (Ctrl+P)",
+    "tooltips": {
+      "showOutline": "Show outline",
+      "hideOutline": "Hide outline",
+      "showDatabase": "Show database table",
+      "hideDatabase": "Hide database table",
+      "moveDatabaseLeft": "Move database to left",
+      "moveDatabaseBottom": "Move database to bottom",
+      "showRightPanel": "Show right panel",
+      "hideRightPanel": "Hide right panel",
+      "aiAssistant": "AI Assistant"
+    }
+  },
+  "database": {
+    "title": "Collections",
+    "createCollection": "Create Collection",
+    "importFolderAsCollection": "Import Folder as Collection",
+    "searchCollections": "Search collections...",
+    "noCollections": "No collections found.",
+    "importFile": "Import File",
+    "addExistingFolder": "Add Existing Folder",
+    "deleteCollection": "Delete Collection",
+    "collectionsLoaded_one": "{{count}} collection loaded",
+    "collectionsLoaded_other": "{{count}} collections loaded",
+    "deleteCollectionTitle": "Delete Collection",
+    "deleteCollectionConfirm": "Are you sure you want to delete collection",
+    "deleteCollectionWarning": "WARNING: This action will delete the collection and all its resources from the database, but will NOT delete the files from your file system.",
+    "newCollectionTitle": "New Collection",
+    "collectionNameLabel": "Collection Name",
+    "collectionNamePlaceholder": "e.g., Mathematics, Physics",
+    "addFolderTo": "Add Folder to",
+    "selectImportFolder": "Select Folder to Import",
+    "importFileTo": "Import File to"
+  },
+  "startPage": {
+    "documentation": "Documentation",
+    "getStarted": "Get Started",
+    "emptyFile": "Empty File",
+    "emptyFileDesc": "Start from scratch with a blank document.",
+    "preambleWizard": "Preamble Wizard",
+    "preambleWizardDesc": "Configure page settings, packages, and fonts.",
+    "databaseTools": "Database Tools",
+    "examGenerator": "Exam Generator",
+    "examGeneratorDesc": "Create exams automatically from valid exercises.",
+    "browseDatabase": "Browse Database",
+    "browseDatabaseDesc": "Manage files, tags, and metadata.",
+    "packageBrowser": "Package Browser",
+    "packageBrowserDesc": "Search and explore CTAN packages.",
+    "recentProjects": "RECENT PROJECTS",
+    "noRecentProjects": "No recent projects found.",
+    "quickResources": "Quick Resources",
+    "latexCheatsheet": "LaTeX Cheatsheet",
+    "ctanSearch": "CTAN Package Search",
+    "detexify": "Detexify (Symbols)",
+    "tikzExamples": "TikZ Examples",
+    "templates": "Templates",
+    "viewAllTemplates": "View all templates"
+  },
+  "statusBar": {
+    "ready": "Ready",
+    "wordCount": "Word Count",
+    "spellCheck": "Spell Check",
+    "connected": "Connected",
+    "disconnected": "Disconnected"
+  },
+  "editorToolbar": {
+    "bold": "Bold (\\textbf)",
+    "italic": "Italic (\\textit)",
+    "underline": "Underline (\\underline)",
+    "strikethrough": "Strikethrough (\\st)",
+    "text": "Text (\\text)",
+    "highlight": "Highlight (\\hl)",
+    "code": "Code (\\texttt)",
+    "alignLeft": "Align Left (flushleft)",
+    "alignCenter": "Align Center (center)",
+    "alignRight": "Align Right (flushright)",
+    "justify": "Justify (default)",
+    "quote": "Quote environment",
+    "ellipsis": "Ellipsis (\\dots)",
+    "bulletList": "Bullet List (itemize)",
+    "numberedList": "Numbered List (enumerate)",
+    "inlineMath": "Inline Math ($...$)",
+    "displayMath": "Display Math (\\[...\\])",
+    "subscript": "Subscript (_{})",
+    "superscript": "Superscript (^{})",
+    "horizontalSpace": "Horizontal Space (\\hspace)",
+    "verticalSpace": "Vertical Space (\\vspace)",
+    "link": "Link (\\href)",
+    "unlink": "Unlink (Remove Link)"
+  }
+}

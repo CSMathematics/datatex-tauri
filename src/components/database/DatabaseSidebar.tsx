@@ -34,6 +34,7 @@ import {
 import { useDatabaseStore } from "../../stores/databaseStore";
 import { useProjectStore } from "../../stores/projectStore";
 import { open } from "@tauri-apps/plugin-dialog";
+import { useTranslation } from "react-i18next";
 
 // Import shared tree components
 import {
@@ -83,6 +84,8 @@ export const DatabaseSidebar = ({
   onDeleteItem,
   onNavigate,
 }: DatabaseSidebarProps) => {
+  const { t } = useTranslation();
+
   // Granular selectors - prevents re-renders when unrelated state changes
   const collections = useDatabaseStore((state) => state.collections);
   const fetchCollections = useDatabaseStore((state) => state.fetchCollections);
@@ -120,7 +123,7 @@ export const DatabaseSidebar = ({
   } = useTreeState<TreeNode>();
 
   // Local state - 3-way view toggle
-  const [activeView, setActiveView] = useState<SidebarViewType>("collections");
+  const [activeView] = useState<SidebarViewType>("collections");
   const [projectSearch, setProjectSearch] = useState("");
   const [hoveredCollection, setHoveredCollection] = useState<string | null>(
     null
@@ -153,7 +156,7 @@ export const DatabaseSidebar = ({
       try {
         const selected = await open({
           directory: true,
-          title: `Add Folder to ${collectionName}`,
+          title: t("database.addFolderTo") + ` ${collectionName}`,
         });
         if (selected && typeof selected === "string") {
           await addFolderToCollection(collectionName, selected);
@@ -162,7 +165,7 @@ export const DatabaseSidebar = ({
         console.error("Add folder failed", e);
       }
     },
-    [addFolderToCollection]
+    [addFolderToCollection, t]
   );
 
   // Fetch collections on mount
@@ -175,7 +178,7 @@ export const DatabaseSidebar = ({
     try {
       const selected = await open({
         directory: true,
-        title: "Select Folder to Import",
+        title: t("database.selectImportFolder"),
       });
       if (selected && typeof selected === "string") {
         const separator = selected.includes("\\") ? "\\" : "/";
@@ -185,7 +188,7 @@ export const DatabaseSidebar = ({
     } catch (e) {
       console.error("Import failed", e);
     }
-  }, [importFolder]);
+  }, [importFolder, t]);
 
   const handleToggleCollection = useCallback(
     (name: string) => {
@@ -352,7 +355,7 @@ export const DatabaseSidebar = ({
       try {
         const selected = await open({
           multiple: false,
-          title: `Import File to ${collectionName}`,
+          title: t("database.importFileTo") + ` ${collectionName}`,
         });
         if (selected && typeof selected === "string") {
           await importFile(selected, collectionName);
@@ -361,7 +364,7 @@ export const DatabaseSidebar = ({
         console.error("Import file failed", e);
       }
     },
-    [importFile]
+    [importFile, t]
   );
 
   // --- Folder click handler ---
@@ -479,27 +482,29 @@ export const DatabaseSidebar = ({
     () => [
       {
         icon: faSync,
-        tooltip: "Refresh",
+        tooltip: t("common.refresh"),
         onClick: () => fetchCollections(),
       },
       {
         icon: faPlus,
-        tooltip: "Create Collection",
+        tooltip: t("database.createCollection"),
         onClick: () => setCreateModalOpen(true), // New button for Empty Collection
       },
       {
         icon: faFolder, // Using Folder icon for "Import Folder" legacy action?
         // Or maybe separate "New Collection" (faDatabase + plus) vs "Import Folder" (faFolder + plus)
-        tooltip: "Import Folder as Collection",
+        tooltip: t("database.importFolderAsCollection"),
         onClick: handleImport,
       },
     ],
-    [fetchCollections, handleImport, loadedCollections.length]
+    [fetchCollections, handleImport, loadedCollections.length, t]
   );
 
   // Get current view title and actions
   const currentTitle =
-    activeView === "collections" ? "Collections" : "Project Folders";
+    activeView === "collections"
+      ? t("database.title")
+      : t("sidebar.projectFiles");
   const currentActions =
     activeView === "collections" ? collectionsToolbarActions : [];
   const showExpandToggle = true;
@@ -529,8 +534,8 @@ export const DatabaseSidebar = ({
           }
           placeholder={
             activeView === "projects"
-              ? "Filter files..."
-              : "Search collections..."
+              ? t("common.filterFiles")
+              : t("database.searchCollections")
           }
         />
       </Box>
@@ -546,7 +551,7 @@ export const DatabaseSidebar = ({
           {/* Quick Tools */}
           <Box p="xs">
             <Text size="xs" fw={700} c="dimmed" mb={4}>
-              QUICK TOOLS
+              {t("sidebar.quickTools")}
             </Text>
             <Group gap={4}>
               {onNavigate && (
@@ -594,12 +599,12 @@ export const DatabaseSidebar = ({
           {projectData.length === 0 ? (
             <Box p="md" ta="center">
               <Text size="xs" c="dimmed" mb="xs">
-                No folder opened
+                {t("sidebar.noFolderOpened")}
               </Text>
               {onOpenFolder && (
                 <Group justify="center">
                   <Button size="xs" variant="default" onClick={onOpenFolder}>
-                    Open Folder
+                    {t("sidebar.openFolder")}
                   </Button>
                 </Group>
               )}
@@ -663,7 +668,7 @@ export const DatabaseSidebar = ({
         <>
           {collections.length === 0 && !isLoading && (
             <Text size="xs" c="dimmed" ta="center">
-              No collections found.
+              {t("database.noCollections")}
             </Text>
           )}
 
@@ -737,7 +742,7 @@ export const DatabaseSidebar = ({
                         }}
                       >
                         <Tooltip
-                          label="New File"
+                          label={t("common.newFile")}
                           withArrow
                           position="top"
                           openDelay={500}
@@ -758,7 +763,7 @@ export const DatabaseSidebar = ({
                         </Tooltip>
 
                         <Tooltip
-                          label="Import File"
+                          label={t("database.importFile")}
                           withArrow
                           position="top"
                           openDelay={500}
@@ -779,7 +784,7 @@ export const DatabaseSidebar = ({
                         </Tooltip>
 
                         <Tooltip
-                          label="New Folder"
+                          label={t("common.newFolder")}
                           withArrow
                           position="top"
                           openDelay={500}
@@ -800,7 +805,7 @@ export const DatabaseSidebar = ({
                         </Tooltip>
 
                         <Tooltip
-                          label="Add Existing Folder"
+                          label={t("database.addExistingFolder")}
                           withArrow
                           position="top"
                           openDelay={500}
@@ -821,7 +826,7 @@ export const DatabaseSidebar = ({
                         </Tooltip>
 
                         <Tooltip
-                          label="Delete Collection"
+                          label={t("database.deleteCollection")}
                           withArrow
                           position="top"
                           color="red"
@@ -872,7 +877,7 @@ export const DatabaseSidebar = ({
                                 pl="lg"
                                 py={4}
                               >
-                                Empty
+                                {t("common.empty")}
                               </Text>
                             );
                           }
@@ -953,8 +958,9 @@ export const DatabaseSidebar = ({
               style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}
             >
               <Text size="xs" c="dimmed">
-                {loadedCollections.length} collection
-                {loadedCollections.length > 1 ? "s" : ""} loaded
+                {t("database.collectionsLoaded", {
+                  count: loadedCollections.length,
+                })}
               </Text>
             </Box>
           )}
@@ -965,32 +971,27 @@ export const DatabaseSidebar = ({
       <Modal
         opened={deleteModalOpen}
         onClose={cancelDelete}
-        title="Διαγραφή Συλλογής"
+        title={t("database.deleteCollectionTitle")}
         centered
         size="md"
       >
         <Stack gap="md">
           <Text>
-            Είστε σίγουροι ότι θέλετε να διαγράψετε τη συλλογή{" "}
+            {t("database.deleteCollectionConfirm")}{" "}
             <Text component="span" fw={700}>
               "{collectionToDelete}"
             </Text>
             ;
           </Text>
           <Text size="sm" c="dimmed">
-            ⚠️ Προσοχή: Αυτή η ενέργεια θα διαγράψει τη συλλογή και όλα τα
-            resources της από τη βάση δεδομένων, αλλά{" "}
-            <Text component="span" fw={700}>
-              ΔΕΝ θα διαγράψει
-            </Text>{" "}
-            τα αρχεία από το σύστημα αρχείων σας.
+            {t("database.deleteCollectionWarning")}
           </Text>
           <Group justify="flex-end" gap="xs">
             <Button variant="default" onClick={cancelDelete}>
-              Ακύρωση
+              {t("common.cancel")}
             </Button>
             <Button color="red" onClick={confirmDelete}>
-              Διαγραφή
+              {t("common.delete")}
             </Button>
           </Group>
         </Stack>
@@ -1000,14 +1001,14 @@ export const DatabaseSidebar = ({
       <Modal
         opened={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
-        title="New Collection"
+        title={t("database.newCollectionTitle")}
         centered
         size="sm"
       >
         <Stack>
           <TextInput
-            label="Collection Name"
-            placeholder="e.g., Mathematics, Physics"
+            label={t("database.collectionNameLabel")}
+            placeholder={t("database.collectionNamePlaceholder")}
             data-autofocus
             value={newCollectionName}
             onChange={(e) => setNewCollectionName(e.currentTarget.value)}
@@ -1017,9 +1018,11 @@ export const DatabaseSidebar = ({
           />
           <Group justify="flex-end">
             <Button variant="default" onClick={() => setCreateModalOpen(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
-            <Button onClick={handleCreateCollection}>Create</Button>
+            <Button onClick={handleCreateCollection}>
+              {t("common.create")}
+            </Button>
           </Group>
         </Stack>
       </Modal>

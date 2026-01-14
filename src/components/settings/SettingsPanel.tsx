@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Box,
   Group,
@@ -116,6 +117,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onAddCustomTheme,
   onRemoveCustomTheme,
 }) => {
+  const { t } = useTranslation();
   const [activeCategory, setActiveCategory] =
     useState<SettingsCategory>(initialCategory);
   const [searchQuery, setSearchQuery] = useState("");
@@ -126,66 +128,66 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       [
         {
           id: "general",
-          label: "General",
+          label: t("settings.categories.general"),
           icon: faCog,
           keywords: "startup exit language autosave",
         },
         {
           id: "tex",
-          label: "TeX Engines",
+          label: t("settings.categories.tex"),
           icon: faTerminal,
           keywords: "latex compiler pdflatex xelatex lualatex bibtex",
         },
         {
           id: "compilation",
-          label: "Compilation",
+          label: t("settings.categories.compilation"),
           icon: faHammer,
           keywords: "build compile error log timeout clean aux",
         },
         {
           id: "editor",
-          label: "Editor Appearance",
+          label: t("settings.categories.editor"),
           icon: faCode,
           keywords: "font size theme minimap line numbers wordwrap",
         },
         {
           id: "editorBehavior",
-          label: "Editor Behavior",
+          label: t("settings.categories.editorBehavior"),
           icon: faKeyboard,
           keywords: "tab indent autocomplete brackets cursor formatting",
         },
         {
           id: "pdfViewer",
-          label: "PDF Viewer",
+          label: t("settings.categories.pdfViewer"),
           icon: faFilePdf,
           keywords: "zoom pdf split view synctex scroll",
         },
         {
           id: "database",
-          label: "Database",
+          label: t("settings.categories.database"),
           icon: faDatabase,
           keywords: "table graph view metadata preamble",
         },
         {
           id: "accessibility",
-          label: "Accessibility",
+          label: t("settings.categories.accessibility"),
           icon: faUniversalAccess,
           keywords: "contrast motion animation spacing ligatures whitespace",
         },
         {
           id: "shortcuts",
-          label: "Keyboard Shortcuts",
+          label: t("settings.categories.shortcuts"),
           icon: faKeyboard,
           keywords: "hotkeys keybindings shortcuts commands",
         },
         {
           id: "theme",
-          label: "Theme",
+          label: t("settings.categories.theme"),
           icon: faPalette,
           keywords: "color ui dark light theme appearance",
         },
       ] as const,
-    []
+    [t]
   );
 
   // Filter categories based on search
@@ -291,10 +293,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       >
         <Box p="md">
           <Title order={4} mb="xs">
-            Settings
+            {t("settings.title")}
           </Title>
           <TextInput
-            placeholder="Search settings..."
+            placeholder={t("settings.searchPlaceholder")}
             leftSection={
               <FontAwesomeIcon icon={faSearch} style={{ width: 14 }} />
             }
@@ -307,7 +309,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         <Box>
           {filteredCategories.length === 0 ? (
             <Text size="sm" c="dimmed" p="md" ta="center">
-              No settings found
+              {t("settings.noSettingsFound")}
             </Text>
           ) : (
             filteredCategories.map((cat) => (

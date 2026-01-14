@@ -1,5 +1,6 @@
 import React from "react";
 import { Stack, Title, Text, Select, Switch } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 import { PdfViewerSettings as IPdfViewerSettings } from "../../hooks/useSettings";
 import { SettingGroup } from "./SettingGroup";
 
@@ -15,36 +16,58 @@ export const PdfViewerSettings: React.FC<PdfViewerSettingsProps> = ({
   settings,
   onUpdate,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <Stack gap="md" maw={600}>
-      <Title order={4}>PDF Viewer Settings</Title>
+      <Title order={4}>{t("settings.pdfViewer.title")}</Title>
       <Text size="sm" c="dimmed">
-        Customize the PDF viewer behavior and appearance.
+        {t("settings.pdfViewer.description")}
       </Text>
 
       <SettingGroup
-        title="Display Settings"
-        description="Control how PDFs are displayed"
+        title={t("settings.pdfViewer.display.title")}
+        description={t("settings.pdfViewer.display.description")}
       >
         <Select
-          label="Default Zoom Level"
-          description="How PDFs should be displayed by default"
+          label={t("settings.pdfViewer.display.defaultZoom.label")}
+          description={t("settings.pdfViewer.display.defaultZoom.description")}
           data={[
-            { value: "fit-page", label: "Fit to Page" },
-            { value: "fit-width", label: "Fit to Width" },
-            { value: "actual", label: "Actual Size (100%)" },
+            {
+              value: "fit-page",
+              label: t("settings.pdfViewer.display.defaultZoom.fitPage"),
+            },
+            {
+              value: "fit-width",
+              label: t("settings.pdfViewer.display.defaultZoom.fitWidth"),
+            },
+            {
+              value: "actual",
+              label: t("settings.pdfViewer.display.defaultZoom.actual"),
+            },
           ]}
           value={settings.defaultZoom as string}
           onChange={(val) => val && onUpdate("defaultZoom", val as any)}
         />
 
         <Select
-          label="Split View Mode"
-          description="How the editor and PDF are arranged"
+          label={t("settings.pdfViewer.display.splitViewMode.label")}
+          description={t(
+            "settings.pdfViewer.display.splitViewMode.description"
+          )}
           data={[
-            { value: "horizontal", label: "Horizontal (Side by Side)" },
-            { value: "vertical", label: "Vertical (Top and Bottom)" },
-            { value: "auto", label: "Auto (Based on Window Size)" },
+            {
+              value: "horizontal",
+              label: t("settings.pdfViewer.display.splitViewMode.horizontal"),
+            },
+            {
+              value: "vertical",
+              label: t("settings.pdfViewer.display.splitViewMode.vertical"),
+            },
+            {
+              value: "auto",
+              label: t("settings.pdfViewer.display.splitViewMode.auto"),
+            },
           ]}
           value={settings.splitViewMode}
           onChange={(val) => val && onUpdate("splitViewMode", val as any)}
@@ -52,31 +75,33 @@ export const PdfViewerSettings: React.FC<PdfViewerSettingsProps> = ({
       </SettingGroup>
 
       <SettingGroup
-        title="Behavior Settings"
-        description="Automatic actions and features"
+        title={t("settings.pdfViewer.behavior.title")}
+        description={t("settings.pdfViewer.behavior.description")}
       >
         <Switch
-          label="Show PDF by Default"
-          description="Automatically show PDF panel when opening .tex files"
+          label={t("settings.pdfViewer.behavior.showByDefault.label")}
+          description={t(
+            "settings.pdfViewer.behavior.showByDefault.description"
+          )}
           checked={settings.showByDefault}
           onChange={(e) => onUpdate("showByDefault", e.currentTarget.checked)}
         />
 
         <Switch
-          label="Auto Refresh PDF"
-          description="Automatically reload PDF after successful compilation"
+          label={t("settings.pdfViewer.behavior.autoRefresh.label")}
+          description={t("settings.pdfViewer.behavior.autoRefresh.description")}
           checked={settings.autoRefresh}
           onChange={(e) => onUpdate("autoRefresh", e.currentTarget.checked)}
         />
       </SettingGroup>
 
       <SettingGroup
-        title="SyncTeX Settings"
-        description="Synchronization between source and PDF"
+        title={t("settings.pdfViewer.synctex.title")}
+        description={t("settings.pdfViewer.synctex.description")}
       >
         <Switch
-          label="SyncTeX Highlighting"
-          description="Highlight the corresponding position in PDF during forward sync"
+          label={t("settings.pdfViewer.synctex.highlight.label")}
+          description={t("settings.pdfViewer.synctex.highlight.description")}
           checked={settings.syncTexHighlight}
           onChange={(e) =>
             onUpdate("syncTexHighlight", e.currentTarget.checked)
@@ -84,8 +109,8 @@ export const PdfViewerSettings: React.FC<PdfViewerSettingsProps> = ({
         />
 
         <Switch
-          label="Scroll Synchronization"
-          description="Sync scrolling between editor and PDF viewer"
+          label={t("settings.pdfViewer.synctex.scrollSync.label")}
+          description={t("settings.pdfViewer.synctex.scrollSync.description")}
           checked={settings.scrollSync}
           onChange={(e) => onUpdate("scrollSync", e.currentTarget.checked)}
         />

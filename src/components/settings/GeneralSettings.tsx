@@ -1,5 +1,6 @@
 import React from "react";
 import { Stack, Title, Text, Switch, Select } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 import { GeneralSettings as IGeneralSettings } from "../../hooks/useSettings";
 
 interface GeneralSettingsProps {
@@ -14,47 +15,57 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
   settings,
   onUpdate,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <Stack gap="md" maw={600}>
-      <Title order={4}>General Settings</Title>
+      <Title order={4}>{t("settings.general.title")}</Title>
       <Text size="sm" c="dimmed">
-        Global application settings.
+        {t("settings.general.description")}
       </Text>
 
       <Select
-        label="Startup Behavior"
-        description="What to show when the application starts"
+        label={t("settings.general.startupBehavior.label")}
+        description={t("settings.general.startupBehavior.description")}
         data={[
-          { value: "restore", label: "Restore Last Session" },
-          { value: "welcome", label: "Show Welcome Screen" },
-          { value: "empty", label: "Empty Workspace" },
+          {
+            value: "restore",
+            label: t("settings.general.startupBehavior.restore"),
+          },
+          {
+            value: "welcome",
+            label: t("settings.general.startupBehavior.welcome"),
+          },
+          {
+            value: "empty",
+            label: t("settings.general.startupBehavior.empty"),
+          },
         ]}
         value={settings.startupBehavior}
         onChange={(val) => val && onUpdate("startupBehavior", val as any)}
       />
 
       <Switch
-        label="Confirm on Exit"
-        description="Ask for confirmation before closing with unsaved changes"
+        label={t("settings.general.confirmOnExit.label")}
+        description={t("settings.general.confirmOnExit.description")}
         checked={settings.confirmOnExit}
         onChange={(e) => onUpdate("confirmOnExit", e.currentTarget.checked)}
       />
 
       <Select
-        label="Language"
-        description="The language of the user interface."
+        label={t("settings.general.language.label")}
+        description={t("settings.general.language.description")}
         data={[
           { value: "en", label: "English" },
-          // { value: 'el', label: 'Greek (Coming Soon)' }
+          { value: "el", label: "Ελληνικά" },
         ]}
         value={settings.language}
         onChange={(val) => val && onUpdate("language", val)}
-        disabled
       />
 
       <Switch
-        label="Auto Save"
-        description="Automatically save changes (Coming Soon)."
+        label={t("settings.general.autoSave.label")}
+        description={t("settings.general.autoSave.description")}
         checked={settings.autoSave}
         onChange={(e) => onUpdate("autoSave", e.currentTarget.checked)}
         disabled

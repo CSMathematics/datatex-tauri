@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Stack,
   Title,
@@ -96,15 +97,29 @@ const SHORTCUT_DEFINITIONS: ShortcutDef[] = [
 
 export const KeyboardShortcutsSettings: React.FC = () => {
   const { settings, updateShortcut, resetShortcuts } = useSettings();
+  const { t } = useTranslation();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [recordedKeys, setRecordedKeys] = useState<string | null>(null);
 
   // Group definitions by category
-  const groupedShortcuts = SHORTCUT_DEFINITIONS.reduce((acc, def) => {
-    if (!acc[def.category]) acc[def.category] = [];
-    acc[def.category].push(def);
-    return acc;
-  }, {} as Record<string, ShortcutDef[]>);
+  const groupedShortcuts = useMemo(() => {
+    return SHORTCUT_DEFINITIONS.reduce((acc, def) => {
+      // Translate category
+      // We map the hardcoded categories "General", "Editor", "Compilation", "Navigation"
+      // to our translation keys
+      const categoryKey = def.category.toLowerCase(); // general, editor, compilation, navigation
+      // Note: "Navigation" in definition -> "navigation" key
+
+      const translatedCategory = t(
+        `settings.shortcuts.categories.${categoryKey}`,
+        { defaultValue: def.category }
+      );
+
+      if (!acc[translatedCategory]) acc[translatedCategory] = [];
+      acc[translatedCategory].push(def);
+      return acc;
+    }, {} as Record<string, ShortcutDef[]>);
+  }, [t]);
 
   // Handle key recording
   useEffect(() => {
@@ -158,14 +173,19 @@ export const KeyboardShortcutsSettings: React.FC = () => {
   };
 
   const activeDefinition = SHORTCUT_DEFINITIONS.find((d) => d.id === editingId);
+  const activeDescription = activeDefinition
+    ? t(`settings.shortcuts.actions.${activeDefinition.id}`, {
+        defaultValue: activeDefinition.description,
+      })
+    : "";
 
   return (
     <Stack gap="md" maw={800}>
       <Group justify="space-between">
         <div>
-          <Title order={4}>Keyboard Shortcuts</Title>
+          <Title order={4}>{t("settings.shortcuts.title")}</Title>
           <Text size="sm" c="dimmed">
-            Customize keyboard shortcuts for frequent actions.
+            {t("settings.shortcuts.description")}
           </Text>
         </div>
         <Button
@@ -175,7 +195,7 @@ export const KeyboardShortcutsSettings: React.FC = () => {
           leftSection={<FontAwesomeIcon icon={faRotateLeft} />}
           onClick={resetShortcuts}
         >
-          Reset All to Defaults
+          {t("settings.shortcuts.resetAll")}
         </Button>
       </Group>
 
@@ -190,18 +210,21 @@ export const KeyboardShortcutsSettings: React.FC = () => {
                 const currentKeys =
                   settings.shortcuts?.[def.id] || def.defaultKeys;
                 const isCustom = currentKeys !== def.defaultKeys;
+                const description = t(`settings.shortcuts.actions.${def.id}`, {
+                  defaultValue: def.description,
+                });
 
                 return (
                   <Table.Tr key={def.id}>
                     <Table.Td width="40%">
-                      <Text size="sm">{def.description}</Text>
+                      <Text size="sm">{description}</Text>
                     </Table.Td>
                     <Table.Td>
                       <Group gap="xs">
                         {renderKey(currentKeys)}
                         {isCustom && (
                           <Badge size="xs" variant="dot" color="yellow">
-                            Modified
+                            {t("settings.shortcuts.modified")}
                           </Badge>
                         )}
                       </Group>
@@ -212,7 +235,7 @@ export const KeyboardShortcutsSettings: React.FC = () => {
                           variant="subtle"
                           size="sm"
                           onClick={() => setEditingId(def.id)}
-                          title="Edit Shortcut"
+                          title={t("settings.shortcuts.edit")}
                         >
                           <FontAwesomeIcon icon={faEdit} />
                         </ActionIcon>
@@ -224,7 +247,7 @@ export const KeyboardShortcutsSettings: React.FC = () => {
                             onClick={() =>
                               handleResetOne(def.id, def.defaultKeys)
                             }
-                            title="Reset to Default"
+                            title={t("settings.shortcuts.reset")}
                           >
                             <FontAwesomeIcon icon={faRotateLeft} />
                           </ActionIcon>
@@ -243,13 +266,13 @@ export const KeyboardShortcutsSettings: React.FC = () => {
       <Modal
         opened={!!editingId}
         onClose={handleCancelEdit}
-        title="Edit Shortcut"
+        title={t("settings.shortcuts.editModal.title")}
         centered
       >
         <Stack align="center" py="md">
-          <Text>Press the desired key combination for:</Text>
+          <Text>{t("settings.shortcuts.editModal.instruction")}</Text>
           <Text fw={700} size="lg">
-            {activeDefinition?.description}
+            {activeDescription}
           </Text>
 
           <Box
@@ -266,21 +289,21 @@ export const KeyboardShortcutsSettings: React.FC = () => {
               <Group justify="center">{renderKey(recordedKeys)}</Group>
             ) : (
               <Text c="dimmed" fs="italic">
-                Listening for keys...
+                {t("settings.shortcuts.editModal.listening")}
               </Text>
             )}
           </Box>
 
           <Group mt="md">
             <Button variant="default" onClick={handleCancelEdit}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={handleSaveShortcut}
               disabled={!recordedKeys}
               color="blue"
             >
-              Save Shortcut
+              {t("settings.shortcuts.editModal.save")}
             </Button>
           </Group>
         </Stack>

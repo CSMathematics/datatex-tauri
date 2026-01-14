@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Stack, Title, Text, Select, NumberInput, Switch } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { EditorSettings as IEditorSettings } from "../../hooks/useSettings";
 
@@ -15,6 +16,7 @@ export const EditorSettings: React.FC<EditorSettingsProps> = ({
   settings,
   onUpdate,
 }) => {
+  const { t } = useTranslation();
   const [systemFonts, setSystemFonts] = useState<string[]>([]);
 
   useEffect(() => {
@@ -27,14 +29,14 @@ export const EditorSettings: React.FC<EditorSettingsProps> = ({
 
   return (
     <Stack gap="md" maw={600}>
-      <Title order={4}>Editor Settings</Title>
+      <Title order={4}>{t("settings.editor.title")}</Title>
       <Text size="sm" c="dimmed">
-        Customize the code editor experience.
+        {t("settings.editor.description")}
       </Text>
 
       <NumberInput
-        label="Font Size"
-        description="Controls the font size in pixels."
+        label={t("settings.editor.fontSize.label")}
+        description={t("settings.editor.fontSize.description")}
         value={settings.fontSize}
         onChange={(val) => onUpdate("fontSize", Number(val))}
         min={8}
@@ -42,30 +44,30 @@ export const EditorSettings: React.FC<EditorSettingsProps> = ({
       />
 
       <Select
-        label="Font Family"
-        description="The font family used in the editor."
+        label={t("settings.editor.fontFamily.label")}
+        description={t("settings.editor.fontFamily.description")}
         data={systemFonts}
         value={settings.fontFamily}
         onChange={(val) => onUpdate("fontFamily", val || "Consolas")}
         searchable
-        nothingFoundMessage="No fonts found"
+        nothingFoundMessage={t("settings.editor.fontFamily.notFound")}
         checkIconPosition="right"
       />
 
       <Select
-        label="Word Wrap"
-        description="Controls how lines should wrap."
+        label={t("settings.editor.wordWrap.label")}
+        description={t("settings.editor.wordWrap.description")}
         data={[
-          { value: "on", label: "On" },
-          { value: "off", label: "Off" },
+          { value: "on", label: t("settings.common.on") },
+          { value: "off", label: t("settings.common.off") },
         ]}
         value={settings.wordWrap}
         onChange={(val) => onUpdate("wordWrap", val as "on" | "off")}
       />
 
       <Select
-        label="Editor Theme"
-        description="Color scheme for the code editor."
+        label={t("settings.editor.theme.label")}
+        description={t("settings.editor.theme.description")}
         data={[
           { value: "data-tex-dark", label: "DataTeX Dark (Default)" },
           { value: "data-tex-light", label: "DataTeX Light" },
@@ -78,20 +80,23 @@ export const EditorSettings: React.FC<EditorSettingsProps> = ({
       />
 
       <Select
-        label="Line Numbers"
-        description="Controls the display of line numbers."
+        label={t("settings.editor.lineNumbers.label")}
+        description={t("settings.editor.lineNumbers.description")}
         data={[
-          { value: "on", label: "On" },
-          { value: "off", label: "Off" },
-          { value: "relative", label: "Relative" },
+          { value: "on", label: t("settings.common.on") },
+          { value: "off", label: t("settings.common.off") },
+          {
+            value: "relative",
+            label: t("settings.editor.lineNumbers.relative"),
+          },
         ]}
         value={settings.lineNumbers}
         onChange={(val) => onUpdate("lineNumbers", val as any)}
       />
 
       <Switch
-        label="Minimap"
-        description="Controls whether the minimap is shown."
+        label={t("settings.editor.minimap.label")}
+        description={t("settings.editor.minimap.description")}
         checked={settings.minimap}
         onChange={(e) => onUpdate("minimap", e.currentTarget.checked)}
       />

@@ -56,6 +56,8 @@ import { ResourceInspector } from "./components/database/ResourceInspector";
 import { PackageBrowser } from "./components/tools/PackageBrowser";
 import { templates, getTemplateById } from "./services/templateService";
 
+import { AISidebar } from "./components/ai/AISidebar";
+
 import {
   latexLanguage,
   latexConfiguration,
@@ -321,7 +323,8 @@ export default function App() {
     () =>
       activeView.startsWith("wizard-") ||
       activeView === "gallery" ||
-      activeView === "package-browser",
+      activeView === "package-browser" ||
+      activeView === "ai-assistant",
     [activeView]
   );
   const showRightPanel = useMemo(
@@ -1035,6 +1038,13 @@ export default function App() {
                   }
                 }
               }}
+              onToggleAI={() => {
+                if (activeView === "ai-assistant") {
+                  setActiveView("editor");
+                } else {
+                  setActiveView("ai-assistant");
+                }
+              }}
             />
           </AppShell.Header>
 
@@ -1402,6 +1412,11 @@ export default function App() {
                           onChange={() => {}}
                         />
                       </WizardWrapper>
+                    ) : activeView === "ai-assistant" ? (
+                      <AISidebar
+                        onInsertCode={(code) => handleInsertSnippet(code)}
+                        onClose={() => setActiveView("editor")}
+                      />
                     ) : (
                       <ResourceInspector
                         mainEditorPdfUrl={pdfUrl}

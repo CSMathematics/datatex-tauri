@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Group, Text, ActionIcon, Tooltip } from "@mantine/core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -26,6 +27,7 @@ export const StatusBar: React.FC<StatusBarProps> = React.memo(
     onToggleSpellCheck,
     onWordCount,
   }) => {
+    const { t } = useTranslation();
     return (
       <Group
         h={24}
@@ -45,14 +47,14 @@ export const StatusBar: React.FC<StatusBarProps> = React.memo(
               style={{ width: 12, height: 12 }}
             />
             <Text size="xs" inherit>
-              Ready
+              {t("statusBar.ready")}
             </Text>
           </Group>
         </Group>
 
         <Group gap="lg">
           {onWordCount && language === "latex" && (
-            <Tooltip label="Word Count">
+            <Tooltip label={t("statusBar.wordCount")}>
               <ActionIcon
                 size="xs"
                 variant="transparent"
@@ -68,7 +70,11 @@ export const StatusBar: React.FC<StatusBarProps> = React.memo(
           )}
 
           {onToggleSpellCheck && (
-            <Tooltip label={`Spell Check: ${spellCheckEnabled ? "On" : "Off"}`}>
+            <Tooltip
+              label={`${t("statusBar.spellCheck")}: ${
+                spellCheckEnabled ? "On" : "Off"
+              }`}
+            >
               <ActionIcon
                 size="xs"
                 variant="transparent"
@@ -107,7 +113,10 @@ export const StatusBar: React.FC<StatusBarProps> = React.memo(
               }}
             />
             <Text size="xs" inherit>
-              DataTex DB: {dbConnected ? "Connected" : "Disconnected"}
+              DataTex DB:{" "}
+              {dbConnected
+                ? t("statusBar.connected")
+                : t("statusBar.disconnected")}
             </Text>
           </Group>
         </Group>

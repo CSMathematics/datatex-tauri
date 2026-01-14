@@ -1,5 +1,6 @@
 import React from "react";
 import { Stack, Title, Text, Select, NumberInput, Switch } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 import { AccessibilitySettings as IAccessibilitySettings } from "../../hooks/useSettings";
 import { SettingGroup } from "./SettingGroup";
 
@@ -15,20 +16,24 @@ export const AccessibilitySettings: React.FC<AccessibilitySettingsProps> = ({
   settings,
   onUpdate,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <Stack gap="md" maw={600}>
-      <Title order={4}>Accessibility Settings</Title>
+      <Title order={4}>{t("settings.accessibility.title")}</Title>
       <Text size="sm" c="dimmed">
-        Improve readability and reduce visual strain.
+        {t("settings.accessibility.description")}
       </Text>
 
       <SettingGroup
-        title="Visual Enhancements"
-        description="Settings for better visibility"
+        title={t("settings.accessibility.visual.title")}
+        description={t("settings.accessibility.visual.description")}
       >
         <Switch
-          label="High Contrast Mode"
-          description="Increase contrast for better visibility"
+          label={t("settings.accessibility.visual.highContrast.label")}
+          description={t(
+            "settings.accessibility.visual.highContrast.description"
+          )}
           checked={settings.highContrastMode}
           onChange={(e) =>
             onUpdate("highContrastMode", e.currentTarget.checked)
@@ -36,15 +41,19 @@ export const AccessibilitySettings: React.FC<AccessibilitySettingsProps> = ({
         />
 
         <Switch
-          label="Font Ligatures"
-          description="Use special character combinations (→, ≤, etc.)"
+          label={t("settings.accessibility.visual.fontLigatures.label")}
+          description={t(
+            "settings.accessibility.visual.fontLigatures.description"
+          )}
           checked={settings.fontLigatures}
           onChange={(e) => onUpdate("fontLigatures", e.currentTarget.checked)}
         />
 
         <NumberInput
-          label="Letter Spacing"
-          description="Additional space between letters in pixels (0-2)"
+          label={t("settings.accessibility.visual.letterSpacing.label")}
+          description={t(
+            "settings.accessibility.visual.letterSpacing.description"
+          )}
           value={settings.letterSpacing}
           onChange={(val) => onUpdate("letterSpacing", Number(val))}
           min={0}
@@ -55,8 +64,10 @@ export const AccessibilitySettings: React.FC<AccessibilitySettingsProps> = ({
         />
 
         <NumberInput
-          label="Line Height"
-          description="Vertical space between lines (1.0-2.0)"
+          label={t("settings.accessibility.visual.lineHeight.label")}
+          description={t(
+            "settings.accessibility.visual.lineHeight.description"
+          )}
           value={settings.lineHeight}
           onChange={(val) => onUpdate("lineHeight", Number(val))}
           min={1.0}
@@ -66,13 +77,31 @@ export const AccessibilitySettings: React.FC<AccessibilitySettingsProps> = ({
         />
 
         <Select
-          label="Render Whitespace"
-          description="Show invisible whitespace characters"
+          label={t("settings.accessibility.visual.renderWhitespace.label")}
+          description={t(
+            "settings.accessibility.visual.renderWhitespace.description"
+          )}
           data={[
-            { value: "none", label: "None" },
-            { value: "boundary", label: "Boundary (Trailing/Leading)" },
-            { value: "selection", label: "Selection Only" },
-            { value: "all", label: "All Whitespace" },
+            {
+              value: "none",
+              label: t("settings.accessibility.visual.renderWhitespace.none"),
+            },
+            {
+              value: "boundary",
+              label: t(
+                "settings.accessibility.visual.renderWhitespace.boundary"
+              ),
+            },
+            {
+              value: "selection",
+              label: t(
+                "settings.accessibility.visual.renderWhitespace.selection"
+              ),
+            },
+            {
+              value: "all",
+              label: t("settings.accessibility.visual.renderWhitespace.all"),
+            },
           ]}
           value={settings.renderWhitespace}
           onChange={(val) => val && onUpdate("renderWhitespace", val as any)}
@@ -80,32 +109,50 @@ export const AccessibilitySettings: React.FC<AccessibilitySettingsProps> = ({
       </SettingGroup>
 
       <SettingGroup
-        title="Motion & Animation"
-        description="Control movement and transitions"
+        title={t("settings.accessibility.motion.title")}
+        description={t("settings.accessibility.motion.description")}
       >
         <Switch
-          label="Smooth Scrolling"
-          description="Enable smooth scrolling animations"
+          label={t("settings.accessibility.motion.smoothScrolling.label")}
+          description={t(
+            "settings.accessibility.motion.smoothScrolling.description"
+          )}
           checked={settings.smoothScrolling}
           onChange={(e) => onUpdate("smoothScrolling", e.currentTarget.checked)}
         />
 
         <Select
-          label="Animation Speed"
-          description="Speed of UI animations and transitions"
+          label={t("settings.accessibility.motion.animationSpeed.label")}
+          description={t(
+            "settings.accessibility.motion.animationSpeed.description"
+          )}
           data={[
-            { value: "slow", label: "Slow (Relaxed)" },
-            { value: "normal", label: "Normal" },
-            { value: "fast", label: "Fast (Snappy)" },
-            { value: "none", label: "None (Instant)" },
+            {
+              value: "slow",
+              label: t("settings.accessibility.motion.animationSpeed.slow"),
+            },
+            {
+              value: "normal",
+              label: t("settings.accessibility.motion.animationSpeed.normal"),
+            },
+            {
+              value: "fast",
+              label: t("settings.accessibility.motion.animationSpeed.fast"),
+            },
+            {
+              value: "none",
+              label: t("settings.accessibility.motion.animationSpeed.none"),
+            },
           ]}
           value={settings.animationSpeed}
           onChange={(val) => val && onUpdate("animationSpeed", val as any)}
         />
 
         <Switch
-          label="Reduce Motion"
-          description="Minimize animations for motion sensitivity (overrides animation speed)"
+          label={t("settings.accessibility.motion.reduceMotion.label")}
+          description={t(
+            "settings.accessibility.motion.reduceMotion.description"
+          )}
           checked={settings.reduceMotion}
           onChange={(e) => onUpdate("reduceMotion", e.currentTarget.checked)}
         />

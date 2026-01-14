@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Container,
   Text,
@@ -50,6 +51,7 @@ export const StartPage: React.FC<StartPageProps> = ({
   onOpenPackageBrowser,
   onOpenTemplateModal,
 }) => {
+  const { t } = useTranslation();
   const colorScheme = useComputedColorScheme("dark", {
     getInitialValueInEffect: true,
   });
@@ -198,21 +200,21 @@ export const StartPage: React.FC<StartPageProps> = ({
                 tt="uppercase"
                 style={{ letterSpacing: 1 }}
               >
-                Get Started
+                {t("startPage.getStarted")}
               </Text>
               <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
                 <ActionCard
                   icon={faFileCirclePlus}
                   color="gray"
-                  title="Empty File"
-                  description="Start from scratch with a blank document."
+                  title={t("startPage.emptyFile")}
+                  description={t("startPage.emptyFileDesc")}
                   onClick={onCreateEmpty}
                 />
                 <ActionCard
                   icon={faWandMagicSparkles}
                   color="violet"
                   title="Preamble Wizard"
-                  description="Configure page settings, packages, and fonts."
+                  description={t("startPage.preambleWizardDesc")}
                   onClick={onOpenWizard}
                 />
               </SimpleGrid>
@@ -225,33 +227,37 @@ export const StartPage: React.FC<StartPageProps> = ({
                 mt="md"
                 style={{ letterSpacing: 1 }}
               >
-                Database Tools
+                {t("startPage.databaseTools")}
               </Text>
               <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
                 <ActionCard
                   icon={faFileSignature}
                   color="teal"
-                  title="Exam Generator"
-                  description="Create exams automatically from valid exercises."
+                  title={t("startPage.examGenerator")}
+                  description={t("startPage.examGeneratorDesc")}
                   onClick={onOpenExamGenerator}
                 />
                 <ActionCard
                   icon={faDatabase}
                   color="cyan"
-                  title="Browse Database"
-                  description="Manage files, tags, and metadata."
+                  title={t("startPage.browseDatabase")}
+                  description={t("startPage.browseDatabaseDesc")}
                   onClick={onOpenDatabase}
                 />
                 <ActionCard
                   icon={faBoxOpen}
                   color="indigo"
-                  title="Package Browser"
-                  description="Search and explore CTAN packages."
+                  title={t("startPage.packageBrowser")}
+                  description={t("startPage.packageBrowserDesc")}
                   onClick={onOpenPackageBrowser}
                 />
               </SimpleGrid>
 
-              <Divider label="RECENT PROJECTS" labelPosition="left" my="xs" />
+              <Divider
+                label={t("startPage.recentProjects")}
+                labelPosition="left"
+                my="xs"
+              />
 
               {recentProjects.length > 0 ? (
                 <Card withBorder bg="var(--mantine-color-default)" p={0}>
@@ -299,7 +305,7 @@ export const StartPage: React.FC<StartPageProps> = ({
                 </Card>
               ) : (
                 <Text c="dimmed" fs="italic" size="sm">
-                  No recent projects found.
+                  {t("startPage.noRecentProjects")}
                 </Text>
               )}
             </Stack>
@@ -313,24 +319,24 @@ export const StartPage: React.FC<StartPageProps> = ({
                 tt="uppercase"
                 style={{ letterSpacing: 1 }}
               >
-                Quick Resources
+                {t("startPage.quickResources")}
               </Text>
               <Card withBorder bg="var(--mantine-color-default)" padding="sm">
                 <Stack gap={4}>
                   <QuickLink
-                    title="LaTeX Cheatsheet"
+                    title={t("startPage.latexCheatsheet")}
                     url="https://wch.github.io/latexsheet/latexsheet.pdf"
                   />
                   <QuickLink
-                    title="CTAN Package Search"
+                    title={t("startPage.ctanSearch")}
                     url="https://ctan.org/"
                   />
                   <QuickLink
-                    title="Detexify (Symbols)"
+                    title={t("startPage.detexify")}
                     url="https://detexify.kirelabs.org/classify.html"
                   />
                   <QuickLink
-                    title="TikZ Examples"
+                    title={t("startPage.tikzExamples")}
                     url="https://texample.net/tikz/examples/"
                   />
                 </Stack>
@@ -344,7 +350,7 @@ export const StartPage: React.FC<StartPageProps> = ({
                 mt="md"
                 style={{ letterSpacing: 1 }}
               >
-                Templates
+                {t("startPage.templates")}
               </Text>
               <Stack gap="xs">
                 {templates.slice(0, 3).map((tmpl) => (
@@ -382,7 +388,7 @@ export const StartPage: React.FC<StartPageProps> = ({
                   style={{ textAlign: "center" }}
                 >
                   <Text size="xs" c="blue" td="underline">
-                    View all templates
+                    {t("startPage.viewAllTemplates")}
                   </Text>
                 </UnstyledButton>
               </Stack>

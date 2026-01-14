@@ -7,6 +7,7 @@ import {
   Group,
   Text,
 } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 import { TexEngineSettings as ITexEngineSettings } from "../../hooks/useSettings";
 
 interface TexEngineSettingsProps {
@@ -24,20 +25,22 @@ export const TexEngineSettings: React.FC<TexEngineSettingsProps> = ({
   // Legacy support: We rely on the parent (App -> SettingsPanel) to provide state from the global store.
   // Local storage persistence is now handled by the store.
 
+  const { t } = useTranslation();
+
   const handleChange = (key: keyof ITexEngineSettings, value: any) => {
     onUpdate(key, value);
   };
 
   return (
     <Stack gap="md" maw={600}>
-      <Title order={4}>TeX Engine Configuration</Title>
+      <Title order={4}>{t("settings.tex.title")}</Title>
       <Text size="sm" c="dimmed">
-        Configure how your LaTeX documents are compiled.
+        {t("settings.tex.description")}
       </Text>
 
       <Select
-        label="Default Engine"
-        description="The engine used when no specific magic comment is found."
+        label={t("settings.tex.defaultEngine.label")}
+        description={t("settings.tex.defaultEngine.description")}
         data={[
           { value: "pdflatex", label: "pdfLaTeX" },
           { value: "xelatex", label: "XeLaTeX" },
@@ -49,7 +52,7 @@ export const TexEngineSettings: React.FC<TexEngineSettingsProps> = ({
 
       <Group grow align="flex-start">
         <TextInput
-          label="pdfLaTeX Path"
+          label={t("settings.tex.pdflatexPath.label")}
           placeholder="pdflatex"
           value={settings.pdflatexPath}
           onChange={(e) => handleChange("pdflatexPath", e.currentTarget.value)}
@@ -57,7 +60,7 @@ export const TexEngineSettings: React.FC<TexEngineSettingsProps> = ({
       </Group>
       <Group grow align="flex-start">
         <TextInput
-          label="XeLaTeX Path"
+          label={t("settings.tex.xelatexPath.label")}
           placeholder="xelatex"
           value={settings.xelatexPath}
           onChange={(e) => handleChange("xelatexPath", e.currentTarget.value)}
@@ -65,7 +68,7 @@ export const TexEngineSettings: React.FC<TexEngineSettingsProps> = ({
       </Group>
       <Group grow align="flex-start">
         <TextInput
-          label="LuaLaTeX Path"
+          label={t("settings.tex.lualatexPath.label")}
           placeholder="lualatex"
           value={settings.lualatexPath}
           onChange={(e) => handleChange("lualatexPath", e.currentTarget.value)}
@@ -73,29 +76,29 @@ export const TexEngineSettings: React.FC<TexEngineSettingsProps> = ({
       </Group>
 
       <TextInput
-        label="Output Directory"
-        description="Directory for auxiliary files (relative to document)."
+        label={t("settings.tex.outputDirectory.label")}
+        description={t("settings.tex.outputDirectory.description")}
         value={settings.outputDirectory}
         onChange={(e) => handleChange("outputDirectory", e.currentTarget.value)}
       />
 
       <Checkbox
-        label="Enable Shell Escape (--shell-escape)"
-        description="Allows execution of external commands (e.g., for minted)."
+        label={t("settings.tex.shellEscape.label")}
+        description={t("settings.tex.shellEscape.description")}
         checked={settings.shellEscape}
         onChange={(e) => handleChange("shellEscape", e.currentTarget.checked)}
       />
 
       <Checkbox
-        label="Enable SyncTeX"
-        description="Required for forward/inverse search."
+        label={t("settings.tex.synctex.label")}
+        description={t("settings.tex.synctex.description")}
         checked={settings.synctex}
         onChange={(e) => handleChange("synctex", e.currentTarget.checked)}
       />
 
       <Checkbox
-        label="Run BibTeX/Biber"
-        description="Automatically run bibliography processor."
+        label={t("settings.tex.bibtex.label")}
+        description={t("settings.tex.bibtex.description")}
         checked={settings.bibtex}
         onChange={(e) => handleChange("bibtex", e.currentTarget.checked)}
       />

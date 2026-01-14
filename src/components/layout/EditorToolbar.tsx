@@ -1,4 +1,5 @@
 import React, { useState, useLayoutEffect, useRef, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Group, ActionIcon, Tooltip, Menu, Text, Box } from "@mantine/core";
 import { useElementSize } from "@mantine/hooks";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -31,6 +32,7 @@ interface EditorToolbarProps {
 }
 
 export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
+  const { t } = useTranslation();
   if (!editor) return null;
 
   // --- Helper Functions ---
@@ -136,7 +138,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
             p={2}
             style={{ borderRadius: 4, flexShrink: 0 }}
           >
-            <Tooltip label="Bold (\textbf)">
+            <Tooltip label={t("editorToolbar.bold")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -146,7 +148,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
                 <FontAwesomeIcon icon={faBold} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Italic (\textit)">
+            <Tooltip label={t("editorToolbar.italic")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -156,7 +158,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
                 <FontAwesomeIcon icon={faItalic} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Underline (\underline)">
+            <Tooltip label={t("editorToolbar.underline")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -166,7 +168,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
                 <FontAwesomeIcon icon={faUnderline} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Strikethrough (\st)">
+            <Tooltip label={t("editorToolbar.strikethrough")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -176,7 +178,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
                 <FontAwesomeIcon icon={faStrikethrough} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Text (\text)">
+            <Tooltip label={t("editorToolbar.text")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -186,7 +188,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
                 <FontAwesomeIcon icon={faFont} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Highlight (\hl)">
+            <Tooltip label={t("editorToolbar.highlight")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -196,7 +198,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
                 <FontAwesomeIcon icon={faPen} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Code (\texttt)">
+            <Tooltip label={t("editorToolbar.code")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -235,7 +237,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
             p={2}
             style={{ borderRadius: 4, flexShrink: 0 }}
           >
-            <Tooltip label="Align Left (flushleft)">
+            <Tooltip label={t("editorToolbar.alignLeft")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -245,7 +247,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
                 <FontAwesomeIcon icon={faAlignLeft} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Align Center (center)">
+            <Tooltip label={t("editorToolbar.alignCenter")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -255,7 +257,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
                 <FontAwesomeIcon icon={faAlignCenter} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Align Right (flushright)">
+            <Tooltip label={t("editorToolbar.alignRight")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -265,7 +267,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
                 <FontAwesomeIcon icon={faAlignRight} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Justify (default)">
+            <Tooltip label={t("editorToolbar.justify")}>
               <ActionIcon variant="subtle" size="xs" color="gray.5" disabled>
                 <FontAwesomeIcon icon={faAlignJustify} />
               </ActionIcon>
@@ -282,7 +284,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
             p={2}
             style={{ borderRadius: 4, flexShrink: 0 }}
           >
-            <Tooltip label="Quote environment">
+            <Tooltip label={t("editorToolbar.quote")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -292,7 +294,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
                 <FontAwesomeIcon icon={faQuoteRight} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Ellipsis (\dots)">
+            <Tooltip label={t("editorToolbar.ellipsis")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -302,7 +304,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
                 <FontAwesomeIcon icon={faEllipsisH} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Bullet List (itemize)">
+            <Tooltip label={t("editorToolbar.bulletList")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -314,7 +316,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
                 <FontAwesomeIcon icon={faListUl} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Numbered List (enumerate)">
+            <Tooltip label={t("editorToolbar.numberedList")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -338,7 +340,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
             p={2}
             style={{ borderRadius: 4, flexShrink: 0 }}
           >
-            <Tooltip label="Inline Math ($...$)">
+            <Tooltip label={t("editorToolbar.inlineMath")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -350,7 +352,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
                 </Text>
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Display Math (\[...\])">
+            <Tooltip label={t("editorToolbar.displayMath")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -362,7 +364,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
                 </Text>
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Subscript (_{})">
+            <Tooltip label={t("editorToolbar.subscript")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -372,7 +374,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
                 <FontAwesomeIcon icon={faSubscript} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Superscript (^{})">
+            <Tooltip label={t("editorToolbar.superscript")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -394,7 +396,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
             p={2}
             style={{ borderRadius: 4, flexShrink: 0 }}
           >
-            <Tooltip label="Horizontal Space (\hspace)">
+            <Tooltip label={t("editorToolbar.horizontalSpace")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -406,7 +408,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
                 </Text>
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Vertical Space (\vspace)">
+            <Tooltip label={t("editorToolbar.verticalSpace")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -430,7 +432,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
             p={2}
             style={{ borderRadius: 4, flexShrink: 0 }}
           >
-            <Tooltip label="Link (\href)">
+            <Tooltip label={t("editorToolbar.link")}>
               <ActionIcon
                 variant="subtle"
                 size="xs"
@@ -440,7 +442,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
                 <FontAwesomeIcon icon={faLink} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Unlink (Remove Link)">
+            <Tooltip label={t("editorToolbar.unlink")}>
               <ActionIcon variant="subtle" size="xs" color="gray.5" disabled>
                 <FontAwesomeIcon icon={faUnlink} />
               </ActionIcon>
@@ -449,7 +451,7 @@ export const EditorToolbar = React.memo<EditorToolbarProps>(({ editor }) => {
         ),
       },
     ],
-    [editor]
+    [editor, t]
   );
 
   // --- Responsive Logic ---

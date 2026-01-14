@@ -1,0 +1,605 @@
+{
+  "common": {
+    "save": "Αποθήκευση",
+    "cancel": "Ακύρωση",
+    "delete": "Διαγραφή",
+    "edit": "Επεξεργασία",
+    "create": "Δημιουργία",
+    "open": "Άνοιγμα",
+    "close": "Κλείσιμο",
+    "search": "Αναζήτηση",
+    "settings": "Ρυθμίσεις",
+    "loading": "Φόρτωση...",
+    "error": "Σφάλμα",
+    "success": "Επιτυχία",
+    "refresh": "Ανανέωση",
+    "filterFiles": "Φιλτράρισμα αρχείων...",
+    "newFile": "Νέο Αρχείο",
+    "newFolder": "Νέος Φάκελος",
+    "empty": "Κενό"
+  },
+  "settings": {
+    "title": "Ρυθμίσεις",
+    "searchPlaceholder": "Αναζήτηση ρυθμίσεων...",
+    "noSettingsFound": "Δεν βρέθηκαν ρυθμίσεις",
+    "categories": {
+      "general": "Γενικά",
+      "tex": "Μηχανές TeX",
+      "compilation": "Μεταγλώττιση",
+      "editor": "Εμφάνιση Editor",
+      "editorBehavior": "Συμπεριφορά Editor",
+      "pdfViewer": "Προβολή PDF",
+      "database": "Βάση Δεδομένων",
+      "accessibility": "Προσβασιμότητα",
+      "shortcuts": "Συντομεύσεις Πληκτρολογίου",
+      "theme": "Θέμα"
+    },
+    "general": {
+      "title": "Γενικές Ρυθμίσεις",
+      "description": "Γενικές ρυθμίσεις εφαρμογής.",
+      "startupBehavior": {
+        "label": "Συμπεριφορά Εκκίνησης",
+        "description": "Τι να εμφανίζεται όταν ξεκινά η εφαρμογή",
+        "restore": "Επαναφορά Τελευταίας Συνεδρίας",
+        "welcome": "Εμφάνιση Οθόνης Υποδοχής",
+        "empty": "Κενός Χώρος Εργασίας"
+      },
+      "confirmOnExit": {
+        "label": "Επιβεβαίωση κατά την Έξοδο",
+        "description": "Ερώτηση για επιβεβαίωση πριν το κλείσιμο με μη αποθηκευμένες αλλαγές"
+      },
+      "language": {
+        "label": "Γλώσσα",
+        "description": "Επιλογή Γλώσσας"
+      },
+      "autoSave": {
+        "label": "Αυτόματη Αποθήκευση",
+        "description": "Αυτόματη αποθήκευση αλλαγών (Προσεχώς)."
+      }
+    },
+    "tex": {
+      "title": "Ρύθμιση Μηχανής TeX",
+      "description": "Ρυθμίστε πώς μεταγλωττίζονται τα έγγραφα LaTeX.",
+      "defaultEngine": {
+        "label": "Προεπιλεγμένη Μηχανή",
+        "description": "Η μηχανή που χρησιμοποιείται όταν δεν βρίσκεται συγκεκριμένο magic comment."
+      },
+      "pdflatexPath": { "label": "Διαδρομή pdfLaTeX" },
+      "xelatexPath": { "label": "Διαδρομή XeLaTeX" },
+      "lualatexPath": { "label": "Διαδρομή LuaLaTeX" },
+      "outputDirectory": {
+        "label": "Φάκελος Εξόδου",
+        "description": "Φάκελος για βοηθητικά αρχεία (σχετικά με το έγγραφο)."
+      },
+      "shellEscape": {
+        "label": "Ενεργοποίηση Shell Escape (--shell-escape)",
+        "description": "Επιτρέπει την εκτέλεση εξωτερικών εντολών (π.χ. για minted)."
+      },
+      "synctex": {
+        "label": "Ενεργοποίηση SyncTeX",
+        "description": "Απαιτείται για forward/inverse αναζήτηση."
+      },
+      "bibtex": {
+        "label": "Εκτέλεση BibTeX/Biber",
+        "description": "Αυτόματη εκτέλεση επεξεργαστή βιβλιογραφίας."
+      }
+    },
+    "compilation": {
+      "title": "Ρυθμίσεις Μεταγλώττισης",
+      "description": "Προηγμένη συμπεριφορά μεταγλώττισης και διαχείριση εξόδου.",
+      "buildBehavior": {
+        "title": "Συμπεριφορά Build",
+        "description": "Πότε και πώς μεταγλωττίζονται τα αρχεία",
+        "compileOnSave": {
+          "label": "Μεταγλώττιση στην Αποθήκευση",
+          "description": "Αυτόματη μεταγλώττιση εγγράφων κατά την αποθήκευση"
+        },
+        "timeout": {
+          "label": "Χρονικό Όριο Μεταγλώττισης",
+          "description": "Μέγιστος χρόνος σε δευτερόλεπτα (30-300)"
+        }
+      },
+      "outputDirectory": {
+        "title": "Φάκελος Εξόδου",
+        "description": "Πού αποθηκεύονται τα μετεγλωττισμένα αρχεία",
+        "buildDirectory": {
+          "label": "Φάκελος Build",
+          "description": "Τοποθεσία για βοηθητικά αρχεία και αρχεία εξόδου",
+          "source": "Ίδιο με το Αρχείο Πηγής",
+          "custom": "Προσαρμοσμένη Διαδρομή"
+        },
+        "customBuildPath": {
+          "label": "Προσαρμοσμένη Διαδρομή Build",
+          "description": "Σχετική ή απόλυτη διαδρομή για την έξοδο build"
+        },
+        "cleanAuxFiles": {
+          "label": "Καθαρισμός Βοηθητικών Αρχείων",
+          "description": "Αφαίρεση αρχείων .aux, .log, .toc μετά από επιτυχή μεταγλώττιση"
+        }
+      },
+      "errorHandling": {
+        "title": "Χειρισμός Σφαλμάτων",
+        "description": "Πώς εμφανίζονται τα σφάλματα μεταγλώττισης",
+        "showLogOnError": {
+          "label": "Εμφάνιση Panel Log σε Σφάλμα",
+          "description": "Αυτόματο άνοιγμα του panel log όταν προκύπτουν σφάλματα"
+        },
+        "maxErrors": {
+          "label": "Μέγιστος Αριθμός Σφαλμάτων",
+          "description": "Όριο αριθμού σφαλμάτων που εμφανίζονται (10-100)"
+        }
+      }
+    },
+    "editor": {
+      "title": "Ρυθμίσεις Editor",
+      "description": "Προσαρμόστε την εμπειρία του editor κώδικα.",
+      "fontSize": {
+        "label": "Μέγεθος Γραμματοσειράς",
+        "description": "Ελέγχει το μέγεθος της γραμματοσειράς σε pixels."
+      },
+      "fontFamily": {
+        "label": "Οικογένεια Γραμματοσειράς",
+        "description": "Η γραμματοσειρά που χρησιμοποιείται στον editor.",
+        "notFound": "Δεν βρέθηκαν γραμματοσειρές"
+      },
+      "wordWrap": {
+        "label": "Αναδίπλωση Λέξεων",
+        "description": "Ελέγχει πώς αναδιπλώνονται οι γραμμές."
+      },
+      "theme": {
+        "label": "Θέμα Editor",
+        "description": "Χρωματικό σχήμα για τον editor κώδικα."
+      },
+      "lineNumbers": {
+        "label": "Αριθμοί Γραμμών",
+        "description": "Ελέγχει την εμφάνιση αριθμών γραμμών.",
+        "relative": "Σχετικοί"
+      },
+      "minimap": {
+        "label": "Minimap",
+        "description": "Ελέγχει αν εμφανίζεται ο χάρτης κώδικα."
+      }
+    },
+    "editorBehavior": {
+      "title": "Ρυθμίσεις Συμπεριφοράς Editor",
+      "description": "Προσαρμόστε πώς ανταποκρίνεται ο editor στην εισαγωγή σας.",
+      "formatting": {
+        "title": "Μορφοποίηση",
+        "description": "Προτιμήσεις εσοχής και διαστημάτων",
+        "tabSize": {
+          "label": "Μέγεθος Tab",
+          "description": "Αριθμός διαστημάτων ανά tab"
+        },
+        "insertSpaces": {
+          "label": "Εισαγωγή Διαστημάτων",
+          "description": "Χρήση διαστημάτων αντί για χαρακτήρες tab"
+        }
+      },
+      "autoCompletion": {
+        "title": "Αυτόματη Συμπλήρωση",
+        "description": "Αυτόματη εισαγωγή και συμπλήρωση",
+        "autoCloseBrackets": {
+          "label": "Αυτόματο Κλείσιμο Αγκυλών",
+          "description": "Αυτόματο κλείσιμο (), {}, [], και εισαγωγικών"
+        },
+        "autoCloseLatexEnv": {
+          "label": "Αυτόματο Κλείσιμο Περιβαλλόντων LaTeX",
+          "description": "Αυτόματη εισαγωγή \\end{} κατά την πληκτρολόγηση \\begin{}"
+        },
+        "suggestOnTrigger": {
+          "label": "Πρόταση σε Χαρακτήρες Ενεργοποίησης",
+          "description": "Εμφάνιση προτάσεων IntelliSense κατά την πληκτρολόγηση \\"
+        },
+        "quickSuggestions": {
+          "label": "Γρήγορες Προτάσεις",
+          "description": "Εμφάνιση inline προτάσεων κατά την πληκτρολόγηση"
+        }
+      },
+      "editorActions": {
+        "title": "Ενέργειες Editor",
+        "description": "Αυτόματη μορφοποίηση και αποθήκευση",
+        "formatOnSave": {
+          "label": "Μορφοποίηση στην Αποθήκευση",
+          "description": "Αυτόματη μορφοποίηση εγγράφου κατά την αποθήκευση"
+        },
+        "scrollBeyondLastLine": {
+          "label": "Κύλιση Πέρα από την Τελευταία Γραμμή",
+          "description": "Επιτρέπει την κύλιση πέρα από το τέλος του εγγράφου"
+        }
+      },
+      "cursor": {
+        "title": "Δρομέας",
+        "description": "Εμφάνιση και συμπεριφορά δρομέα",
+        "style": {
+          "label": "Στυλ Δρομέα",
+          "description": "Οπτικό στυλ του δρομέα κειμένου",
+          "line": "Γραμμή (|)",
+          "block": "Μπλοκ (█)",
+          "underline": "Υπογράμμιση (_)"
+        },
+        "blinking": {
+          "label": "Αναβόσβημα Δρομέα",
+          "description": "Στυλ κίνησης για τον δρομέα",
+          "blink": "Αναβόσβημα",
+          "smooth": "Ομαλό",
+          "phase": "Φάση",
+          "expand": "Επέκταση",
+          "solid": "Σταθερό (Χωρίς Αναβόσβημα)"
+        }
+      }
+    },
+    "pdfViewer": {
+      "title": "Ρυθμίσεις Προβολής PDF",
+      "description": "Προσαρμόστε τη συμπεριφορά και εμφάνιση της προβολής PDF.",
+      "display": {
+        "title": "Ρυθμίσεις Εμφάνισης",
+        "description": "Ελέγξτε πώς εμφανίζονται τα PDF",
+        "defaultZoom": {
+          "label": "Προεπιλεγμένο Επίπεδο Zoom",
+          "description": "Πώς θα πρέπει να εμφανίζονται τα PDF από προεπιλογή",
+          "fitPage": "Προσαρμογή στη Σελίδα",
+          "fitWidth": "Προσαρμογή στο Πλάτος",
+          "actual": "Πραγματικό Μέγεθος (100%)"
+        },
+        "splitViewMode": {
+          "label": "Λειτουργία Split View",
+          "description": "Πώς τακτοποιούνται ο editor και το PDF",
+          "horizontal": "Οριζόντια (Δίπλα-Δίπλα)",
+          "vertical": "Κάθετα (Πάνω-Κάτω)",
+          "auto": "Αυτόματα (Βάσει Μεγέθους Παραθύρου)"
+        }
+      },
+      "behavior": {
+        "title": "Ρυθμίσεις Συμπεριφοράς",
+        "description": "Αυτόματες ενέργειες και χαρακτηριστικά",
+        "showByDefault": {
+          "label": "Εμφάνιση PDF από Προεπιλογή",
+          "description": "Αυτόματη εμφάνιση του PDF panel κατά το άνοιγμα αρχείων .tex"
+        },
+        "autoRefresh": {
+          "label": "Αυτόματη Ανανέωση PDF",
+          "description": "Αυτόματη επαναφόρτωση PDF μετά από επιτυχή μεταγλώττιση"
+        }
+      },
+      "synctex": {
+        "title": "Ρυθμίσεις SyncTeX",
+        "description": "Συγχρονισμός μεταξύ πηγής και PDF",
+        "highlight": {
+          "label": "Επισήμανση SyncTeX",
+          "description": "Επισήμανση της αντίστοιχης θέσης στο PDF κατά το forward sync"
+        },
+        "scrollSync": {
+          "label": "Συγχρονισμός Κύλισης",
+          "description": "Συγχρονισμός κύλισης μεταξύ editor και προβολής PDF"
+        }
+      }
+    },
+    "database": {
+      "title": "Ρυθμίσεις Βάσης Δεδομένων",
+      "description": "Προσαρμόστε την προβολή και συμπεριφορά της βάσης.",
+      "view": {
+        "title": "Ρυθμίσεις Προβολής",
+        "description": "Προεπιλεγμένες προβολές και επιλογές εμφάνισης",
+        "defaultView": {
+          "label": "Προεπιλεγμένη Προβολή",
+          "description": "Πώς εμφανίζεται η βάση από προεπιλογή",
+          "table": "Προβολή Πίνακα",
+          "graph": "Προβολή Γράφου",
+          "list": "Προβολή Λίστας"
+        },
+        "showMetadataPanel": {
+          "label": "Εμφάνιση Panel Μεταδεδομένων",
+          "description": "Εμφάνιση panel μεταδεδομένων από προεπιλογή κατά την προβολή πόρων"
+        },
+        "tablePageSize": {
+          "label": "Μέγεθος Σελίδας Πίνακα",
+          "description": "Αριθμός γραμμών ανά σελίδα στην προβολή πίνακα (10-100)"
+        }
+      },
+      "graph": {
+        "title": "Προβολή Γράφου",
+        "description": "Ρυθμίσεις για οπτική απεικόνιση γράφου",
+        "physics": {
+          "label": "Ενεργοποίηση Προσομοίωσης Φυσικής",
+          "description": "Χρήση διάταξης force-directed για οπτικοποίηση γράφου"
+        },
+        "animation": {
+          "label": "Κίνηση Γράφου",
+          "description": "Κίνηση μεταβάσεων και αλληλεπιδράσεων γράφου"
+        }
+      },
+      "advanced": {
+        "title": "Για Προχωρημένους",
+        "description": "Πρόσθετα χαρακτηριστικά βάσης",
+        "autoDetectPreambles": {
+          "label": "Αυτόματη Ανίχνευση Προοιμίων",
+          "description": "Αυτόματη αναγνώριση και κατηγοριοποίηση αρχείων προοιμίου"
+        },
+        "showFilePreview": {
+          "label": "Εμφάνιση Προεπισκόπησης Αρχείου",
+          "description": "Εμφάνιση tooltip προεπισκόπησης αρχείου κατά την αιώρηση πάνω από στοιχεία"
+        }
+      }
+    },
+    "accessibility": {
+      "title": "Ρυθμίσεις Προσβασιμότητας",
+      "description": "Βελτίωση αναγνωσιμότητας και μείωση οπτικής κόπωσης.",
+      "visual": {
+        "title": "Οπτικές Βελτιώσεις",
+        "description": "Ρυθμίσεις για καλύτερη ορατότητα",
+        "highContrast": {
+          "label": "Λειτουργία Υψηλής Αντίθεσης",
+          "description": "Αύξηση αντίθεσης για καλύτερη ορατότητα"
+        },
+        "fontLigatures": {
+          "label": "Συμπλέγματα Γραμματοσειράς",
+          "description": "Χρήση ειδικών συνδυασμών χαρακτήρων (→, ≤, κλπ.)"
+        },
+        "letterSpacing": {
+          "label": "Απόσταση Γραμμάτων",
+          "description": "Πρόσθετο διάστημα μεταξύ γραμμάτων σε pixels (0-2)"
+        },
+        "lineHeight": {
+          "label": "Ύψος Γραμμής",
+          "description": "Κάθετο διάστημα μεταξύ γραμμών (1.0-2.0)"
+        },
+        "renderWhitespace": {
+          "label": "Εμφάνιση Κενών",
+          "description": "Εμφάνιση αόρατων χαρακτήρων κενου",
+          "none": "Κανένα",
+          "boundary": "Όριο (Αρχή/Τέλος)",
+          "selection": "Μόνο Επιλογή",
+          "all": "Όλα τα Κενά"
+        }
+      },
+      "motion": {
+        "title": "Κίνηση & Animation",
+        "description": "Έλεγχος κίνησης και μεταβάσεων",
+        "smoothScrolling": {
+          "label": "Ομαλή Κύλιση",
+          "description": "Ενεργοποίηση animations ομαλής κύλισης"
+        },
+        "animationSpeed": {
+          "label": "Ταχύτητα Animation",
+          "description": "Ταχύτητα animations και μεταβάσεων UI",
+          "slow": "Αργό (Χαλαρό)",
+          "normal": "Κανονικό",
+          "fast": "Γρήγορο",
+          "none": "Καθόλου (Άμεσο)"
+        },
+        "reduceMotion": {
+          "label": "Μείωση Κίνησης",
+          "description": "Ελαχιστοποίηση animations για ευαισθησία στην κίνηση"
+        }
+      }
+    },
+    "theme": {
+      "title": "Ρυθμίσεις Θέματος",
+      "description": "Προσαρμόστε την εμφάνιση και αίσθηση της εφαρμογής.",
+      "uiTheme": {
+        "label": "Θέμα UI",
+        "description": "Χρωματικό θέμα για τη διεπαφή της εφαρμογής.",
+        "custom": "Προσαρμοσμένο",
+        "light": "Φωτεινό",
+        "dark": "Σκοτεινό"
+      },
+      "advanced": {
+        "title": "Προηγμένος Επεξεργαστής Θέματος",
+        "description": "Παράκαμψη συγκεκριμένων χρωμάτων του τρέχοντος θέματος. Οι αλλαγές εφαρμόζονται άμεσα.",
+        "appBg": { "label": "Φόντο Εφαρμογής", "description": "Κύριο φόντο πίσω από τον editor" },
+        "sidebarBg": { "label": "Φόντο Sidebar", "description": "Αριστερή πλευρική στήλη" },
+        "headerBg": { "label": "Φόντο Header", "description": "Πάνω μπάρα πλοήγησης" },
+        "panelBg": { "label": "Φόντο Panel", "description": "Πλευρικά panels (αρχεία, βάση)" },
+        "statusBarBg": { "label": "Φόντο Status Bar", "description": "Κάτω μπάρα κατάστασης" },
+        "primaryColor": { "label": "Κύριο Χρώμα", "description": "Κύριο χρώμα έμφασης (κουμπιά, highlights)" },
+        "accentColor": { "label": "Χρώμα Έμφασης", "description": "Δευτερεύουσα έμφαση (εικονίδια, ενεργές καταστάσεις)" },
+        "borderColor": { "label": "Χρώμα Περιγράμματος", "description": "Καολικό χρώμα περιγράμματος" },
+        "actions": "Ενέργειες",
+        "resetOverrides": "Επαναφορά Παρακάμψεων",
+        "newThemeName": "Όνομα Νέου Θέματος",
+        "saveAsTheme": "Αποθήκευση ως Θέμα"
+      }
+    },
+    "shortcuts": {
+      "title": "Συντομεύσεις Πληκτρολογίου",
+      "description": "Προσαρμόστε τις συντομεύσεις για συχνές ενέργειες.",
+      "resetAll": "Επαναφορά Όλων",
+      "categories": {
+        "general": "Γενικά",
+        "editor": "Editor",
+        "compilation": "Μεταγλώττιση",
+        "navigation": "Πλοήγηση"
+      },
+      "actions": {
+        "file.save": { "description": "Αποθήκευση τρέχοντος αρχείου" },
+        "file.saveAll": { "description": "Αποθήκευση όλων" },
+        "file.closeTab": { "description": "Κλείσιμο καρτέλας" },
+        "file.newTemplate": { "description": "Νέο αρχείο από πρότυπο" },
+        "view.openSettings": { "description": "Άνοιγμα Ρυθμίσεων" },
+        "editor.find": { "description": "Εύρεση στο αρχείο" },
+        "editor.replace": { "description": "Εύρεση και αντικατάσταση" },
+        "compilation.build": { "description": "Μεταγλώττιση εγγράφου" },
+        "view.toggleSidebar": { "description": "Εναλλαγή sidebar" },
+        "tools.packageBrowser": { "description": "Άνοιγμα Browser Πακέτων" }
+      },
+      "modified": "Τροποπο.",
+      "edit": "Επεξεργασία",
+      "reset": "Επαναφορά",
+      "editModal": {
+        "title": "Επεξεργασία Συντόμευσης",
+        "instruction": "Πατήστε το επιθυμητό συνδυασμό πλήκτρων για:",
+        "listening": "Αναμονή πλήκτρων...",
+        "save": "Αποθήκευση Συντόμευσης"
+      }
+    },
+    "common": {
+      "on": "Ναι",
+      "off": "Όχι"
+    }
+  },
+  "menu": {
+    "file": {
+      "label": "Αρχείο",
+      "newFile": "Νέο Αρχείο",
+      "newFromTemplate": "Νέο από Πρότυπο",
+      "open": "Άνοιγμα",
+      "save": "Αποθήκευση",
+      "exportPdf": "Εξαγωγή σε PDF",
+      "exit": "Έξοδος"
+    },
+    "edit": {
+      "label": "Επεξεργασία",
+      "undo": "Αναίρεση",
+      "redo": "Επανάληψη",
+      "cut": "Αποκοπή",
+      "copy": "Αντιγραφή",
+      "paste": "Επικόλληση",
+      "find": "Εύρεση"
+    },
+    "insert": {
+      "label": "Εισαγωγή",
+      "image": "Εικόνα (Σχήμα)"
+    },
+    "view": {
+      "label": "Προβολή",
+      "databasePanel": "Πίνακας Βάσης Δεδομένων",
+      "rightSidebar": "Δεξιά Πλευρική Μπάρα (PDF)",
+      "wordCount": "Καταμέτρηση Λέξεων",
+      "zoomIn": "Μεγέθυνση",
+      "zoomOut": "Σμίκρυνση"
+    },
+    "database": {
+      "label": "Βάση Δεδομένων",
+      "open": "Άνοιγμα Βάσης / Φακέλου",
+      "addCollection": "Προσθήκη Συλλογής (Φάκελος)",
+      "refresh": "Ανανέωση Βάσης"
+    },
+    "tools": {
+      "label": "Εργαλεία",
+      "wizards": "Οδηγοί",
+      "preambleWizard": "Οδηγός Προοιμίου",
+      "tableWizard": "Οδηγός Πίνακα",
+      "tikzWizard": "Οδηγός TikZ",
+      "fancyhdrWizard": "Οδηγός FancyHDR",
+      "pstricksWizard": "Οδηγός PSTricks",
+      "packageGallery": "Συλλογή Πακέτων",
+      "packageBrowser": "Περιηγητής Πακέτων",
+      "settings": "Ρυθμίσεις"
+    },
+    "build": {
+      "label": "Build",
+      "compile": "Compile",
+      "stop": "Διακοπή"
+    },
+    "help": {
+      "label": "Βοήθεια",
+      "about": "Σχετικά με το DataTex"
+    }
+  },
+  "sidebar": {
+    "database": "Βάση Δεδομένων",
+    "structure": "Δομή",
+    "symbols": "Σύμβολα AMS",
+    "gallery": "Συλλογή Πακέτων",
+    "search": "Αναζήτηση",
+    "git": "Έλεγχος Πηγαίου Κώδικα",
+    "settings": "Ρυθμίσεις",
+    "openPackageDatabase": "Άνοιγμα Βάσης Πακέτων",
+    "selectCategory": "Επιλέξτε μια κατηγορία",
+    "noStructure": "Δεν βρέθηκε δομή.",
+    "projectFiles": "Φάκελοι Έργου",
+    "quickTools": "ΓΡΗΓΟΡΑ ΕΡΓΑΛΕΙΑ",
+    "noFolderOpened": "Κανένας φάκελος δεν έχει ανοίξει",
+    "openFolder": "Άνοιγμα Φακέλου"
+  },
+  "header": {
+    "searchPlaceholder": "Αναζήτηση DataTex (Ctrl+P)",
+    "tooltips": {
+      "showOutline": "Εμφάνιση δομής",
+      "hideOutline": "Απόκρυψη δομής",
+      "showDatabase": "Εμφάνιση πίνακα βάσης",
+      "hideDatabase": "Απόκρυψη πίνακα βάσης",
+      "moveDatabaseLeft": "Μετακίνηση βάσης αριστερά",
+      "moveDatabaseBottom": "Μετακίνηση βάσης κάτω",
+      "showRightPanel": "Εμφάνιση δεξιού πάνελ",
+      "hideRightPanel": "Απόκρυψη δεξιού πάνελ",
+      "aiAssistant": "Βοηθός AI"
+    }
+  },
+  "database": {
+    "title": "Συλλογές",
+    "createCollection": "Δημιουργία Συλλογής",
+    "importFolderAsCollection": "Εισαγωγή Φακέλου ως Συλλογή",
+    "searchCollections": "Αναζήτηση συλλογών...",
+    "noCollections": "Δεν βρέθηκαν συλλογές.",
+    "importFile": "Εισαγωγή Αρχείου",
+    "addExistingFolder": "Προσθήκη Υπάρχοντος Φακέλου",
+    "deleteCollection": "Διαγραφή Συλλογής",
+    "collectionsLoaded_one": "{{count}} συλλογή φορτώθηκε",
+    "collectionsLoaded_other": "{{count}} συλλογές φορτώθηκαν",
+    "deleteCollectionTitle": "Διαγραφή Συλλογής",
+    "deleteCollectionConfirm": "Είστε σίγουροι ότι θέλετε να διαγράψετε τη συλλογή",
+    "deleteCollectionWarning": "⚠️ Προσοχή: Αυτή η ενέργεια θα διαγράψει τη συλλογή και όλα τα resources της από τη βάση δεδομένων, αλλά ΔΕΝ θα διαγράψει τα αρχεία από το σύστημα αρχείων σας.",
+    "newCollectionTitle": "Νέα Συλλογή",
+    "collectionNameLabel": "Όνομα Συλλογής",
+    "collectionNamePlaceholder": "π.χ. Μαθηματικά, Φυσική",
+    "addFolderTo": "Προσθήκη Φακέλου σε",
+    "selectImportFolder": "Επιλογή Φακέλου για Εισαγωγή",
+    "importFileTo": "Εισαγωγή Αρχείου σε"
+  },
+  "startPage": {
+    "getStarted": "Ξεκινηστε",
+    "emptyFile": "Κενό Αρχείο",
+    "emptyFileDesc": "Ξεκινήστε από την αρχή με ένα κενό έγγραφο.",
+    "preambleWizard": "Οδηγός Προοιμίου",
+    "preambleWizardDesc": "Ρυθμίστε τη σελίδα, τα πακέτα και τις γραμματοσειρές.",
+    "databaseTools": "Εργαλεια Βασης",
+    "examGenerator": "Εργαλείο Διαγωνισμάτων",
+    "examGeneratorDesc": "Δημιουργήστε διαγωνίσματα αυτόματα από ασκήσεις.",
+    "browseDatabase": "Βάσεις Δεδομένων",
+    "browseDatabaseDesc": "Διαχειριστείτε αρχεία, ετικέτες και μεταδεδομένα.",
+    "packageBrowser": "Περιηγητής Πακέτων",
+    "packageBrowserDesc": "Αναζητήστε και εξερευνήστε πακέτα CTAN.",
+    "recentProjects": "ΠΡΟΣΦΑΤΑ ΕΡΓΑ",
+    "noRecentProjects": "Δεν βρέθηκαν πρόσφατα έργα.",
+    "quickResources": "Χρησιμα links",
+    "latexCheatsheet": "Σκόνα LaTeX",
+    "ctanSearch": "Αναζήτηση Πακέτων CTAN",
+    "detexify": "Detexify (Σύμβολα)",
+    "tikzExamples": "Παραδείγματα TikZ",
+    "templates": "Προτυπα",
+    "viewAllTemplates": "Προβολή όλων των προτύπων"
+  },
+  "statusBar": {
+    "ready": "Έτοιμο",
+    "wordCount": "Καταμέτρηση Λέξεων",
+    "spellCheck": "Ορθογραφικός Πίνακας",
+    "connected": "Συνδεδεμένο",
+    "disconnected": "Αποσυνδεδεμένο"
+  },
+  "editorToolbar": {
+    "bold": "Έντονα (\\textbf)",
+    "italic": "Πλάγια (\\textit)",
+    "underline": "Υπογράμμιση (\\underline)",
+    "strikethrough": "Διαγράμμιση (\\st)",
+    "text": "Κείμενο (\\text)",
+    "highlight": "Επισήμανση (\\hl)",
+    "code": "Κώδικας (\\texttt)",
+    "alignLeft": "Στοίχιση Αριστερά (flushleft)",
+    "alignCenter": "Στοίχιση Κέντρο (center)",
+    "alignRight": "Στοίχιση Δεξιά (flushright)",
+    "justify": "Πλήρης Στοίχιση (προεπιλογή)",
+    "quote": "Περιβάλλον Quote",
+    "ellipsis": "Αποσιωπητικά (\\dots)",
+    "bulletList": "Λίστα Κουκκίδων (itemize)",
+    "numberedList": "Αριθμημένη Λίστα (enumerate)",
+    "inlineMath": "Ενσωματωμένα Μαθηματικά ($...$)",
+    "displayMath": "Διακριτά Μαθηματικά (\\[...\\])",
+    "subscript": "Δείκτης (_{})",
+    "superscript": "Εκθέτης (^{})",
+    "horizontalSpace": "Οριζόντιο Διάστημα (\\hspace)",
+    "verticalSpace": "Κάθετο Διάστημα (\\vspace)",
+    "link": "Σύνδεσμος (\\href)",
+    "unlink": "Αφαίρεση Συνδέσμου"
+  }
+}

@@ -8,6 +8,7 @@ import {
   Switch,
   TextInput,
 } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 import { CompilationSettings as ICompilationSettings } from "../../hooks/useSettings";
 import { SettingGroup } from "./SettingGroup";
 
@@ -23,27 +24,33 @@ export const CompilationSettings: React.FC<CompilationSettingsProps> = ({
   settings,
   onUpdate,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <Stack gap="md" maw={600}>
-      <Title order={4}>Compilation Settings</Title>
+      <Title order={4}>{t("settings.compilation.title")}</Title>
       <Text size="sm" c="dimmed">
-        Advanced compilation behavior and output management.
+        {t("settings.compilation.description")}
       </Text>
 
       <SettingGroup
-        title="Build Behavior"
-        description="When and how files are compiled"
+        title={t("settings.compilation.buildBehavior.title")}
+        description={t("settings.compilation.buildBehavior.description")}
       >
         <Switch
-          label="Compile on Save"
-          description="Automatically compile documents when saving"
+          label={t("settings.compilation.buildBehavior.compileOnSave.label")}
+          description={t(
+            "settings.compilation.buildBehavior.compileOnSave.description"
+          )}
           checked={settings.compileOnSave}
           onChange={(e) => onUpdate("compileOnSave", e.currentTarget.checked)}
         />
 
         <NumberInput
-          label="Compilation Timeout"
-          description="Maximum time in seconds for compilation (30-300)"
+          label={t("settings.compilation.buildBehavior.timeout.label")}
+          description={t(
+            "settings.compilation.buildBehavior.timeout.description"
+          )}
           value={settings.timeout}
           onChange={(val) => onUpdate("timeout", Number(val))}
           min={30}
@@ -53,17 +60,29 @@ export const CompilationSettings: React.FC<CompilationSettingsProps> = ({
       </SettingGroup>
 
       <SettingGroup
-        title="Output Directory"
-        description="Where compilation artifacts are stored"
+        title={t("settings.compilation.outputDirectory.title")}
+        description={t("settings.compilation.outputDirectory.description")}
       >
         <Select
-          label="Build Directory"
-          description="Location for auxiliary and output files"
+          label={t("settings.compilation.outputDirectory.buildDirectory.label")}
+          description={t(
+            "settings.compilation.outputDirectory.buildDirectory.description"
+          )}
           data={[
-            { value: "source", label: "Same as Source File" },
+            {
+              value: "source",
+              label: t(
+                "settings.compilation.outputDirectory.buildDirectory.source"
+              ),
+            },
             { value: "build", label: "./build" },
             { value: "output", label: "./output" },
-            { value: "custom", label: "Custom Path" },
+            {
+              value: "custom",
+              label: t(
+                "settings.compilation.outputDirectory.buildDirectory.custom"
+              ),
+            },
           ]}
           value={settings.buildDirectory}
           onChange={(val) => val && onUpdate("buildDirectory", val as any)}
@@ -71,8 +90,12 @@ export const CompilationSettings: React.FC<CompilationSettingsProps> = ({
 
         {settings.buildDirectory === "custom" && (
           <TextInput
-            label="Custom Build Path"
-            description="Relative or absolute path for build output"
+            label={t(
+              "settings.compilation.outputDirectory.customBuildPath.label"
+            )}
+            description={t(
+              "settings.compilation.outputDirectory.customBuildPath.description"
+            )}
             value={settings.customBuildPath}
             onChange={(e) => onUpdate("customBuildPath", e.currentTarget.value)}
             placeholder="./custom-build"
@@ -80,27 +103,33 @@ export const CompilationSettings: React.FC<CompilationSettingsProps> = ({
         )}
 
         <Switch
-          label="Clean Auxiliary Files"
-          description="Remove .aux, .log, .toc files after successful compilation"
+          label={t("settings.compilation.outputDirectory.cleanAuxFiles.label")}
+          description={t(
+            "settings.compilation.outputDirectory.cleanAuxFiles.description"
+          )}
           checked={settings.cleanAuxFiles}
           onChange={(e) => onUpdate("cleanAuxFiles", e.currentTarget.checked)}
         />
       </SettingGroup>
 
       <SettingGroup
-        title="Error Handling"
-        description="How compilation errors are displayed"
+        title={t("settings.compilation.errorHandling.title")}
+        description={t("settings.compilation.errorHandling.description")}
       >
         <Switch
-          label="Show Log Panel on Error"
-          description="Automatically open the log panel when errors occur"
+          label={t("settings.compilation.errorHandling.showLogOnError.label")}
+          description={t(
+            "settings.compilation.errorHandling.showLogOnError.description"
+          )}
           checked={settings.showLogOnError}
           onChange={(e) => onUpdate("showLogOnError", e.currentTarget.checked)}
         />
 
         <NumberInput
-          label="Maximum Errors to Display"
-          description="Limit the number of errors shown (10-100)"
+          label={t("settings.compilation.errorHandling.maxErrors.label")}
+          description={t(
+            "settings.compilation.errorHandling.maxErrors.description"
+          )}
           value={settings.maxErrors}
           onChange={(val) => onUpdate("maxErrors", Number(val))}
           min={10}

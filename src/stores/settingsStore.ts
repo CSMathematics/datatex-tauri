@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import i18n from "../i18n";
 
 export interface EditorSettings {
   fontSize: number;
@@ -312,12 +313,17 @@ export const useSettingsStore = create<SettingsState>()(
         })),
 
       updateGeneralSetting: (key, value) =>
-        set((state) => ({
-          settings: {
-            ...state.settings,
-            general: { ...state.settings.general, [key]: value },
-          },
-        })),
+        set((state) => {
+          if (key === "language") {
+            i18n.changeLanguage(value as string);
+          }
+          return {
+            settings: {
+              ...state.settings,
+              general: { ...state.settings.general, [key]: value },
+            },
+          };
+        }),
 
       setUiTheme: (theme) =>
         set((state) => ({

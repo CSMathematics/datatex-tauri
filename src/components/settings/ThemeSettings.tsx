@@ -1,5 +1,6 @@
 import React from "react";
 import { ActionIcon, Group, Select, Stack, Text, Title } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import {
@@ -26,6 +27,7 @@ export const ThemeSettings: React.FC<ThemeSettingsProps> = ({
   onAddCustomTheme,
   onRemoveCustomTheme,
 }) => {
+  const { t } = useTranslation();
   const customThemeItems = (settings.customThemes || []).map((t) => ({
     value: t.id,
     label: t.label,
@@ -41,21 +43,21 @@ export const ThemeSettings: React.FC<ThemeSettingsProps> = ({
 
   return (
     <Stack gap="md" maw={600}>
-      <Title order={4}>Theme Settings</Title>
+      <Title order={4}>{t("settings.theme.title")}</Title>
       <Text size="sm" c="dimmed">
-        Customize the look and feel of the application.
+        {t("settings.theme.description")}
       </Text>
 
       <Select
-        label="UI Theme"
-        description="Color theme for the application interface."
+        label={t("settings.theme.uiTheme.label")}
+        description={t("settings.theme.uiTheme.description")}
         data={[
           {
-            group: "Custom",
+            group: t("settings.theme.uiTheme.custom"),
             items: customThemeItems,
           },
           {
-            group: "Light",
+            group: t("settings.theme.uiTheme.light"),
             items: [
               { value: "light-blue", label: "Light Blue (Default)" },
               { value: "light-gray", label: "Light Gray (Minimal)" },
@@ -63,7 +65,7 @@ export const ThemeSettings: React.FC<ThemeSettingsProps> = ({
             ],
           },
           {
-            group: "Dark",
+            group: t("settings.theme.uiTheme.dark"),
             items: [
               { value: "dark-blue", label: "Dark Blue (Default)" },
               { value: "dark-deep", label: "Deep Black (OLED)" },

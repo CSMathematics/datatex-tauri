@@ -26,7 +26,6 @@ import {
   faCode,
   faBoxOpen,
   faList,
-  faAnchor,
   faImage,
 } from "@fortawesome/free-solid-svg-icons";
 
@@ -60,7 +59,8 @@ export type ViewType =
   | "gallery"
   | "settings"
   | "database"
-  | "package-browser";
+  | "package-browser"
+  | "ai-assistant";
 
 export interface FileSystemNode {
   id: string;
@@ -115,6 +115,10 @@ interface SidebarProps {
 // Re-export getFileIcon from shared components for backward compatibility
 export { getFileIcon } from "../shared/tree";
 
+import { useTranslation } from "react-i18next";
+
+// ... existing imports ...
+
 // --- Outline View Component ---
 interface OutlineNode {
   id: string;
@@ -131,6 +135,7 @@ const OutlineView = ({
   content: string;
   onNavigate: (line: number) => void;
 }) => {
+  const { t } = useTranslation();
   const outline = useMemo(() => {
     const lines = content.split("\n");
     const regex =
@@ -170,48 +175,35 @@ const OutlineView = ({
     return (
       <Box p="md">
         <Text size="sm" c="dimmed">
-          No structure found.
+          {t("sidebar.noStructure")}
         </Text>
       </Box>
     );
   }
-
   return (
-    <Stack gap={0} p="xs">
-      {outline.map((node) => (
-        <UnstyledButton
-          key={node.id}
-          onClick={() => onNavigate(node.lineNumber)}
-          style={{
-            padding: "4px 8px",
-            paddingLeft: (node.level - 1) * 12 + 8,
-            fontSize: 13,
-            color: "var(--mantine-color-text)",
-            borderRadius: 4,
-            ":hover": { backgroundColor: "var(--mantine-color-default-hover)" },
-          }}
-        >
-          <Group gap={6}>
-            {node.title.startsWith("Label:") ? (
-              <FontAwesomeIcon
-                icon={faAnchor}
-                style={{ width: 10, height: 10, color: "gray" }}
-              />
-            ) : (
-              <Text size="xs" fw={700} c="dimmed">
-                H{node.level}
-              </Text>
-            )}
+    <ScrollArea h="100%">
+      <Stack gap={2} p="xs">
+        {outline.map((node) => (
+          <UnstyledButton
+            key={node.id}
+            onClick={() => onNavigate(node.lineNumber)}
+            style={{
+              paddingLeft: (node.level - 1) * 12,
+              paddingTop: 4,
+              paddingBottom: 4,
+              width: "100%",
+              display: "block",
+            }}
+          >
             <Text size="xs" truncate>
-              {node.title.replace("Label: ", "")}
+              {node.title}
             </Text>
-          </Group>
-        </UnstyledButton>
-      ))}
-    </Stack>
+          </UnstyledButton>
+        ))}
+      </Stack>
+    </ScrollArea>
   );
 };
-
 export const Sidebar = React.memo<SidebarProps>(
   ({
     width,
@@ -234,6 +226,7 @@ export const Sidebar = React.memo<SidebarProps>(
     onScrollToLine,
   }) => {
     // --- Local State ---
+    const { t } = useTranslation();
     const [activeSymbolCategory, setActiveSymbolCategory] =
       useState<SymbolCategory | null>("greek");
 
@@ -298,7 +291,7 @@ export const Sidebar = React.memo<SidebarProps>(
         >
           <Stack gap={12} align="center">
             {/* Database button now first since Explorer is merged into it */}
-            <Tooltip label="Database" position="right">
+            <Tooltip label={t("sidebar.database")} position="right">
               <ActionIcon
                 size="sm"
                 variant={getVariant("database")}
@@ -311,7 +304,7 @@ export const Sidebar = React.memo<SidebarProps>(
                 />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Structure" position="right">
+            <Tooltip label={t("sidebar.structure")} position="right">
               <ActionIcon
                 size="sm"
                 variant={getVariant("outline")}
@@ -324,7 +317,7 @@ export const Sidebar = React.memo<SidebarProps>(
                 />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="AMS Symbols" position="right">
+            <Tooltip label={t("sidebar.symbols")} position="right">
               <ActionIcon
                 size="sm"
                 variant={getVariant("symbols")}
@@ -337,7 +330,7 @@ export const Sidebar = React.memo<SidebarProps>(
                 />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Package Gallery" position="right">
+            <Tooltip label={t("sidebar.gallery")} position="right">
               <ActionIcon
                 size="sm"
                 variant={getVariant("gallery")}
@@ -350,7 +343,7 @@ export const Sidebar = React.memo<SidebarProps>(
                 />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Search" position="right">
+            <Tooltip label={t("sidebar.search")} position="right">
               <ActionIcon
                 size="sm"
                 variant={getVariant("search")}
@@ -363,7 +356,7 @@ export const Sidebar = React.memo<SidebarProps>(
                 />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Source Control" position="right">
+            <Tooltip label={t("sidebar.git")} position="right">
               <ActionIcon
                 size="sm"
                 variant={getVariant("git")}
@@ -378,7 +371,7 @@ export const Sidebar = React.memo<SidebarProps>(
             </Tooltip>
           </Stack>
           <Stack gap={4} align="center">
-            <Tooltip label="Settings" position="right">
+            <Tooltip label={t("sidebar.settings")} position="right">
               <ActionIcon
                 size="sm"
                 variant={getVariant("settings")}
@@ -424,7 +417,9 @@ export const Sidebar = React.memo<SidebarProps>(
                 }}
               >
                 <Text size="xs" fw={700} tt="uppercase" c="dimmed">
-                  {activeSection}
+                  {t(`sidebar.${activeSection}`, {
+                    defaultValue: activeSection,
+                  })}
                 </Text>
               </Group>
             )}
@@ -453,7 +448,7 @@ export const Sidebar = React.memo<SidebarProps>(
                 ) : (
                   <Box p="md" style={{ flex: 1 }}>
                     <Text c="dimmed" size="sm" ta="center">
-                      Select a category
+                      {t("sidebar.selectCategory")}
                     </Text>
                   </Box>
                 )}
@@ -509,7 +504,7 @@ export const Sidebar = React.memo<SidebarProps>(
                       onClick={() => onNavigate("package-browser")}
                       mb="sm"
                     >
-                      Open Package Database
+                      {t("sidebar.openPackageDatabase")}
                     </Button>
                     {(Object.keys(packageCategories) as Category[]).map(
                       (cat) => {
