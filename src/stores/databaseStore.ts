@@ -61,7 +61,7 @@ interface DatabaseState {
   importFolder: (path: string, name: string) => Promise<void>;
   addFolderToCollection: (
     collectionName: string,
-    path: string
+    path: string,
   ) => Promise<void>;
   createCollection: (name: string, path: string) => Promise<void>;
   selectResource: (id: string | null) => void;
@@ -74,22 +74,22 @@ interface DatabaseState {
     path: string,
     collection: string,
     content: string,
-    metadata?: LatexFileMetadata
+    metadata?: LatexFileMetadata,
   ) => Promise<void>;
   createFolder: (path: string, collection: string) => Promise<void>;
   importFile: (path: string, collection: string) => Promise<void>;
   updateResourceMetadata: (
     id: string,
-    metadata: LatexFileMetadata
+    metadata: LatexFileMetadata,
   ) => Promise<void>;
   linkResources: (
     sourceId: string,
     targetId: string,
-    relationType: string
+    relationType: string,
   ) => Promise<void>;
   getLinkedResources: (
     sourceId: string,
-    relationType?: string
+    relationType?: string,
   ) => Promise<Resource[]>;
   updateResourceKind: (id: string, kind: string) => Promise<void>;
   moveResource: (id: string, newCollection: string) => Promise<void>;
@@ -130,7 +130,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     try {
       const resources = await invoke<Resource[]>(
         "get_resources_by_collection_cmd",
-        { collection: name }
+        { collection: name },
       );
       set({ resources, isLoading: false });
     } catch (err: any) {
@@ -158,7 +158,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
         "get_resources_by_collections_cmd",
         {
           collections: newLoadedCollections,
-        }
+        },
       );
 
       set({ allLoadedResources: allResources, isLoading: false });
@@ -180,7 +180,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
         "get_resources_by_collections_cmd",
         {
           collections,
-        }
+        },
       );
 
       set({ allLoadedResources: allResources, isLoading: false });
@@ -203,7 +203,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
         "get_resources_by_collections_cmd",
         {
           collections: loadedCollections,
-        }
+        },
       );
 
       set({ allLoadedResources: allResources, isLoading: false });
@@ -260,7 +260,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
       const { loadedCollections } = get();
       if (loadedCollections.includes(name)) {
         const newLoadedCollections = loadedCollections.filter(
-          (c) => c !== name
+          (c) => c !== name,
         );
         set({ loadedCollections: newLoadedCollections });
 
@@ -304,7 +304,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
     path: string,
     collection: string,
     content: string,
-    metadata?: LatexFileMetadata
+    metadata?: LatexFileMetadata,
   ) => {
     set({ isLoading: true, error: null });
     try {
@@ -378,7 +378,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   linkResources: async (
     sourceId: string,
     targetId: string,
-    relationType: string
+    relationType: string,
   ) => {
     try {
       await invoke("link_resources_cmd", { sourceId, targetId, relationType });
@@ -463,7 +463,7 @@ export const useDatabaseStore = create<DatabaseState>((set, get) => ({
   fetchGraphLinks: async () => {
     try {
       const rawLinks = await invoke<[string, string, string][]>(
-        "get_all_dependencies_cmd"
+        "get_all_dependencies_cmd",
       );
       const links = rawLinks.map(([source, target, type]) => ({
         source,

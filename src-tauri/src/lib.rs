@@ -8,8 +8,11 @@ use walkdir::WalkDir; // For typed metadata queries
 
 mod compiler;
 mod database;
+mod git;
+mod history;
 mod lsp;
 mod search;
+mod watcher;
 
 // Legacy rusqlite modules - kept for future typed metadata implementation
 mod graph_processor;
@@ -3899,7 +3902,12 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_clipboard_manager::init())
+        .manage(Mutex::new(watcher::GitWatcher::new()))
         .invoke_handler(tauri::generate_handler![
+            git_watch_repo_cmd,
+            git_unwatch_repo_cmd,
+            git_read_gitignore_cmd,
+            git_write_gitignore_cmd,
             open_project,
             get_db_path,
             compile_tex,
@@ -4004,6 +4012,37 @@ pub fn run() {
             delete_preamble_type_cmd,
             search_database_files,
             replace_database_files,
+            // Local History Commands
+            save_history_snapshot_cmd,
+            get_file_history_cmd,
+            get_snapshot_content_cmd,
+            restore_snapshot_cmd,
+            diff_snapshots_cmd,
+            diff_with_current_cmd,
+            delete_snapshot_cmd,
+            cleanup_file_history_cmd,
+            // Git Integration Commands
+            git_detect_repo_cmd,
+            git_status_cmd,
+            git_stage_file_cmd,
+            git_stage_all_cmd,
+            git_unstage_file_cmd,
+            git_commit_cmd,
+            git_log_cmd,
+            git_file_diff_cmd,
+            git_file_at_commit_cmd,
+            git_discard_changes_cmd,
+            git_init_repo_cmd,
+            git_get_structured_diff_cmd,
+            git_get_head_content_cmd,
+            git_list_branches_cmd,
+            git_create_branch_cmd,
+            git_switch_branch_cmd,
+            git_delete_branch_cmd,
+            git_list_remotes_cmd,
+            git_fetch_remote_cmd,
+            git_push_remote_cmd,
+            git_pull_remote_cmd,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -4094,6 +4133,222 @@ async fn delete_preamble_type_cmd(state: State<'_, AppState>, id: String) -> Res
     Ok(())
 }
 
+// ============================================================================
+// Local History Commands
+// ============================================================================
+
+#[tauri::command]
+async fn save_history_snapshot_cmd(
+    file_path: String,
+    content: String,
+    summary: Option<String>,
+    is_manual: bool,
+    state: State<'_, AppState>,
+) -> Result<String, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    history::save_snapshot(
+        &manager.pool,
+        &file_path,
+        &content,
+        summary.as_deref(),
+        is_manual,
+    )
+    .await
+}
+
+#[tauri::command]
+async fn get_file_history_cmd(
+    file_path: String,
+    limit: Option<i32>,
+    state: State<'_, AppState>,
+) -> Result<Vec<history::HistoryEntry>, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    history::get_file_history(&manager.pool, &file_path, limit).await
+}
+
+#[tauri::command]
+async fn get_snapshot_content_cmd(
+    snapshot_id: String,
+    state: State<'_, AppState>,
+) -> Result<String, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    history::get_snapshot_content(&manager.pool, &snapshot_id).await
+}
+
+#[tauri::command]
+async fn restore_snapshot_cmd(
+    snapshot_id: String,
+    state: State<'_, AppState>,
+) -> Result<(String, String), String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    // Returns (file_path, content) so frontend can write to disk
+    history::get_restore_content(&manager.pool, &snapshot_id).await
+}
+
+#[tauri::command]
+async fn diff_snapshots_cmd(
+    old_id: String,
+    new_id: String,
+    state: State<'_, AppState>,
+) -> Result<history::DiffResult, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    history::diff_snapshots(&manager.pool, &old_id, &new_id).await
+}
+
+#[tauri::command]
+fn diff_with_current_cmd(snapshot_content: String, current_content: String) -> history::DiffResult {
+    history::diff_with_current(&snapshot_content, &current_content)
+}
+
+#[tauri::command]
+async fn delete_snapshot_cmd(
+    snapshot_id: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    history::delete_snapshot(&manager.pool, &snapshot_id).await
+}
+
+#[tauri::command]
+async fn cleanup_file_history_cmd(
+    file_path: String,
+    keep_count: i32,
+    state: State<'_, AppState>,
+) -> Result<usize, String> {
+    let db_guard = state.db_manager.lock().await;
+    let manager = db_guard.as_ref().ok_or("Database not initialized")?;
+
+    history::cleanup_old_snapshots(&manager.pool, &file_path, keep_count).await
+}
+
+// ============================================================================
+// Git Integration Commands
+// ============================================================================
+
+#[tauri::command]
+fn git_detect_repo_cmd(path: String) -> Result<Option<git::GitRepoInfo>, String> {
+    git::detect_repo(&path)
+}
+
+#[tauri::command]
+fn git_status_cmd(repo_path: String) -> Result<Vec<git::GitFileStatus>, String> {
+    git::get_status(&repo_path)
+}
+
+#[tauri::command]
+fn git_stage_file_cmd(repo_path: String, file_path: String) -> Result<(), String> {
+    git::stage_file(&repo_path, &file_path)
+}
+
+#[tauri::command]
+fn git_stage_all_cmd(repo_path: String) -> Result<(), String> {
+    git::stage_all(&repo_path)
+}
+
+#[tauri::command]
+fn git_unstage_file_cmd(repo_path: String, file_path: String) -> Result<(), String> {
+    git::unstage_file(&repo_path, &file_path)
+}
+
+#[tauri::command]
+fn git_commit_cmd(repo_path: String, message: String) -> Result<String, String> {
+    git::commit(&repo_path, &message)
+}
+
+#[tauri::command]
+fn git_log_cmd(repo_path: String, limit: Option<i32>) -> Result<Vec<git::GitCommitInfo>, String> {
+    git::get_log(&repo_path, limit)
+}
+
+#[tauri::command]
+fn git_file_diff_cmd(repo_path: String, file_path: String) -> Result<String, String> {
+    git::get_file_diff(&repo_path, &file_path)
+}
+
+#[tauri::command]
+fn git_file_at_commit_cmd(
+    repo_path: String,
+    commit_id: String,
+    file_path: String,
+) -> Result<String, String> {
+    git::get_file_at_commit(&repo_path, &commit_id, &file_path)
+}
+
+#[tauri::command]
+fn git_discard_changes_cmd(repo_path: String, file_path: String) -> Result<(), String> {
+    git::discard_changes(&repo_path, &file_path)
+}
+
+#[tauri::command]
+fn git_init_repo_cmd(path: String) -> Result<git::GitRepoInfo, String> {
+    git::init_repo(&path)
+}
+
+#[tauri::command]
+fn git_get_structured_diff_cmd(
+    repo_path: String,
+    file_path: String,
+) -> Result<git::StructuredDiff, String> {
+    git::get_structured_diff(&repo_path, &file_path)
+}
+
+#[tauri::command]
+fn git_get_head_content_cmd(repo_path: String, file_path: String) -> Result<String, String> {
+    git::get_head_file_content(&repo_path, &file_path)
+}
+
+#[tauri::command]
+fn git_list_branches_cmd(repo_path: String) -> Result<Vec<git::BranchInfo>, String> {
+    git::list_branches(&repo_path)
+}
+
+#[tauri::command]
+fn git_create_branch_cmd(repo_path: String, name: String) -> Result<(), String> {
+    git::create_branch(&repo_path, &name)
+}
+
+#[tauri::command]
+fn git_switch_branch_cmd(repo_path: String, name: String) -> Result<(), String> {
+    git::switch_branch(&repo_path, &name)
+}
+
+#[tauri::command]
+fn git_delete_branch_cmd(repo_path: String, name: String) -> Result<(), String> {
+    git::delete_branch(&repo_path, &name)
+}
+
+#[tauri::command]
+fn git_list_remotes_cmd(repo_path: String) -> Result<Vec<git::RemoteInfo>, String> {
+    git::list_remotes(&repo_path)
+}
+
+#[tauri::command]
+fn git_fetch_remote_cmd(repo_path: String, remote: String) -> Result<(), String> {
+    git::fetch_remote(&repo_path, &remote)
+}
+
+#[tauri::command]
+fn git_push_remote_cmd(repo_path: String, remote: String, branch: String) -> Result<(), String> {
+    git::push_to_remote(&repo_path, &remote, &branch)
+}
+
+#[tauri::command]
+fn git_pull_remote_cmd(repo_path: String, remote: String, branch: String) -> Result<(), String> {
+    git::pull_from_remote(&repo_path, &remote, &branch)
+}
+
 fn slugify(s: &str) -> String {
     s.to_lowercase()
         .chars()
@@ -4103,4 +4358,33 @@ fn slugify(s: &str) -> String {
         .filter(|&part| !part.is_empty())
         .collect::<Vec<&str>>()
         .join("-")
+}
+
+#[tauri::command]
+async fn git_watch_repo_cmd(
+    watcher: State<'_, Mutex<watcher::GitWatcher>>,
+    app_handle: tauri::AppHandle,
+    repo_path: String,
+) -> Result<(), String> {
+    let watcher = watcher.lock().await;
+    watcher.watch(&repo_path, app_handle)
+}
+
+#[tauri::command]
+async fn git_unwatch_repo_cmd(
+    watcher: State<'_, Mutex<watcher::GitWatcher>>,
+) -> Result<(), String> {
+    let watcher = watcher.lock().await;
+    watcher.unwatch();
+    Ok(())
+}
+
+#[tauri::command]
+fn git_read_gitignore_cmd(repo_path: String) -> Result<String, String> {
+    git::read_gitignore(&repo_path)
+}
+
+#[tauri::command]
+fn git_write_gitignore_cmd(repo_path: String, content: String) -> Result<(), String> {
+    git::write_gitignore(&repo_path, &content)
 }

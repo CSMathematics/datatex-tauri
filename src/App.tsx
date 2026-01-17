@@ -125,7 +125,7 @@ export default function App() {
   const activeTheme = getTheme(
     settings.uiTheme,
     settings.customThemes,
-    settings.customThemeOverrides
+    settings.customThemeOverrides,
   );
 
   // Memoize settings to prevent unnecessary EditorArea re-renders.
@@ -226,7 +226,7 @@ export default function App() {
 
   // --- Database Logic: Auto-open table when collection checked ---
   const loadedCollections = useDatabaseStore(
-    (state) => state.loadedCollections
+    (state) => state.loadedCollections,
   );
   const prevLoadedCountRef = useRef(loadedCollections.length);
 
@@ -243,7 +243,7 @@ export default function App() {
     // Only keep right sidebar open if there are editor or table tabs
     // "start-page" and "settings" do not need the resource inspector
     const hasContentTabs = tabs.some(
-      (t) => t.type === "editor" || t.type === "table"
+      (t) => t.type === "editor" || t.type === "table",
     );
 
     if (!hasContentTabs) {
@@ -254,7 +254,7 @@ export default function App() {
   // --- Template Modal State ---
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
-    null
+    null,
   );
 
   // --- Derived State (from Zustand selectors) ---
@@ -283,11 +283,21 @@ export default function App() {
         // Update tab dirty state and content
         markDirty(targetId, false);
         updateTabContent(targetId, contentToSave);
+
+        // Save local history snapshot (fire and forget)
+        invoke("save_history_snapshot_cmd", {
+          filePath: tab.id,
+          content: contentToSave,
+          summary: null,
+          isManual: false,
+        }).catch((err) =>
+          console.warn("Failed to save history snapshot:", err),
+        );
       } catch (e) {
         console.error("Failed to save file:", e);
       }
     },
-    [tabs, activeTabId, markDirty, updateTabContent]
+    [tabs, activeTabId, markDirty, updateTabContent],
   );
 
   // --- Compilation Hook ---
@@ -325,18 +335,18 @@ export default function App() {
       activeView === "gallery" ||
       activeView === "package-browser" ||
       activeView === "ai-assistant",
-    [activeView]
+    [activeView],
   );
   const showRightPanel = useMemo(
     () =>
       (showRightSidebar || isWizardActive) &&
       (isWizardActive || activeView === "editor" || activeView === "database"),
-    [showRightSidebar, isWizardActive, activeView]
+    [showRightSidebar, isWizardActive, activeView],
   );
 
   // --- Sync projectData to projectStore for DatabaseSidebar ---
   const setProjectDataToStore = useProjectStore(
-    (state) => state.setProjectData
+    (state) => state.setProjectData,
   );
   useEffect(() => {
     setProjectDataToStore(projectData);
@@ -394,7 +404,7 @@ export default function App() {
           setActiveView((currentView) =>
             currentView === "settings" || currentView === "database"
               ? "editor"
-              : currentView
+              : currentView,
           );
         }
 
@@ -407,7 +417,7 @@ export default function App() {
         }
       }
     },
-    [activeActivity]
+    [activeActivity],
   );
 
   // --- HELPER: Load Project Files ---
@@ -418,7 +428,7 @@ export default function App() {
     debounce((content: string) => {
       setOutlineSource(content);
     }, 1000),
-    []
+    [],
   );
 
   const handleTabChange = useCallback(
@@ -442,7 +452,7 @@ export default function App() {
         setOutlineSource(newTab.content);
       }
     },
-    [activeTabId, tabs, updateTabContent, setActiveTab]
+    [activeTabId, tabs, updateTabContent, setActiveTab],
   );
 
   const createTabWithContent = useCallback(
@@ -503,7 +513,7 @@ export default function App() {
         console.error("Failed to create file: " + String(e));
       }
     },
-    [handleTabChange]
+    [handleTabChange],
   );
 
   const handleCreateEmpty = useCallback(() => {
@@ -525,7 +535,7 @@ export default function App() {
 
   const handleCreateFromTemplate = useCallback(
     (code: string) => createTabWithContent(code, "Untitled.tex"),
-    [createTabWithContent]
+    [createTabWithContent],
   );
 
   const handleOpenTemplateModal = useCallback(() => {
@@ -551,7 +561,7 @@ export default function App() {
 
   const handleOpenPreambleWizard = useCallback(
     () => setActiveView("wizard-preamble"),
-    []
+    [],
   );
 
   // --- File Handlers (Moved to useProjectFiles) ---
@@ -571,7 +581,7 @@ export default function App() {
             kind: "warning",
             okLabel: "Close",
             cancelLabel: "Cancel",
-          }
+          },
         );
         if (!confirmed) return;
       }
@@ -581,7 +591,7 @@ export default function App() {
       if (!closed) {
       }
     },
-    [tabs, closeTabStore]
+    [tabs, closeTabStore],
   );
 
   const handleOpenFileNode = useCallback(
@@ -611,14 +621,14 @@ export default function App() {
         language: "latex",
       });
     },
-    [tabs, setActiveTab, openTab]
+    [tabs, setActiveTab, openTab],
   );
 
   const handleCloseTabs = useCallback(
     (ids: string[]) => {
       closeTabsById(ids);
     },
-    [closeTabsById]
+    [closeTabsById],
   );
 
   const handleEditorChange = useCallback(
@@ -633,7 +643,7 @@ export default function App() {
         debouncedOutlineUpdate(val);
       }
     },
-    [tabs, markDirty, activeActivity, debouncedOutlineUpdate]
+    [tabs, markDirty, activeActivity, debouncedOutlineUpdate],
   );
 
   // --- FIX: Update structure on view change ---
@@ -687,7 +697,7 @@ export default function App() {
         return { lineNumber: line, column };
       });
     }, 200),
-    []
+    [],
   );
 
   const handleRevealLine = useCallback((line: number) => {
@@ -726,7 +736,7 @@ export default function App() {
         monaco.languages.setMonarchTokensProvider("my-latex", latexLanguage);
         monaco.languages.setLanguageConfiguration(
           "my-latex",
-          latexConfiguration
+          latexConfiguration,
         );
 
         setupLatexProviders(monaco);
@@ -740,7 +750,7 @@ export default function App() {
       // settings is a dependency here
       monaco.editor.setTheme(settings.editor.theme);
     },
-    [settings.editor.theme]
+    [settings.editor.theme],
   );
 
   /* PDF -> Editor (Inverse) - commented out, SyncTeX integration moved to ResourceInspector
@@ -795,7 +805,7 @@ export default function App() {
     try {
       const texPath = activeTab.id;
       const lastSlash = texPath.lastIndexOf(
-        texPath.includes("\\") ? "\\" : "/"
+        texPath.includes("\\") ? "\\" : "/",
       );
       const cwd = texPath.substring(0, lastSlash);
 
@@ -830,7 +840,7 @@ export default function App() {
       // Auto-open Resource Inspector when file selected from Table
       setShowRightSidebar(true);
     },
-    [handleOpenFileNode]
+    [handleOpenFileNode],
   );
 
   const handleOpenFileAtLine = useCallback(
@@ -850,7 +860,7 @@ export default function App() {
         handleRevealLine(lineNumber);
       }, 150);
     },
-    [handleOpenFileNode, handleRevealLine]
+    [handleOpenFileNode, handleRevealLine],
   );
 
   // --- Resize Logic moved to useAppPanelResize hook ---
@@ -861,7 +871,7 @@ export default function App() {
       activationConstraint: {
         distance: 10,
       },
-    })
+    }),
   );
 
   const handleDragEnd = useCallback(
@@ -886,7 +896,7 @@ export default function App() {
         }
       }
     },
-    [handleOpenFileNode, handleMoveItem]
+    [handleOpenFileNode, handleMoveItem],
   );
 
   // --- RENDER ---
@@ -918,7 +928,7 @@ export default function App() {
               databasePanelPosition={databasePanelPosition}
               onToggleDatabasePosition={() =>
                 setDatabasePanelPosition((pos) =>
-                  pos === "bottom" ? "left" : "bottom"
+                  pos === "bottom" ? "left" : "bottom",
                 )
               }
               // Right Sidebar
@@ -933,21 +943,21 @@ export default function App() {
                 editorRef.current?.trigger(
                   null,
                   "editor.action.clipboardCutAction",
-                  null
+                  null,
                 )
               }
               onCopy={() =>
                 editorRef.current?.trigger(
                   null,
                   "editor.action.clipboardCopyAction",
-                  null
+                  null,
                 )
               }
               onPaste={() =>
                 editorRef.current?.trigger(
                   null,
                   "editor.action.clipboardPasteAction",
-                  null
+                  null,
                 )
               }
               onFind={() =>
@@ -959,14 +969,14 @@ export default function App() {
                 editorRef.current?.trigger(
                   null,
                   "editor.action.fontZoomIn",
-                  null
+                  null,
                 )
               }
               onZoomOut={() =>
                 editorRef.current?.trigger(
                   null,
                   "editor.action.fontZoomOut",
-                  null
+                  null,
                 )
               }
               // Tools
@@ -1115,6 +1125,18 @@ export default function App() {
                 onSelectPackage={setActivePackageId}
                 outlineSource={outlineSource}
                 onScrollToLine={handleRevealLine}
+                // Git & History
+                projectPath={
+                  projectData.length > 0 ? projectData[0].path : undefined
+                }
+                activeFilePath={activeTab?.id}
+                activeFileContent={activeTab?.content}
+                onRestoreContent={(content) => {
+                  if (activeTab) {
+                    updateTabContent(activeTab.id, content);
+                    markDirty(activeTab.id, true);
+                  }
+                }}
               />
 
               {/* 2. CENTER: EDITOR / VIEWS */}

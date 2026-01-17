@@ -40,6 +40,7 @@ impl DatabaseManager {
             include_str!("../../migrations/012_resource_bibliographies.sql"), // 11
             include_str!("../../migrations/013_resource_dtx_ins.sql"), // 12
             include_str!("../../migrations/014_add_collection_path.sql"), // 13
+            include_str!("../../migrations/015_file_history.sql"), // 14 - Local history
         ];
 
         // Check current version

@@ -37,4 +37,10 @@ uuid = { version = "1.19.0", features = ["v4"] }
 rusqlite = { version = "0.32", features = ["bundled"] }
 regex = "1"
 rayon = "1.10"
+# Git integration & Local History
+git2 = "0.19"
+sha2 = "0.10"
+similar = "2.6"
+chrono = { version = "0.4", features = ["serde"] }
+notify = "6"
 

@@ -59,7 +59,7 @@ interface DatabaseSidebarProps {
   onCreateItem?: (
     name: string,
     type: "file" | "folder",
-    parentPath: string
+    parentPath: string,
   ) => void;
   onRenameItem?: (node: FileSystemNode, newName: string) => void;
   onDeleteItem?: (node: FileSystemNode) => void;
@@ -79,10 +79,10 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
   const collections = useDatabaseStore((state) => state.collections);
   const fetchCollections = useDatabaseStore((state) => state.fetchCollections);
   const loadedCollections = useDatabaseStore(
-    (state) => state.loadedCollections
+    (state) => state.loadedCollections,
   );
   const setLoadedCollections = useDatabaseStore(
-    (state) => state.setLoadedCollections
+    (state) => state.setLoadedCollections,
   );
 
   const importFolder = useDatabaseStore((state) => state.importFolder);
@@ -91,24 +91,33 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
   const deleteCollection = useDatabaseStore((state) => state.deleteCollection);
 
   const allLoadedResources = useDatabaseStore(
-    (state) => state.allLoadedResources
+    (state) => state.allLoadedResources,
   );
   const selectResource = useDatabaseStore((state) => state.selectResource);
   const activeResourceId = useDatabaseStore((state) => state.activeResourceId);
   const createCollection = useDatabaseStore((state) => state.createCollection);
 
   const addFolderToCollection = useDatabaseStore(
-    (state) => state.addFolderToCollection
+    (state) => state.addFolderToCollection,
   );
 
   const createResource = useDatabaseStore((state) => state.createResource);
+  const deleteResource = useDatabaseStore((state) => state.deleteResource);
   const createFolder = useDatabaseStore((state) => state.createFolder);
+  const toggleCollectionLoaded = useDatabaseStore(
+    (state) => state.toggleCollectionLoaded,
+  );
 
   const tree = useTree();
 
   // Use shared tree state hook
-  const { isToggleExpanded, searchQuery, setSearchQuery, toggleExpandState } =
-    useTreeState<TreeNode>();
+  const {
+    isToggleExpanded,
+    searchQuery,
+    setSearchQuery,
+    toggleExpandState,
+    filterNodes,
+  } = useTreeState<TreeNode>();
 
   // Toggle tree expansion when toolbar button is clicked
   const [fileTree, setFileTree] = useState<TreeNode[]>([]);
@@ -152,7 +161,7 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
         const allPaths = getAllFolderPaths(fileTree);
         const newState = allPaths.reduce(
           (acc, path) => ({ ...acc, [path]: true }),
-          {}
+          {},
         );
         (tree as any).setExpandedState(newState);
       }
@@ -167,18 +176,22 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
 
   // Local state
   const [activeView, setActiveView] = useState<"collections" | "statistics">(
-    "collections"
+    "collections",
   );
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [collectionToDelete, setCollectionToDelete] = useState<string | null>(
-    null
-  );
+  const [itemToDelete, setItemToDelete] = useState<{
+    type: "collection" | "file" | "folder";
+    name: string;
+    id: string; // For collection -> name, For file -> id
+    path?: string; // Required for folder cascading delete
+  } | null>(null);
 
   const [creatingCollectionItem, setCreatingCollectionItem] = useState<{
     type: "file" | "folder";
     parentId: string;
     parentPath: string;
+    collectionName: string;
   } | null>(null);
 
   // Focus state for visual selection
@@ -188,7 +201,7 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
   useEffect(() => {
     if (activeResourceId) {
       const resource = allLoadedResources.find(
-        (r) => r.id === activeResourceId
+        (r) => r.id === activeResourceId,
       );
       if (resource) {
         setFocusedPath(resource.path);
@@ -199,7 +212,7 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
   // Helper: Normalize path
   const normalizePath = useCallback(
     (p: string) => p.replace(/\\/g, "/").replace(/\/$/, ""),
-    []
+    [],
   );
 
   // Helper: Find a node by path
@@ -215,7 +228,7 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
       }
       return null;
     },
-    [normalizePath]
+    [normalizePath],
   );
 
   // Handler for creating new collection
@@ -248,12 +261,23 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
 
   // --- New Logic to Populate File Tree ---
   useEffect(() => {
+    console.log(
+      "[BuildTree] useEffect triggered. Collections:",
+      collections.length,
+      "Resources:",
+      allLoadedResources.length,
+    );
     if (!collections || collections.length === 0) {
       setFileTree([]);
       return;
     }
 
     const buildTree = () => {
+      console.log(
+        "[BuildTree] Building tree with",
+        allLoadedResources.length,
+        "resources",
+      );
       // 1. Create root nodes for each collection
       const roots: TreeNode[] = collections.map((col) => ({
         id: col.name, // Using name as ID for root (matches logic elsewhere)
@@ -265,6 +289,14 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
 
       // 2. Populate each collection with its resources
       allLoadedResources.forEach((resource) => {
+        console.log(
+          "[BuildTree] Processing resource:",
+          resource.path,
+          "kind:",
+          resource.kind,
+          "collection:",
+          resource.collection,
+        );
         // Find which collection this resource belongs to
         const root = roots.find((r) => r.name === resource.collection);
         if (!root) return;
@@ -304,13 +336,26 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
           let child = currentNode.children.find((c) => c.name === part);
 
           if (!child) {
+            const nodeType = isFile
+              ? resource.kind === "folder"
+                ? "folder"
+                : "file"
+              : "folder";
             child = {
               id: currentPath,
               name: part,
-              type: isFile ? "file" : "folder",
+              type: nodeType,
               path: currentPath,
               children: [],
             };
+            console.log(
+              "[BuildTree] Creating node:",
+              part,
+              "type:",
+              nodeType,
+              "path:",
+              currentPath,
+            );
             currentNode.children.push(child);
           }
           currentNode = child;
@@ -370,7 +415,7 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
         console.error("Failed to add folder:", err);
       }
     },
-    [addFolderToCollection, t, fetchCollections]
+    [addFolderToCollection, t, fetchCollections],
   );
 
   const handleImportFileToCollection = useCallback(
@@ -396,7 +441,7 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
               "Importing file:",
               file,
               "to collection:",
-              collectionName
+              collectionName,
             );
             await importFile(file, collectionName);
           }
@@ -406,26 +451,66 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
         console.error("Failed to import file:", err);
       }
     },
-    [importFile, t, fetchCollections]
+    [importFile, t, fetchCollections],
   );
 
-  const handleDeleteClick = useCallback((name: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCollectionToDelete(name);
-    setDeleteModalOpen(true);
-  }, []);
+  const handleDeleteClick = useCallback(
+    (
+      item: {
+        type: "collection" | "file" | "folder";
+        name: string;
+        id: string;
+        path?: string;
+      },
+      e: React.MouseEvent,
+    ) => {
+      e.stopPropagation();
+      setItemToDelete(item);
+      setDeleteModalOpen(true);
+    },
+    [],
+  );
 
   const confirmDelete = useCallback(async () => {
-    if (collectionToDelete) {
-      await deleteCollection(collectionToDelete);
+    if (itemToDelete) {
+      if (itemToDelete.type === "collection") {
+        await deleteCollection(itemToDelete.id); // Collection ID is its name
+      } else if (itemToDelete.type === "file") {
+        await deleteResource(itemToDelete.id);
+      } else if (itemToDelete.type === "folder") {
+        // Folder deletion: Delete the explicit folder resource (if exists)
+        // AND all descendant resources (implicit deletion of contents)
+
+        const targets = allLoadedResources.filter((r) => {
+          // Match explicit folder or descendants
+          if (itemToDelete.id && r.id === itemToDelete.id) return true;
+          if (itemToDelete.path) {
+            const rPath = normalizePath(r.path);
+            const folderPath = normalizePath(itemToDelete.path);
+            return rPath === folderPath || rPath.startsWith(folderPath + "/");
+          }
+          return false;
+        });
+
+        // Delete all identified resources
+        for (const target of targets) {
+          await deleteResource(target.id);
+        }
+      }
       setDeleteModalOpen(false);
-      setCollectionToDelete(null);
+      setItemToDelete(null);
     }
-  }, [collectionToDelete, deleteCollection]);
+  }, [
+    itemToDelete,
+    deleteCollection,
+    deleteResource,
+    allLoadedResources,
+    normalizePath,
+  ]);
 
   const cancelDelete = useCallback(() => {
     setDeleteModalOpen(false);
-    setCollectionToDelete(null);
+    setItemToDelete(null);
   }, []);
 
   const handleStartCreation = useCallback(
@@ -443,7 +528,7 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
       if (!collectionNode) {
         if (!targetPath) {
           console.warn(
-            `Collection '${collectionName}' not found or has no path.`
+            `Collection '${collectionName}' not found or has no path.`,
           );
           return;
         }
@@ -457,7 +542,7 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
         // Verify the focused path belongs to this collection tree
         const targetInCollection = findNodeByPath(
           [collectionNode],
-          focusedPath
+          focusedPath,
         );
 
         if (targetInCollection) {
@@ -469,13 +554,13 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
             // If selected item is file, find its parent
             const findParent = (
               paramsNodes: TreeNode[],
-              tgt: string
+              tgt: string,
             ): TreeNode | null => {
               for (const node of paramsNodes) {
                 if (node.children) {
                   if (
                     node.children.some(
-                      (c) => normalizePath(c.path) === normalizePath(tgt)
+                      (c) => normalizePath(c.path) === normalizePath(tgt),
                     )
                   )
                     return node;
@@ -502,12 +587,13 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
       setTimeout(() => {
         setCreatingCollectionItem({
           type,
-          parentId: targetNode?.id || collectionName, // This ID is what we'll match in the recursive render
-          parentPath: targetPath, // This is the FS path where we will create the item
+          parentId: targetNode?.id || collectionName,
+          parentPath: targetPath,
+          collectionName: collectionName, // Store collection name directly
         });
       }, 100);
     },
-    [fileTree, collections, findNodeByPath, focusedPath, normalizePath]
+    [fileTree, collections, findNodeByPath, focusedPath, normalizePath],
   );
 
   // --- Collections filtering ---
@@ -563,33 +649,21 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
         },
       };
     },
-    [creatingCollectionItem]
+    [creatingCollectionItem],
   );
 
   const handleCommitCreation = useCallback(
-    async (name: string, type: "file" | "folder", parentPath: string) => {
+    async (name: string, type: "file" | "folder") => {
       if (!creatingCollectionItem) {
         return;
       }
 
-      // We need to find the collection name.
-      // First try to find in fileTree (populated collections)
-      let collectionRoot = fileTree.find((root) =>
-        parentPath.startsWith(root.path)
-      );
-
-      let collectionName = collectionRoot ? collectionRoot.name : "";
-
-      // Fallback: If not in tree, look in collections list using path
-      if (!collectionName) {
-        const matchedCol = collections.find(
-          (c) => c.path && parentPath.startsWith(c.path)
-        );
-        if (matchedCol) collectionName = matchedCol.name;
-      }
+      // Use the stored collection name from state
+      const collectionName = creatingCollectionItem.collectionName;
+      const parentPath = creatingCollectionItem.parentPath;
 
       if (!collectionName) {
-        console.error("Could not determine collection for path:", parentPath);
+        console.error("Collection name not found in creating state");
         return;
       }
 
@@ -603,16 +677,34 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
       }
 
       try {
+        console.log(
+          `Creating ${type} at path:`,
+          fullPath,
+          "in collection:",
+          collectionName,
+        );
+
+        // Ensure the collection is loaded so the new resource will appear
+        if (!loadedCollections.includes(collectionName)) {
+          console.log(
+            `Loading collection ${collectionName} before creating resource`,
+          );
+          await toggleCollectionLoaded(collectionName);
+        }
+
         if (type === "file") {
-          await createResource(fullPath, collectionName, ""); // Empty content
+          await createResource(fullPath, collectionName, "");
         } else {
           await createFolder(fullPath, collectionName);
         }
+        console.log(`${type} created successfully, waiting for refresh...`);
+        // Wait a bit for the store's refresh to complete
+        await new Promise((resolve) => setTimeout(resolve, 150));
       } catch (err) {
         console.error("Failed to create item:", err);
+      } finally {
+        setCreatingCollectionItem(null);
       }
-
-      setCreatingCollectionItem(null);
     },
     [
       creatingCollectionItem,
@@ -620,7 +712,7 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
       collections,
       createResource,
       createFolder,
-    ]
+    ],
   );
 
   // --- Folder click handler ---
@@ -648,17 +740,16 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
         }
       }
     },
-    [allLoadedResources, selectResource, onOpenFileNode]
+    [allLoadedResources, selectResource, onOpenFileNode],
   );
 
   // --- Statistics Logic ---
   const statistics = useMemo(() => {
     return loadedCollections.map((colName) => {
       const colResources = allLoadedResources.filter(
-        (r) => r.collection === colName
+        (r) => r.collection === colName,
       );
       const fileCount = colResources.length;
-
       let chapterCount = 0;
       let sectionCount = 0;
       let imageCount = 0;
@@ -713,6 +804,77 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
     });
   }, [loadedCollections, allLoadedResources]);
 
+  const handleDeleteSelected = useCallback(() => {
+    if (!focusedPath) return;
+
+    // 1. Check if it's a Collection (Root) - often name == path for roots in some logic, or name is key.
+    // In fileTree, roots have id=name, path=path.
+    // focusedPath is the 'path' property.
+
+    // Check if focusedPath matches a collection's path
+    const collectionByPath = collections.find(
+      (c) => normalizePath(c.path || "") === normalizePath(focusedPath),
+    );
+    const collectionByName = collections.find((c) => c.name === focusedPath); // fallback if focusedPath is just name
+
+    const collection = collectionByPath || collectionByName;
+
+    if (collection) {
+      handleDeleteClick(
+        { type: "collection", name: collection.name, id: collection.name },
+        { stopPropagation: () => {} } as any,
+      );
+      return;
+    }
+
+    // 2. Resource or Implicit Folder
+    // We check for any resource matching the path.
+    const resource = allLoadedResources.find(
+      (r) => normalizePath(r.path) === normalizePath(focusedPath),
+    );
+
+    if (resource) {
+      const type = resource.kind === "folder" ? "folder" : "file";
+      handleDeleteClick(
+        {
+          type: type as "file" | "folder",
+          name:
+            resource.path.split(/[/\\]/).pop() ||
+            (type === "folder" ? "Folder" : "File"),
+          id: resource.id,
+          path: resource.path,
+        },
+        { stopPropagation: () => {} } as any,
+      );
+      return;
+    }
+
+    // 3. Implicit Folder (not a resource itself, but deeper path in tree)
+    // Check if any resources start with this path
+    const isImplicitFolder = allLoadedResources.some((r) =>
+      normalizePath(r.path).startsWith(normalizePath(focusedPath) + "/"),
+    );
+
+    if (isImplicitFolder) {
+      handleDeleteClick(
+        {
+          type: "folder",
+          name: focusedPath.split(/[/\\]/).pop() || "Folder",
+          id: "", // No direct ID
+          path: focusedPath,
+        },
+        { stopPropagation: () => {} } as any,
+      );
+      return;
+    }
+  }, [
+    focusedPath,
+    collections,
+    allLoadedResources,
+    handleDeleteClick,
+    normalizePath,
+  ]);
+
   // Toolbar Actions including View Toggle
   const toolbarActions: ToolbarAction[] = useMemo(() => {
     const actions: ToolbarAction[] = [
@@ -724,7 +886,7 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
       {
         icon: faSearch,
         tooltip: "Toggle Search",
-        variant: "subtle",
+        variant: isSearchVisible ? "filled" : "light",
         onClick: () => setIsSearchVisible((v) => !v),
       },
       // Toggle View Action
@@ -734,7 +896,7 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
           activeView === "collections" ? "Show Statistics" : "Show Files",
         onClick: () =>
           setActiveView((v) =>
-            v === "collections" ? "statistics" : "collections"
+            v === "collections" ? "statistics" : "collections",
           ),
         variant: "subtle",
       },
@@ -805,7 +967,6 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
                   handleCommitCreation(
                     e.currentTarget.value,
                     creatingCollectionItem!.type,
-                    creatingCollectionItem!.parentPath
                   );
                 } else if (e.key === "Escape") {
                   setCreatingCollectionItem(null);
@@ -1012,18 +1173,20 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
                   </ActionIcon>
                 </Tooltip>
 
-                <Tooltip
-                  label={t("database.deleteCollection")}
-                  withArrow
-                  position="top"
-                >
+                <Tooltip label={t("common.delete")} withArrow position="top">
                   <ActionIcon
                     size="sm"
                     variant="subtle"
                     color="red"
+                    disabled={
+                      !focusedPath ||
+                      !normalizePath(focusedPath).startsWith(
+                        normalizePath(node.value as string),
+                      )
+                    }
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDeleteClick(node.label as string, e);
+                      handleDeleteSelected();
                     }}
                   >
                     <FontAwesomeIcon
@@ -1045,14 +1208,21 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
       handleFileClick,
       handleCommitCreation,
       setCreatingCollectionItem,
-    ]
+    ],
   );
 
   const filteredTreeData = useMemo(() => {
-    return fileTree
-      .filter((node) => loadedCollections.includes(node.id))
-      .map(mapNode);
-  }, [fileTree, loadedCollections, mapNode]);
+    // 1. Filter roots by loaded collections
+    const visibleRoots = fileTree.filter((node) =>
+      loadedCollections.includes(node.id),
+    );
+
+    // 2. Filter content by search query
+    const searchedRoots = filterNodes(visibleRoots, searchQuery);
+
+    // 3. Map to Mantine data format
+    return searchedRoots.map(mapNode);
+  }, [fileTree, loadedCollections, searchQuery, filterNodes, mapNode]);
 
   return (
     <Stack p="xs" gap="xs" h="100%" style={{ overflow: "hidden" }}>
@@ -1263,7 +1433,7 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
           <Text>
             {t("database.deleteCollectionConfirm")}{" "}
             <Text component="span" fw={700}>
-              "{collectionToDelete}"
+              "{itemToDelete?.name || itemToDelete?.id}"
             </Text>
             ?
           </Text>

@@ -27,6 +27,7 @@ import {
   faBoxOpen,
   faList,
   faImage,
+  faClock,
 } from "@fortawesome/free-solid-svg-icons";
 
 import { SymbolSidebar } from "./SymbolSidebar";
@@ -36,11 +37,15 @@ import { PACKAGES_DB, Category } from "../wizards/preamble/packages";
 import { getWizardConfig } from "../wizards/preamble/wizardRegistry";
 import { DatabaseSidebar } from "../database/DatabaseSidebar";
 import { SearchPanel } from "../search/SearchPanel";
+import { GitPanel } from "../git/GitPanel";
+import { HistoryPanel } from "../history/HistoryPanel";
+import { useDatabaseStore } from "../../stores/databaseStore";
 
 // --- Types ---
 export type SidebarSection =
   | "search"
   | "git"
+  | "history"
   | "database"
   | "settings"
   | "symbols"
@@ -98,7 +103,7 @@ interface SidebarProps {
   onCreateItem?: (
     name: string,
     type: "file" | "folder",
-    parentPath: string
+    parentPath: string,
   ) => void;
   onRenameItem?: (node: FileSystemNode, newName: string) => void;
   onDeleteItem?: (node: FileSystemNode) => void;
@@ -110,6 +115,12 @@ interface SidebarProps {
 
   outlineSource?: string;
   onScrollToLine?: (line: number) => void;
+
+  // Git & History props
+  projectPath?: string;
+  activeFilePath?: string;
+  activeFileContent?: string;
+  onRestoreContent?: (content: string) => void;
 }
 
 // Re-export getFileIcon from shared components for backward compatibility
@@ -205,6 +216,34 @@ const OutlineView = ({
     </ScrollArea>
   );
 };
+
+// Git Panel wrapper that falls back to loaded database collection paths
+const GitPanelWithDbFallback: React.FC<{
+  projectPath?: string;
+  onOpenFile: (path: string) => void;
+}> = ({ projectPath, onOpenFile }) => {
+  const collections = useDatabaseStore((state) => state.collections);
+  const loadedCollections = useDatabaseStore(
+    (state) => state.loadedCollections,
+  );
+
+  // Get the first loaded collection's path as fallback
+  const effectivePath = React.useMemo(() => {
+    if (projectPath) return projectPath;
+
+    // Find first loaded collection with a path
+    for (const colName of loadedCollections) {
+      const collection = collections.find((c) => c.name === colName);
+      if (collection?.path) {
+        return collection.path;
+      }
+    }
+    return null;
+  }, [projectPath, collections, loadedCollections]);
+
+  return <GitPanel projectPath={effectivePath} onOpenFile={onOpenFile} />;
+};
+
 export const Sidebar = React.memo<SidebarProps>(
   ({
     width,
@@ -225,6 +264,10 @@ export const Sidebar = React.memo<SidebarProps>(
     onSelectPackage,
     outlineSource,
     onScrollToLine,
+    projectPath,
+    activeFilePath,
+    activeFileContent,
+    onRestoreContent,
   }) => {
     // --- Local State ---
     const { t } = useTranslation();
@@ -234,12 +277,12 @@ export const Sidebar = React.memo<SidebarProps>(
     const getVariant = useCallback(
       (section: SidebarSection) =>
         activeSection === section && isOpen ? "light" : "subtle",
-      [activeSection, isOpen]
+      [activeSection, isOpen],
     );
     const getColor = useCallback(
       (section: SidebarSection) =>
         activeSection === section && isOpen ? "blue" : "gray.7",
-      [activeSection, isOpen]
+      [activeSection, isOpen],
     );
 
     const packageCategories: Record<string, React.ReactNode> = {
@@ -370,6 +413,19 @@ export const Sidebar = React.memo<SidebarProps>(
                 />
               </ActionIcon>
             </Tooltip>
+            <Tooltip label={t("sidebar.history")} position="right">
+              <ActionIcon
+                size="sm"
+                variant={getVariant("history")}
+                color={getColor("history")}
+                onClick={() => onToggleSection("history")}
+              >
+                <FontAwesomeIcon
+                  icon={faClock}
+                  style={{ width: 20, height: 20 }}
+                />
+              </ActionIcon>
+            </Tooltip>
           </Stack>
           <Stack gap={4} align="center">
             <Tooltip label={t("sidebar.settings")} position="right">
@@ -494,6 +550,28 @@ export const Sidebar = React.memo<SidebarProps>(
                     }}
                   />
                 )}
+                {activeSection === "git" && (
+                  <GitPanelWithDbFallback
+                    projectPath={projectPath}
+                    onOpenFile={(path) => {
+                      const node: FileSystemNode = {
+                        id: path,
+                        name: path.split(/[/\\]/).pop() || path,
+                        type: "file",
+                        path,
+                        children: [],
+                      };
+                      onOpenFileNode(node);
+                    }}
+                  />
+                )}
+                {activeSection === "history" && (
+                  <HistoryPanel
+                    activeFilePath={activeFilePath || null}
+                    currentContent={activeFileContent || ""}
+                    onRestoreContent={onRestoreContent || (() => {})}
+                  />
+                )}
                 {activeSection === "gallery" && (
                   <Stack gap={4} p="xs">
                     <Button
@@ -510,7 +588,7 @@ export const Sidebar = React.memo<SidebarProps>(
                     {(Object.keys(packageCategories) as Category[]).map(
                       (cat) => {
                         const pkgs = PACKAGES_DB.filter(
-                          (p) => p.category === cat
+                          (p) => p.category === cat,
                         );
                         if (pkgs.length === 0) return null;
                         return (
@@ -552,7 +630,7 @@ export const Sidebar = React.memo<SidebarProps>(
                             ))}
                           </Box>
                         );
-                      }
+                      },
                     )}
                   </Stack>
                 )}
@@ -576,5 +654,5 @@ export const Sidebar = React.memo<SidebarProps>(
         </>
       </Group>
     );
-  }
+  },
 );
