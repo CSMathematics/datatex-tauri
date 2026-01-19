@@ -560,7 +560,9 @@
     "quickTools": "OUTILS RAPIDES",
     "noFolderOpened": "Aucun dossier ouvert",
     "openFolder": "Ouvrir Dossier",
-    "labelPrefix": "Étiquette: "
+    "labelPrefix": "Étiquette: ",
+    "history": "Historique",
+    "outline": "Plan"
   },
   "header": {
     "searchPlaceholder": "Recherche DataTex (Ctrl+P)",

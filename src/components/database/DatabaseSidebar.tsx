@@ -261,23 +261,12 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
 
   // --- New Logic to Populate File Tree ---
   useEffect(() => {
-    console.log(
-      "[BuildTree] useEffect triggered. Collections:",
-      collections.length,
-      "Resources:",
-      allLoadedResources.length,
-    );
     if (!collections || collections.length === 0) {
       setFileTree([]);
       return;
     }
 
     const buildTree = () => {
-      console.log(
-        "[BuildTree] Building tree with",
-        allLoadedResources.length,
-        "resources",
-      );
       // 1. Create root nodes for each collection
       const roots: TreeNode[] = collections.map((col) => ({
         id: col.name, // Using name as ID for root (matches logic elsewhere)
@@ -289,14 +278,6 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
 
       // 2. Populate each collection with its resources
       allLoadedResources.forEach((resource) => {
-        console.log(
-          "[BuildTree] Processing resource:",
-          resource.path,
-          "kind:",
-          resource.kind,
-          "collection:",
-          resource.collection,
-        );
         // Find which collection this resource belongs to
         const root = roots.find((r) => r.name === resource.collection);
         if (!root) return;
@@ -348,14 +329,6 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
               path: currentPath,
               children: [],
             };
-            console.log(
-              "[BuildTree] Creating node:",
-              part,
-              "type:",
-              nodeType,
-              "path:",
-              currentPath,
-            );
             currentNode.children.push(child);
           }
           currentNode = child;
@@ -677,18 +650,8 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
       }
 
       try {
-        console.log(
-          `Creating ${type} at path:`,
-          fullPath,
-          "in collection:",
-          collectionName,
-        );
-
         // Ensure the collection is loaded so the new resource will appear
         if (!loadedCollections.includes(collectionName)) {
-          console.log(
-            `Loading collection ${collectionName} before creating resource`,
-          );
           await toggleCollectionLoaded(collectionName);
         }
 
@@ -697,7 +660,6 @@ export const DatabaseSidebar = ({ onOpenFileNode }: DatabaseSidebarProps) => {
         } else {
           await createFolder(fullPath, collectionName);
         }
-        console.log(`${type} created successfully, waiting for refresh...`);
         // Wait a bit for the store's refresh to complete
         await new Promise((resolve) => setTimeout(resolve, 150));
       } catch (err) {

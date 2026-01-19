@@ -50,6 +50,9 @@ export function usePdfState({
         // @ts-ignore
         const { readFile, exists } = await import("@tauri-apps/plugin-fs");
 
+        // Add a small delay to ensure file system is flushed
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
         if (await exists(pdfPath)) {
           const pdfData = await readFile(pdfPath);
           const blob = new Blob([pdfData], { type: "application/pdf" });
@@ -83,7 +86,7 @@ export function usePdfState({
         const texPath = activeTab.id;
         const pdfPath = texPath.replace(/\.tex$/i, ".pdf");
         const lastSlash = texPath.lastIndexOf(
-          texPath.includes("\\") ? "\\" : "/"
+          texPath.includes("\\") ? "\\" : "/",
         );
         const cwd = texPath.substring(0, lastSlash);
 
@@ -94,7 +97,7 @@ export function usePdfState({
 
         if (!pdfExists) {
           setCompileError(
-            "PDF not available. Please compile your document first."
+            "PDF not available. Please compile your document first.",
           );
           return;
         }
@@ -132,7 +135,7 @@ export function usePdfState({
           onRequirePanelOpen?.();
         } else {
           setCompileError(
-            "SyncTeX forward sync failed. Make sure you compiled with -synctex=1 flag."
+            "SyncTeX forward sync failed. Make sure you compiled with -synctex=1 flag.",
           );
         }
       } catch (e) {
@@ -140,14 +143,14 @@ export function usePdfState({
         const errorMsg = String(e);
         if (errorMsg.includes("synctex.gz")) {
           setCompileError(
-            "SyncTeX file not found. Please recompile your document with SyncTeX enabled."
+            "SyncTeX file not found. Please recompile your document with SyncTeX enabled.",
           );
         } else {
           setCompileError("SyncTeX forward search failed: " + errorMsg);
         }
       }
     },
-    [activeTab, isTexFile, setCompileError]
+    [activeTab, isTexFile, setCompileError],
   );
 
   return {

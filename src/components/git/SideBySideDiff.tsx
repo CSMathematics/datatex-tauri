@@ -107,6 +107,7 @@ export const SideBySideDiff: React.FC<SideBySideDiffProps> = ({
                 <Text
                   style={{ whiteSpace: "pre-wrap", wordBreak: "break-all" }}
                   c={line.change_type === "removed" ? "red" : undefined}
+                  size="xs"
                 >
                   {line.left_content}
                 </Text>
@@ -136,6 +137,7 @@ export const SideBySideDiff: React.FC<SideBySideDiffProps> = ({
                 <Text
                   style={{ whiteSpace: "pre-wrap", wordBreak: "break-all" }}
                   c={line.change_type === "added" ? "green" : undefined}
+                  size="xs"
                 >
                   {line.right_content}
                 </Text>

@@ -287,7 +287,7 @@ export const GitGraph: React.FC<GitGraphProps> = ({
                         ? "var(--mantine-color-blue-light)"
                         : "transparent",
                     borderBottom:
-                      "1px solid var(--mantine-color-default-border)",
+                      "0px solid var(--mantine-color-default-border)",
                   }}
                 >
                   <Group

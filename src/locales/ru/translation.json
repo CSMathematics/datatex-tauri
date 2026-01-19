@@ -585,7 +585,9 @@
     "quickTools": "БЫСТРЫЕ ИНСТРУМЕНТЫ",
     "noFolderOpened": "Папка не открыта",
     "openFolder": "Открыть Папку",
-    "labelPrefix": "Метка: "
+    "labelPrefix": "Метка: ",
+    "history": "История",
+    "outline": "Структура"
   },
   "header": {
     "searchPlaceholder": "Поиск DataTex (Ctrl+P)",

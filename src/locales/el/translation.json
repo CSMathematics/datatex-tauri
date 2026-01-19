@@ -22,6 +22,10 @@
     "download": "Λήψη",
     "print": "Εκτύπωση"
   },
+  "file": {
+    "expandAll": "Ανάπτυξη Όλων",
+    "collapseAll": "Σύμπτυξη Όλων"
+  },
   "tools": {
     "packageBrowser": {
       "title": "Πακέτα CTAN",
@@ -560,7 +564,9 @@
     "quickTools": "ΓΡΗΓΟΡΑ ΕΡΓΑΛΕΙΑ",
     "noFolderOpened": "Κανένας φάκελος δεν έχει ανοίξει",
     "openFolder": "Άνοιγμα Φακέλου",
-    "labelPrefix": "Ετικέτα: "
+    "labelPrefix": "Ετικέτα: ",
+    "history": "Ιστορικό",
+    "outline": "Περίγραμμα"
   },
   "header": {
     "searchPlaceholder": "Αναζήτηση DataTex (Ctrl+P)",

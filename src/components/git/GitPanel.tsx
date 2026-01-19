@@ -1415,27 +1415,30 @@ export const GitPanel: React.FC<GitPanelProps> = ({
                           <ActionIcon
                             size="xs"
                             variant="subtle"
+                            color="gray"
                             onClick={() => handleBlame(file.path)}
                           >
-                            <FontAwesomeIcon icon={faHistory} />
+                            <FontAwesomeIcon icon={faHistory} size="xs" />
                           </ActionIcon>
                         </Tooltip>
                         <Tooltip label="View diff">
                           <ActionIcon
                             size="xs"
                             variant="subtle"
+                            color="gray"
                             onClick={() => handleViewDiff(file)}
                           >
-                            <FontAwesomeIcon icon={faEye} />
+                            <FontAwesomeIcon icon={faEye} size="xs" />
                           </ActionIcon>
                         </Tooltip>
                         <Tooltip label="Stage">
                           <ActionIcon
                             size="xs"
                             variant="subtle"
+                            color="green"
                             onClick={() => handleStageFile(file)}
                           >
-                            <FontAwesomeIcon icon={faPlus} />
+                            <FontAwesomeIcon icon={faPlus} size="xs" />
                           </ActionIcon>
                         </Tooltip>
                         <Tooltip label="Discard">
@@ -1445,7 +1448,7 @@ export const GitPanel: React.FC<GitPanelProps> = ({
                             color="red"
                             onClick={() => handleDiscardChanges(file)}
                           >
-                            <FontAwesomeIcon icon={faUndo} />
+                            <FontAwesomeIcon icon={faUndo} size="xs" />
                           </ActionIcon>
                         </Tooltip>
                       </Group>

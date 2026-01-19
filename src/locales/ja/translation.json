@@ -585,7 +585,9 @@
     "quickTools": "クイックツール",
     "noFolderOpened": "フォルダが開かれていません",
     "openFolder": "フォルダを開く",
-    "labelPrefix": "ラベル: "
+    "labelPrefix": "ラベル: ",
+    "history": "履歴",
+    "outline": "アウトライン"
   },
   "header": {
     "searchPlaceholder": "DataTex 検索 (Ctrl+P)",

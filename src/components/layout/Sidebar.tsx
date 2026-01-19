@@ -517,15 +517,25 @@ export const Sidebar = React.memo<SidebarProps>(
               </Group>
             ) : (
               <ScrollArea style={{ flex: 1 }}>
-                {activeSection === "outline" && (
+                <Box
+                  style={{
+                    display: activeSection === "outline" ? "block" : "none",
+                    height: "100%",
+                  }}
+                >
                   <OutlineView
                     content={outlineSource || ""}
                     onNavigate={onScrollToLine || (() => {})}
                   />
-                )}
+                </Box>
 
                 {/* Database & Gallery sections */}
-                {activeSection === "database" && (
+                <Box
+                  style={{
+                    display: activeSection === "database" ? "block" : "none",
+                    height: "100%",
+                  }}
+                >
                   <DatabaseSidebar
                     onOpenFolder={onOpenFolder}
                     onRemoveFolder={onRemoveFolder}
@@ -535,8 +545,14 @@ export const Sidebar = React.memo<SidebarProps>(
                     onDeleteItem={onDeleteItem}
                     onNavigate={(view) => onNavigate(view as ViewType)}
                   />
-                )}
-                {activeSection === "search" && (
+                </Box>
+
+                <Box
+                  style={{
+                    display: activeSection === "search" ? "block" : "none",
+                    height: "100%",
+                  }}
+                >
                   <SearchPanel
                     onOpenFile={(path, lineNumber) => {
                       if (onOpenFileAtLine) {
@@ -554,8 +570,14 @@ export const Sidebar = React.memo<SidebarProps>(
                       }
                     }}
                   />
-                )}
-                {activeSection === "git" && (
+                </Box>
+
+                <Box
+                  style={{
+                    display: activeSection === "git" ? "block" : "none",
+                    height: "100%",
+                  }}
+                >
                   <GitPanelWithDbFallback
                     projectPath={projectPath}
                     onOpenFile={(path) => {
@@ -569,15 +591,27 @@ export const Sidebar = React.memo<SidebarProps>(
                       onOpenFileNode(node);
                     }}
                   />
-                )}
-                {activeSection === "history" && (
+                </Box>
+
+                <Box
+                  style={{
+                    display: activeSection === "history" ? "block" : "none",
+                    height: "100%",
+                  }}
+                >
                   <HistoryPanel
                     activeFilePath={activeFilePath || null}
                     currentContent={activeFileContent || ""}
                     onRestoreContent={onRestoreContent || (() => {})}
                   />
-                )}
-                {activeSection === "gallery" && (
+                </Box>
+
+                <Box
+                  style={{
+                    display: activeSection === "gallery" ? "block" : "none",
+                    height: "100%",
+                  }}
+                >
                   <Stack gap={4} p="xs">
                     <Button
                       variant="light"
@@ -638,7 +672,7 @@ export const Sidebar = React.memo<SidebarProps>(
                       },
                     )}
                   </Stack>
-                )}
+                </Box>
               </ScrollArea>
             )}
           </Box>

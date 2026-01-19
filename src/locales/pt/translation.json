@@ -585,7 +585,9 @@
     "quickTools": "FERRAMENTAS RÁPIDAS",
     "noFolderOpened": "Nenhuma pasta aberta",
     "openFolder": "Abrir Pasta",
-    "labelPrefix": "Rótulo: "
+    "labelPrefix": "Rótulo: ",
+    "history": "Histórico",
+    "outline": "Estrutura"
   },
   "header": {
     "searchPlaceholder": "Pesquisa DataTex (Ctrl+P)",

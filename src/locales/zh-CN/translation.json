@@ -583,7 +583,9 @@
     "quickTools": "快速工具",
     "noFolderOpened": "未打开文件夹",
     "openFolder": "打开文件夹",
-    "labelPrefix": "标签: "
+    "labelPrefix": "标签: ",
+    "history": "历史记录",
+    "outline": "大纲"
   },
   "header": {
     "searchPlaceholder": "DataTex 搜索 (Ctrl+P)",

@@ -22,6 +22,10 @@
     "download": "Download",
     "print": "Print"
   },
+  "file": {
+    "expandAll": "Expand All",
+    "collapseAll": "Collapse All"
+  },
   "tools": {
     "packageBrowser": {
       "title": "CTAN Packages",
@@ -560,7 +564,9 @@
     "quickTools": "QUICK TOOLS",
     "noFolderOpened": "No folder opened",
     "openFolder": "Open Folder",
-    "labelPrefix": "Label: "
+    "labelPrefix": "Label: ",
+    "history": "History",
+    "outline": "Outline"
   },
   "header": {
     "searchPlaceholder": "DataTex Search (Ctrl+P)",

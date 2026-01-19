@@ -560,7 +560,9 @@
     "quickTools": "STRUMENTI RAPIDI",
     "noFolderOpened": "Nessuna cartella aperta",
     "openFolder": "Apri Cartella",
-    "labelPrefix": "Etichetta: "
+    "labelPrefix": "Etichetta: ",
+    "history": "Cronologia",
+    "outline": "Struttura"
   },
   "header": {
     "searchPlaceholder": "Cerca in DataTex (Ctrl+P)",

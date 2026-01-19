@@ -52,11 +52,13 @@ interface ResourceInspectorProps {
   /** PDF URL from main editor */
   mainEditorPdfUrl?: string | null;
   syncTexCoords?: { page: number; x: number; y: number } | null;
+  pdfRefreshTrigger?: number;
 }
 
 export const ResourceInspector = ({
   mainEditorPdfUrl,
   syncTexCoords,
+  pdfRefreshTrigger,
 }: ResourceInspectorProps) => {
   const { t } = useTranslation();
   const { allLoadedResources, activeResourceId } = useDatabaseStore();
@@ -67,7 +69,7 @@ export const ResourceInspector = ({
 
   // Initialize typed metadata lookup data
   const loadAllLookupData = useTypedMetadataStore(
-    (state) => state.loadAllLookupData
+    (state) => state.loadAllLookupData,
   );
 
   useEffect(() => {
@@ -90,8 +92,8 @@ export const ResourceInspector = ({
       const pdfPath = isTexFile
         ? resource.path.replace(/\.tex$/i, ".pdf")
         : resource.path.toLowerCase().endsWith(".pdf")
-        ? resource.path
-        : null;
+          ? resource.path
+          : null;
 
       if (!pdfPath) {
         setPdfUrl(null);
@@ -128,7 +130,7 @@ export const ResourceInspector = ({
     return () => {
       if (activeBlobUrl) URL.revokeObjectURL(activeBlobUrl);
     };
-  }, [resource?.path]);
+  }, [resource?.path, pdfRefreshTrigger]);
 
   const { isWizardOpen, setWizardOpen, createResource } = useDatabaseStore();
 
@@ -153,7 +155,7 @@ export const ResourceInspector = ({
                 extensions: ["tex"],
               },
             ],
-          })
+          }),
       );
 
       if (selectedPath) {

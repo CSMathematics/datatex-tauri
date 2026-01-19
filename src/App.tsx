@@ -633,8 +633,10 @@ export default function App() {
 
   const handleEditorChange = useCallback(
     (id: string, val: string) => {
-      // Only update isDirty flag to avoid heavy re-renders
+      // Access store directly to avoid dependency on 'tabs'
+      const { tabs, markDirty } = useTabsStore.getState();
       const tab = tabs.find((t) => t.id === id);
+
       if (tab && !tab.isDirty) {
         markDirty(id, true);
       }
@@ -643,10 +645,17 @@ export default function App() {
         debouncedOutlineUpdate(val);
       }
     },
-    [tabs, markDirty, activeActivity, debouncedOutlineUpdate],
+    [activeActivity, debouncedOutlineUpdate],
   );
 
   // --- FIX: Update structure on view change ---
+  const handleOpenDatabase = useCallback(() => setShowDatabasePanel(true), []);
+  const handleOpenPackageBrowser = useCallback(
+    () => setActiveView("package-browser"),
+    [],
+  );
+  const handleOpenExamGenerator = useCallback(() => {}, []);
+
   useEffect(() => {
     if (activeActivity === "outline") {
       const tab = tabs.find((t) => t.id === activeTabId);
@@ -1210,17 +1219,15 @@ export default function App() {
                         onCompile={handleCompile}
                         isCompiling={isCompiling}
                         onStopCompile={handleStopCompile}
-                        onSave={() => handleSave()}
+                        onSave={handleSave}
                         onCreateEmpty={handleCreateEmpty}
                         onOpenWizard={handleOpenPreambleWizard}
                         onCreateFromTemplate={handleCreateFromTemplate}
                         recentProjects={recentProjects}
                         onOpenRecent={handleOpenRecent}
-                        onOpenDatabase={() => setShowDatabasePanel(true)}
-                        onOpenPackageBrowser={() =>
-                          setActiveView("package-browser")
-                        }
-                        onOpenExamGenerator={() => {}}
+                        onOpenDatabase={handleOpenDatabase}
+                        onOpenPackageBrowser={handleOpenPackageBrowser}
+                        onOpenExamGenerator={handleOpenExamGenerator}
                         editorSettings={editorSettingsMemo}
                         logEntries={logEntries}
                         showLogPanel={showLogPanel}
@@ -1230,7 +1237,7 @@ export default function App() {
                         onSyncTexForward={handleSyncTexForward}
                         spellCheckEnabled={spellCheckEnabled}
                         onOpenFileFromTable={handleOpenFileFromTable}
-                        onOpenFile={(path) => handleOpenFileFromTable(path)}
+                        onOpenFile={handleOpenFileFromTable} // handleOpenFileFromTable is stable
                         lspClient={lspClientRef.current}
                       />
                     </Box>
@@ -1259,17 +1266,15 @@ export default function App() {
                         onCompile={handleCompile}
                         isCompiling={isCompiling}
                         onStopCompile={handleStopCompile}
-                        onSave={() => handleSave()}
+                        onSave={handleSave}
                         onCreateEmpty={handleCreateEmpty}
                         onOpenWizard={handleOpenPreambleWizard}
                         onCreateFromTemplate={handleCreateFromTemplate}
                         recentProjects={recentProjects}
                         onOpenRecent={handleOpenRecent}
-                        onOpenDatabase={() => setShowDatabasePanel(true)}
-                        onOpenPackageBrowser={() =>
-                          setActiveView("package-browser")
-                        }
-                        onOpenExamGenerator={() => {}}
+                        onOpenDatabase={handleOpenDatabase}
+                        onOpenPackageBrowser={handleOpenPackageBrowser}
+                        onOpenExamGenerator={handleOpenExamGenerator}
                         onOpenTemplateModal={handleOpenTemplateModal}
                         editorSettings={editorSettingsMemo}
                         logEntries={logEntries}
@@ -1280,7 +1285,7 @@ export default function App() {
                         onSyncTexForward={handleSyncTexForward}
                         spellCheckEnabled={spellCheckEnabled}
                         onOpenFileFromTable={handleOpenFileFromTable}
-                        onOpenFile={(path) => handleOpenFileFromTable(path)}
+                        onOpenFile={handleOpenFileFromTable}
                         lspClient={lspClientRef.current}
                       />
                     </Box>
@@ -1443,6 +1448,7 @@ export default function App() {
                       <ResourceInspector
                         mainEditorPdfUrl={pdfUrl}
                         syncTexCoords={syncTexCoords}
+                        pdfRefreshTrigger={pdfRefreshTrigger}
                       />
                     )}
                   </Box>

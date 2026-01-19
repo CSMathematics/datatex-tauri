@@ -560,7 +560,9 @@
     "quickTools": "SCHNELL-TOOLS",
     "noFolderOpened": "Kein Ordner geöffnet",
     "openFolder": "Ordner öffnen",
-    "labelPrefix": "Label: "
+    "labelPrefix": "Label: ",
+    "history": "Verlauf",
+    "outline": "Gliederung"
   },
   "header": {
     "searchPlaceholder": "DataTex Suche (Ctrl+P)",
