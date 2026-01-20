@@ -8,11 +8,11 @@ import {
   faSpellCheck,
   faCalculator,
 } from "@fortawesome/free-solid-svg-icons";
+import { useCursorStore } from "../../stores/cursorStore";
 
 interface StatusBarProps {
   language?: string;
   dbConnected?: boolean;
-  cursorPosition?: { lineNumber: number; column: number };
   spellCheckEnabled?: boolean;
   onToggleSpellCheck?: () => void;
   onWordCount?: () => void;
@@ -22,12 +22,14 @@ export const StatusBar: React.FC<StatusBarProps> = React.memo(
   ({
     language,
     dbConnected = true,
-    cursorPosition = { lineNumber: 1, column: 1 },
     spellCheckEnabled = false,
     onToggleSpellCheck,
     onWordCount,
   }) => {
     const { t } = useTranslation();
+    // Subscribe to cursor store - select primitives to avoid infinite loop
+    const lineNumber = useCursorStore((state) => state.lineNumber);
+    const column = useCursorStore((state) => state.column);
     return (
       <Group
         h={24}
@@ -94,8 +96,7 @@ export const StatusBar: React.FC<StatusBarProps> = React.memo(
           )}
 
           <Text size="xs" inherit>
-            {t("statusBar.ln")} {cursorPosition.lineNumber},{" "}
-            {t("statusBar.col")} {cursorPosition.column}
+            {t("statusBar.ln")} {lineNumber}, {t("statusBar.col")} {column}
           </Text>
 
           <Text size="xs" inherit>
@@ -125,5 +126,5 @@ export const StatusBar: React.FC<StatusBarProps> = React.memo(
         </Group>
       </Group>
     );
-  }
+  },
 );

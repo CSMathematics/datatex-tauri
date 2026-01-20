@@ -84,6 +84,7 @@ import { useAppPanelResize } from "./hooks/useAppPanelResize";
 import { useProjectFiles } from "./hooks/useProjectFiles";
 import { useCompilation } from "./hooks/useCompilation";
 import { usePdfState } from "./hooks/usePdfState";
+import { useCursorStore } from "./stores/cursorStore";
 
 // --- CSS Variables Resolver ---
 const resolver: CSSVariablesResolver = (theme) => ({
@@ -165,10 +166,6 @@ export default function App() {
   const renameTab = useTabsStore((state) => state.renameTab);
   const editorRef = useRef<any>(null);
   const [outlineSource, setOutlineSource] = useState<string>("");
-  const [cursorPosition, setCursorPosition] = useState({
-    lineNumber: 1,
-    column: 1,
-  });
   const [spellCheckEnabled, setSpellCheckEnabled] = useState(false);
 
   // --- LSP State ---
@@ -601,11 +598,11 @@ export default function App() {
 
   const handleConfirmDiscard = useCallback(() => {
     if (tabToCloseId) {
-      closeTabStore(tabToCloseId);
+      closeTabsById([tabToCloseId]);
       setUnsavedChangesModalOpen(false);
       setTabToCloseId(null);
     }
-  }, [tabToCloseId, closeTabStore]);
+  }, [tabToCloseId, closeTabsById]);
 
   const handleCancelClose = useCallback(() => {
     setUnsavedChangesModalOpen(false);
@@ -649,21 +646,30 @@ export default function App() {
     [closeTabsById],
   );
 
+  // Debounced markDirty to prevent re-renders on every keystroke
+  const debouncedMarkDirty = useMemo(
+    () =>
+      debounce((id: string) => {
+        useTabsStore.getState().markDirty(id, true);
+      }, 500),
+    [],
+  );
+
   const handleEditorChange = useCallback(
     (id: string, val: string) => {
       // Access store directly to avoid dependency on 'tabs'
-      const { tabs, markDirty } = useTabsStore.getState();
+      const { tabs } = useTabsStore.getState();
       const tab = tabs.find((t) => t.id === id);
 
       if (tab && !tab.isDirty) {
-        markDirty(id, true);
+        debouncedMarkDirty(id);
       }
 
       if (activeActivity === "outline") {
         debouncedOutlineUpdate(val);
       }
     },
-    [activeActivity, debouncedOutlineUpdate],
+    [activeActivity, debouncedOutlineUpdate, debouncedMarkDirty],
   );
 
   // --- FIX: Update structure on view change ---
@@ -716,14 +722,12 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Throttled cursor position update
+  // Throttled cursor position update - uses store directly, no App re-render
   const handleCursorChange = useCallback(
     throttle((line: number, column: number) => {
-      setCursorPosition((prev) => {
-        if (prev.lineNumber === line && prev.column === column) return prev;
-        return { lineNumber: line, column };
-      });
-    }, 200),
+      // Use store directly - does not trigger App.tsx re-render
+      useCursorStore.getState().setCursor(line, column);
+    }, 100),
     [],
   );
 
@@ -1554,7 +1558,6 @@ export default function App() {
             <StatusBar
               language={activeTab?.language}
               dbConnected={true}
-              cursorPosition={cursorPosition}
               spellCheckEnabled={spellCheckEnabled}
               onToggleSpellCheck={() =>
                 setSpellCheckEnabled(!spellCheckEnabled)
