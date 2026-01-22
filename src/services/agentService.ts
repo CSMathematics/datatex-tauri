@@ -1,4 +1,5 @@
 import { useDatabaseStore } from "../stores/databaseStore";
+import { useAIStore } from "../stores/aiStore";
 import { invoke } from "@tauri-apps/api/core";
 import { readTextFile } from "@tauri-apps/plugin-fs";
 
@@ -8,8 +9,33 @@ export interface Agent {
   description: string;
   systemPrompt: string;
   avatar?: string;
-  // TODO: allowedTools: string[];
+  isBuiltIn?: boolean;
 }
+
+// Built-in Agents Imports
+import latexExpertConfig from "../assets/agents/latex_expert/config.json";
+import latexExpertPrompt from "../assets/agents/latex_expert/prompt.md?raw";
+import preambleExpertConfig from "../assets/agents/preamble_expert/config.json";
+import preambleExpertPrompt from "../assets/agents/preamble_expert/prompt.md?raw";
+import librarianConfig from "../assets/agents/librarian/config.json";
+import librarianPrompt from "../assets/agents/librarian/prompt.md?raw";
+
+export const getBuiltInAgents = (): Agent[] => {
+  return [
+    {
+      ...latexExpertConfig,
+      systemPrompt: latexExpertPrompt,
+    },
+    {
+      ...preambleExpertConfig,
+      systemPrompt: preambleExpertPrompt,
+    },
+    {
+      ...librarianConfig,
+      systemPrompt: librarianPrompt,
+    },
+  ];
+};
 
 export interface Tool {
   name: string;
@@ -44,14 +70,14 @@ export const tools: Record<string, Tool> = {
           "get_resources_by_collection_cmd",
           {
             collection: collection_name,
-          }
+          },
         );
         return JSON.stringify(
           resources.map((r) => ({
             name: r.title || r.path,
             id: r.id,
             path: r.path,
-          }))
+          })),
         );
       } catch (e: any) {
         return `Error listing files: ${e.message}`;
@@ -73,6 +99,19 @@ export const tools: Record<string, Tool> = {
       } catch (e: any) {
         return `Error reading file: ${e.message}`;
       }
+    },
+  },
+  write_file: {
+    name: "write_file",
+    description: "Overwrite the content of a file given its absolute path.",
+    parameters:
+      '{ "path": "Absolute path of the file", "content": "New content of the file" }',
+    execute: async ({ path, content }) => {
+      // Trigger the UI to show the approval dialog
+      useAIStore.getState().setPendingWrite({ path, content });
+
+      // Return a message to the AI so it knows it's waiting
+      return `Action PENDING_APPROVAL: I have drafted the changes for ${path}. The user has been prompted to review and approve them. Please wait for confirmation.`;
     },
   },
 };

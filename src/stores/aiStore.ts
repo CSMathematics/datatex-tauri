@@ -1,12 +1,17 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { Agent } from "../services/agentService";
+import { Agent, getBuiltInAgents } from "../services/agentService";
 
 export type AIProviderId = "mock" | "openai" | "gemini" | "ollama";
 
 export interface Message {
   role: "user" | "assistant" | "system";
+  content: string;
+}
+
+export interface PendingWrite {
+  path: string;
   content: string;
 }
 
@@ -20,8 +25,10 @@ interface AIState {
   ollamaModel: string;
 
   // Agents
+  builtInAgents: Agent[];
   agents: Agent[];
   activeAgentId: string | null;
+  pendingWrite: PendingWrite | null;
 
   // Chat History
   messages: Message[];
@@ -38,6 +45,7 @@ interface AIState {
   updateAgent: (agent: Agent) => void;
   deleteAgent: (id: string) => void;
   setActiveAgent: (id: string | null) => void;
+  setPendingWrite: (write: PendingWrite | null) => void;
 
   addMessage: (msg: Message) => void;
   setMessages: (msgs: Message[]) => void;
@@ -57,8 +65,10 @@ export const useAIStore = create<AIState>()(
       ollamaModel: "llama3",
       messages: [],
 
+      builtInAgents: getBuiltInAgents(),
       agents: [],
-      activeAgentId: null,
+      activeAgentId: "latex_expert",
+      pendingWrite: null,
 
       setProvider: (provider) => set({ provider }),
       setOpenAIKey: (openaiKey) => set({ openaiKey }),
@@ -81,6 +91,7 @@ export const useAIStore = create<AIState>()(
             state.activeAgentId === id ? null : state.activeAgentId,
         })),
       setActiveAgent: (id) => set({ activeAgentId: id }),
+      setPendingWrite: (write) => set({ pendingWrite: write }),
 
       addMessage: (msg) =>
         set((state) => ({ messages: [...state.messages, msg] })),
@@ -93,6 +104,10 @@ export const useAIStore = create<AIState>()(
     }),
     {
       name: "datatex-ai-storage",
-    }
-  )
+      partialize: (state) => ({
+        ...state,
+        builtInAgents: undefined, // Do not persist built-in agents
+      }),
+    },
+  ),
 );

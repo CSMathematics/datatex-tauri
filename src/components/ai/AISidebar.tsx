@@ -13,7 +13,9 @@ import {
   Autocomplete,
   Box,
   Divider,
+  Progress,
 } from "@mantine/core";
+import { indexingService } from "../../services/indexingService";
 import { IconTrash } from "@tabler/icons-react";
 import { currentProvider } from "../../services/aiService";
 import { ChatPanel } from "./ChatPanel";
@@ -37,6 +39,10 @@ export const AISidebar: React.FC<AISidebarProps> = ({
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
 
+  // Indexing State
+  const [isIndexing, setIsIndexing] = useState(false);
+  const [indexProgress, setIndexProgress] = useState(0);
+
   // Store hooks
   const {
     provider,
@@ -54,6 +60,7 @@ export const AISidebar: React.FC<AISidebarProps> = ({
     ollamaModel,
     setOllamaModel,
     agents,
+    builtInAgents,
     deleteAgent,
     activeAgentId,
     setActiveAgent,
@@ -84,7 +91,7 @@ export const AISidebar: React.FC<AISidebarProps> = ({
   const renderModelSelection = (
     currentModel: string,
     setModel: (val: string) => void,
-    placeholder: string
+    placeholder: string,
   ) => (
     <Group align="flex-end" gap="xs">
       <Autocomplete
@@ -162,7 +169,7 @@ export const AISidebar: React.FC<AISidebarProps> = ({
               {renderModelSelection(
                 geminiModel,
                 setGeminiModel,
-                "gemini-1.5-flash"
+                "gemini-1.5-flash",
               )}
             </>
           )}
@@ -179,11 +186,79 @@ export const AISidebar: React.FC<AISidebarProps> = ({
             </>
           )}
 
-          <Divider
-            my="md"
-            label={t("ai.settings.customAgents")}
-            labelPosition="center"
-          />
+          {provider === "ollama" && (
+            <>
+              <TextInput
+                label={t("ai.settings.ollamaUrl")}
+                placeholder="http://localhost:11434"
+                value={ollamaUrl}
+                onChange={(e) => setOllamaUrl(e.currentTarget.value)}
+              />
+              {renderModelSelection(ollamaModel, setOllamaModel, "llama3")}
+            </>
+          )}
+
+          <Divider my="md" labelPosition="center" />
+
+          <Title order={6} size="sm" c="dimmed" mb="xs">
+            Knowledge Base (RAG)
+          </Title>
+          <Box>
+            <Group justify="space-between" mb="xs">
+              <Text size="sm">Project Indexing</Text>
+              <Button
+                size="xs"
+                variant="light"
+                onClick={async () => {
+                  if (indexingService.isIndexing) {
+                    indexingService.stop();
+                    setIsIndexing(false);
+                  } else {
+                    setIsIndexing(true);
+                    await indexingService.buildIndex((current, total) => {
+                      setIndexProgress((current / total) * 100);
+                    });
+                    setIsIndexing(false);
+                  }
+                }}
+                color={isIndexing ? "red" : "blue"}
+              >
+                {isIndexing ? "Stop" : "Build Index"}
+              </Button>
+            </Group>
+            {indexProgress > 0 && (
+              <Progress value={indexProgress} size="sm" animated={isIndexing} />
+            )}
+            <Text size="xs" c="dimmed" mt={4}>
+              Generates embeddings for your project files to enable semantic
+              search.
+            </Text>
+          </Box>
+
+          <Divider my="md" labelPosition="center" />
+
+          <Title order={6} size="sm" c="dimmed" mb="xs">
+            {t("ai.settings.builtInAgents", "Built-in Agents")}
+          </Title>
+          <Stack gap="xs" mb="md">
+            {builtInAgents.map((agent) => (
+              <Group key={agent.id} justify="space-between">
+                <Box>
+                  <Text size="sm" fw={500}>
+                    {agent.name}
+                  </Text>
+                  <Text size="xs" c="dimmed" lineClamp={1}>
+                    {agent.description}
+                  </Text>
+                </Box>
+                <Group gap={4}>{/* Built-in agents are read-only */}</Group>
+              </Group>
+            ))}
+          </Stack>
+
+          <Title order={6} size="sm" c="dimmed" mb="xs">
+            {t("ai.settings.customAgents", "Custom Agents")}
+          </Title>
 
           <Stack gap="xs">
             {agents.map((agent) => (
@@ -258,6 +333,10 @@ export const AISidebar: React.FC<AISidebarProps> = ({
             <Select
               data={[
                 { value: "standard", label: t("ai.standardAssistant") },
+                ...builtInAgents.map((a) => ({
+                  value: a.id,
+                  label: `${t("ai.agentPrefix")} ${a.name}`,
+                })),
                 ...agents.map((a) => ({
                   value: a.id,
                   label: `${t("ai.agentPrefix")} ${a.name}`,
