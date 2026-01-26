@@ -497,6 +497,9 @@
       "open": "Open",
       "openFile": "Open File...",
       "save": "Save",
+      "saveAs": "Save As",
+      "closeFile": "Close File",
+      "openRecent": "Open Recent",
       "exportPdf": "Export to PDF",
       "exit": "Exit"
     },
@@ -507,7 +510,11 @@
       "cut": "Cut",
       "copy": "Copy",
       "paste": "Paste",
-      "find": "Find"
+      "selectAll": "Select All",
+      "find": "Find",
+      "replace": "Replace",
+      "goToLine": "Go to Line",
+      "toggleComment": "Toggle Comment"
     },
     "insert": {
       "label": "Insert",
@@ -517,9 +524,12 @@
       "label": "View",
       "databasePanel": "Database Panel",
       "rightSidebar": "Right Sidebar (PDF)",
+      "leftSidebar": "Toggle Left Sidebar",
+      "aiAssistant": "Toggle AI Assistant",
       "wordCount": "Word Count",
       "zoomIn": "Zoom In",
-      "zoomOut": "Zoom Out"
+      "zoomOut": "Zoom Out",
+      "resetZoom": "Reset Zoom"
     },
     "database": {
       "label": "Database",

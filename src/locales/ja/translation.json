@@ -517,6 +517,9 @@
       "newFromTemplate": "テンプレートから新規作成",
       "open": "開く",
       "save": "保存",
+      "saveAs": "名前を付けて保存",
+      "closeFile": "ファイルを閉じる",
+      "openRecent": "最近開いたファイル",
       "exportPdf": "PDF にエクスポート",
       "exit": "終了"
     },
@@ -527,7 +530,11 @@
       "cut": "切り取り",
       "copy": "コピー",
       "paste": "貼り付け",
-      "find": "検索"
+      "selectAll": "すべて選択",
+      "find": "検索",
+      "replace": "置換",
+      "goToLine": "行へ移動",
+      "toggleComment": "コメントの切り替え"
     },
     "insert": {
       "label": "挿入",
@@ -537,9 +544,12 @@
       "label": "表示",
       "databasePanel": "データベースパネル",
       "rightSidebar": "右サイドバー (PDF)",
+      "leftSidebar": "サイドバーの切り替え",
+      "aiAssistant": "AIアシスタントの切り替え",
       "wordCount": "文字数",
       "zoomIn": "拡大",
-      "zoomOut": "縮小"
+      "zoomOut": "縮小",
+      "resetZoom": "ズームのリセット"
     },
     "database": {
       "label": "データベース",

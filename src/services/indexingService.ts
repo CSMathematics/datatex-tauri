@@ -1,15 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
-import { readTextFile } from "@tauri-apps/plugin-fs";
+import { listen } from "@tauri-apps/api/event";
 import { useDatabaseStore } from "../stores/databaseStore";
-import { aiProxy } from "./aiService";
+import { useAIStore } from "../stores/aiStore";
 import { notifications } from "@mantine/notifications";
-
-// Types corresponding to Rust backend
-interface VectorItem {
-  id: string; // File Path
-  vector: number[];
-  metadata?: Record<string, string>;
-}
 
 export const indexingService = {
   isIndexing: false,
@@ -25,11 +18,16 @@ export const indexingService = {
     this.stopRequested = false;
     this.progress = 0;
 
+    // Listen for progress events from Rust
+    const unlisten = await listen("indexing-progress", (event: any) => {
+      const payload = event.payload as { current: number; total: number };
+      this.progress = payload.current;
+      this.total = payload.total;
+      onProgress(this.progress, this.total);
+    });
+
     try {
       // 1. Fetch all relevant files
-      // We'll use the store's loaded resources or fetch all
-      // Ideally we should fetch all from backend command, but using store for now
-      // assuming the user has opened a project.
       const collections = useDatabaseStore.getState().collections;
       const collectionNames = collections.map((c) => c.name);
 
@@ -47,67 +45,68 @@ export const indexingService = {
         return ["tex", "bib", "txt", "md", "sty", "cls"].includes(ext || "");
       });
 
-      this.total = textFiles.length;
+      const filePaths = textFiles.map((f) => f.path);
+      this.total = filePaths.length;
       onProgress(0, this.total);
 
-      const items: VectorItem[] = [];
-      const BATCH_SIZE = 5; // Process and save in batches
-
-      for (let i = 0; i < textFiles.length; i++) {
-        if (this.stopRequested) break;
-
-        const file = textFiles[i];
-
-        try {
-          const content = await readTextFile(file.path);
-
-          // Limit content size to avoid token limits (simple truncation for Phase 2)
-          // Phase 3 could do smart chunking
-          const truncated = content.slice(0, 8000);
-          if (!truncated.trim()) continue;
-
-          const vector = await aiProxy.getEmbedding(truncated);
-
-          items.push({
-            id: file.path,
-            vector: vector,
-            metadata: {
-              title: file.title || "",
-              collection: file.collection || "",
-            },
-          });
-
-          // Save batch
-          if (items.length >= BATCH_SIZE || i === textFiles.length - 1) {
-            await invoke("store_embeddings", { items });
-            items.length = 0; // Clear array
-          }
-        } catch (e) {
-          console.warn(`Failed to index ${file.path}:`, e);
-        }
-
-        this.progress = i + 1;
-        onProgress(this.progress, this.total);
+      if (filePaths.length === 0) {
+        notifications.show({
+          title: "Indexing Skipped",
+          message: "No text files found to index.",
+          color: "yellow",
+        });
+        return;
       }
+
+      // 2. Prepare Config
+      const aiState = useAIStore.getState();
+      const config = {
+        provider: aiState.provider,
+        api_key:
+          aiState.provider === "openai"
+            ? aiState.openaiKey
+            : aiState.provider === "gemini"
+              ? aiState.geminiKey
+              : undefined,
+        model:
+          aiState.provider === "openai"
+            ? aiState.openaiModel
+            : aiState.provider === "gemini"
+              ? aiState.geminiModel
+              : aiState.provider === "ollama"
+                ? aiState.ollamaModel
+                : undefined,
+        url: aiState.provider === "ollama" ? aiState.ollamaUrl : undefined,
+      };
+
+      // 3. Invoke Rust Command
+      // Note: passing the WHOLE file list might be large, but usually fine for a few thousand files.
+      // If project is huge, might need to chunk the file list itself, but Rust handles Vec<String> fine.
+      await invoke("build_index_cmd", {
+        files: filePaths,
+        config: config,
+      });
 
       notifications.show({
         title: "Indexing Complete",
-        message: `Successfully indexed ${this.progress} files.`,
+        message: `Successfully indexed ${this.total} files via Rust backend.`,
         color: "green",
       });
     } catch (e: any) {
       console.error("Indexing failed", e);
       notifications.show({
         title: "Indexing Failed",
-        message: e.message,
+        message: e.message || "Unknown error",
         color: "red",
       });
     } finally {
+      unlisten();
       this.isIndexing = false;
     }
   },
 
   stop() {
     this.stopRequested = true;
+    // TODO: Send stop command to Rust if implemented
   },
 };

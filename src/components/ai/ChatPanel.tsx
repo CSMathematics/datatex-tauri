@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   Stack,
-  TextInput,
+  Textarea,
+  Select,
   ActionIcon,
   Paper,
   Text,
@@ -12,6 +13,8 @@ import {
   Avatar,
   Box,
   Title,
+  Tooltip,
+  ThemeIcon,
 } from "@mantine/core";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -34,11 +37,66 @@ interface ChatPanelProps {
 }
 
 export const ChatPanel: React.FC<ChatPanelProps> = ({ onInsertCode }) => {
-  const { messages, addMessage, deleteMessage, clearMessages } = useAIStore();
+  const {
+    messages,
+    addMessage,
+    deleteMessage,
+    clearMessages,
+    provider,
+    setProvider,
+    openaiModel,
+    setOpenAIModel,
+    geminiModel,
+    setGeminiModel,
+    ollamaModel,
+    setOllamaModel,
+  } = useAIStore();
 
-  // Initialize ONLY if empty (and avoid doing it in render to prevent loops, though persist handles it)
-  // Actually, persist middleware handles hydration, so we just use what's there.
-  // We can add a welcome message via useEffect if length is 0.
+  // Model Options
+  const modelOptions = [
+    {
+      group: "Gemini",
+      items: [
+        { value: "gemini:gemini-1.5-flash", label: "Gemini 1.5 Flash" },
+        { value: "gemini:gemini-1.5-pro", label: "Gemini 1.5 Pro" },
+      ],
+    },
+    {
+      group: "OpenAI",
+      items: [
+        { value: "openai:gpt-4o", label: "GPT-4o" },
+        { value: "openai:gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
+      ],
+    },
+    {
+      group: "Ollama",
+      items: [
+        { value: "ollama:llama3", label: "Llama 3" },
+        { value: "ollama:mistral", label: "Mistral" },
+      ],
+    },
+  ];
+
+  const currentModelValue = `${provider}:${
+    provider === "openai"
+      ? openaiModel
+      : provider === "gemini"
+        ? geminiModel
+        : provider === "ollama"
+          ? ollamaModel
+          : ""
+  }`;
+
+  const handleModelChange = (val: string | null) => {
+    if (!val) return;
+    const [newProvider, newModel] = val.split(":");
+    setProvider(newProvider as any);
+    if (newProvider === "openai") setOpenAIModel(newModel);
+    if (newProvider === "gemini") setGeminiModel(newModel);
+    if (newProvider === "ollama") setOllamaModel(newModel);
+  };
+
+  // Initialize ONLY if empty
   useEffect(() => {
     if (messages.length === 0) {
       addMessage({
@@ -47,10 +105,42 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onInsertCode }) => {
           "Hello! I am your AI LaTeX Assistant. How can I help you today?",
       });
     }
-  }, []); // Run once on mount
+  }, []);
+
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [thoughts, setThoughts] = useState<string[]>([]);
   const viewport = useRef<HTMLDivElement>(null);
+
+  const handleClear = () => {
+    clearMessages();
+    setThoughts([]);
+  };
+
+  // ... (Listeners useEffect remains same) ...
+
+  // Listen for Agent Thoughts & Observations
+  useEffect(() => {
+    let unlistenThought: () => void;
+    let unlistenObservation: () => void;
+
+    import("@tauri-apps/api/event").then(async ({ listen }) => {
+      unlistenThought = await listen("agent-thought", (event: any) => {
+        setThoughts((prev) => [...prev, `🤔 ${event.payload}`]);
+      });
+      unlistenObservation = await listen("agent-observation", (event: any) => {
+        // Truncate observation to avoid UI lag
+        let obs = event.payload;
+        if (obs.length > 200) obs = obs.substring(0, 200) + "...";
+        setThoughts((prev) => [...prev, `👁️ ${obs}`]);
+      });
+    });
+
+    return () => {
+      if (unlistenThought) unlistenThought();
+      if (unlistenObservation) unlistenObservation();
+    };
+  }, []);
 
   const scrollToBottom = () => {
     if (viewport.current) {
@@ -61,7 +151,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onInsertCode }) => {
     }
   };
 
-  useEffect(scrollToBottom, [messages, loading]);
+  useEffect(scrollToBottom, [messages, loading, thoughts]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -69,6 +159,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onInsertCode }) => {
     const userMsg: Message = { role: "user", content: input };
     addMessage(userMsg);
     setInput("");
+    setThoughts([]); // Clear previous thoughts
     setLoading(true);
 
     try {
@@ -85,31 +176,41 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onInsertCode }) => {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
   return (
     <Stack gap={0} h="100%" style={{ position: "relative" }}>
+      {/* Header Bar */}
+      <Group
+        px="md"
+        py="xs"
+        justify="space-between"
+        style={{
+          borderBottom: "1px solid var(--mantine-color-default-border)",
+          backgroundColor: "var(--mantine-color-body)",
+        }}
+      >
+        <Group gap="xs">
+          <ThemeIcon variant="light" color="blue" size="sm">
+            <IconSparkles2 size={12} />
+          </ThemeIcon>
+          <Text fw={600} size="sm">
+            Assistant
+          </Text>
+        </Group>
+        <Tooltip label="Clear chat & history">
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            size="sm"
+            onClick={handleClear}
+          >
+            <IconTrash size={14} />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
+
       <ScrollArea viewportRef={viewport} style={{ flex: 1 }} p="md">
         <Stack gap="md">
-          {/* Header Actions (Clear) could go in a header bar, but here is okay for now or floating */}
-          {messages.length > 2 && (
-            <Group justify="center">
-              <Button
-                variant="subtle"
-                size="xs"
-                color="gray"
-                leftSection={<IconTrash size={12} />}
-                onClick={clearMessages}
-              >
-                Clear Chat
-              </Button>
-            </Group>
-          )}
+          {/* Messages */}
 
           {messages.map((msg, idx) => (
             <Group
@@ -305,6 +406,34 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onInsertCode }) => {
               )}
             </Group>
           ))}
+          {thoughts.length > 0 && (
+            <Paper
+              p="xs"
+              bg="dark.8"
+              mb="sm"
+              style={{
+                borderLeft: "2px solid var(--mantine-primary-color-filled)",
+              }}
+            >
+              <Text size="xs" fw={700} c="dimmed" mb={4}>
+                Agent Process
+              </Text>
+              <ScrollArea.Autosize mah={150} type="always" offsetScrollbars>
+                <Code
+                  block
+                  color="dark"
+                  style={{
+                    fontSize: "0.75rem",
+                    whiteSpace: "pre-wrap",
+                    backgroundColor: "transparent",
+                  }}
+                >
+                  {thoughts.join("\n")}
+                </Code>
+              </ScrollArea.Autosize>
+            </Paper>
+          )}
+
           {loading && (
             <Group align="flex-start" gap="xs">
               <Avatar color="blue" radius="lg" size="sm">
@@ -321,30 +450,71 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onInsertCode }) => {
       </ScrollArea>
 
       {/* Input Area */}
-      <Box
+      <Paper
         p="sm"
-        style={{ borderTop: "1px solid var(--mantine-color-default-border)" }}
+        radius={0}
+        bg="var(--mantine-color-body)"
+        style={{
+          borderTop: "1px solid var(--mantine-color-default-border)",
+        }}
       >
-        <TextInput
+        <Textarea
           placeholder="Ask AI to create something..."
           value={input}
           onChange={(e) => setInput(e.currentTarget.value)}
-          onKeyDown={handleKeyDown}
-          rightSection={
-            <ActionIcon
-              onClick={handleSend}
-              disabled={loading || !input.trim()}
-              variant="transparent"
-              color="blue"
-            >
-              <FontAwesomeIcon icon={faPaperPlane} />
-            </ActionIcon>
-          }
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
+          autosize
+          minRows={1}
+          maxRows={8}
+          size="sm"
+          variant="filled"
+          radius="md"
+          styles={{
+            input: {
+              fontSize: "0.85rem",
+            },
+          }}
         />
-        <Text size="xs" c="dimmed" mt={4} ta="center" style={{ fontSize: 10 }}>
+        <Group mt="xs" justify="space-between" align="center">
+          <Select
+            size="xs"
+            variant="filled"
+            radius="md"
+            value={currentModelValue}
+            onChange={handleModelChange}
+            data={modelOptions}
+            allowDeselect={false}
+            checkIconPosition="right"
+            style={{ flex: 1, maxWidth: 200 }}
+          />
+
+          <Button
+            size="xs"
+            variant="light"
+            radius="md"
+            onClick={handleSend}
+            disabled={loading || !input.trim()}
+            rightSection={<FontAwesomeIcon icon={faPaperPlane} />}
+          >
+            Send
+          </Button>
+        </Group>
+
+        <Text
+          size="xs"
+          c="dimmed"
+          mt={4}
+          ta="center"
+          style={{ fontSize: 9, opacity: 0.7 }}
+        >
           AI can make mistakes. Check generated code.
         </Text>
-      </Box>
+      </Paper>
     </Stack>
   );
 };

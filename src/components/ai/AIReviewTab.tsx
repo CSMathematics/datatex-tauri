@@ -1,5 +1,12 @@
-import React from "react";
-import { Box, Button, Group, Text, Paper } from "@mantine/core";
+import React, { useState } from "react";
+import {
+  Box,
+  Button,
+  Group,
+  Text,
+  Paper,
+  SegmentedControl,
+} from "@mantine/core";
 import { DiffEditor } from "@monaco-editor/react";
 import { useAIStore } from "../../stores/aiStore";
 import { useTabsStore } from "../../stores/useTabsStore";
@@ -21,6 +28,7 @@ export const AIReviewTab: React.FC<AIReviewTabProps> = ({
 }) => {
   const { setPendingWrite, addMessage } = useAIStore();
   const { closeTab } = useTabsStore();
+  const [viewMode, setViewMode] = useState<"split" | "unified">("split");
 
   const handleAccept = async () => {
     try {
@@ -33,9 +41,23 @@ export const AIReviewTab: React.FC<AIReviewTabProps> = ({
       // Write to disk
       await writeTextFile(path, modified);
 
-      // 2. Update store state so Editor reflects changes immediately (Editor remounts)
-      useTabsStore.getState().updateTabContent(path, modified);
-      useTabsStore.getState().markDirty(path, false);
+      // 2. Open or Update the file tab
+      const tabsStore = useTabsStore.getState();
+      const filename = path.split(/[/\\]/).pop() || "Untitled";
+
+      if (tabsStore.hasTab(path)) {
+        tabsStore.updateTabContent(path, modified);
+        tabsStore.markDirty(path, false);
+        tabsStore.setActiveTab(path);
+      } else {
+        tabsStore.openTab({
+          id: path,
+          title: filename,
+          type: "editor",
+          content: modified,
+          isDirty: false,
+        });
+      }
 
       notifications.show({
         title: "Success",
@@ -87,6 +109,15 @@ export const AIReviewTab: React.FC<AIReviewTabProps> = ({
             </Text>
           </Box>
           <Group>
+            <SegmentedControl
+              size="xs"
+              value={viewMode}
+              onChange={(v) => setViewMode(v as "split" | "unified")}
+              data={[
+                { label: "Split", value: "split" },
+                { label: "Unified", value: "unified" },
+              ]}
+            />
             <Button color="red" variant="subtle" onClick={handleReject}>
               Reject
             </Button>
@@ -107,7 +138,7 @@ export const AIReviewTab: React.FC<AIReviewTabProps> = ({
           theme="vs-dark" // or dynamic based on settings
           options={{
             readOnly: true,
-            renderSideBySide: true,
+            renderSideBySide: viewMode === "split",
             minimap: { enabled: false },
           }}
         />

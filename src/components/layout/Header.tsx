@@ -75,6 +75,16 @@ interface HeaderProps {
   onExportDtex?: () => void;
   onExportToTex?: () => void;
   onBatchExport?: () => void;
+  // New Menu Actions
+  onSaveAs?: () => void;
+  onCloseFile?: () => void;
+  onSelectAll?: () => void;
+  onReplace?: () => void;
+  onGoToLine?: () => void;
+  onToggleComment?: () => void;
+  onResetZoom?: () => void;
+  recentProjects?: string[];
+  onOpenRecent?: (path: string) => void;
 }
 
 export const HeaderContent: React.FC<HeaderProps> = ({
@@ -118,6 +128,15 @@ export const HeaderContent: React.FC<HeaderProps> = ({
   onExportDtex,
   onExportToTex,
   onBatchExport,
+  onSaveAs,
+  onCloseFile,
+  onSelectAll,
+  onReplace,
+  onGoToLine,
+  onToggleComment,
+  onResetZoom,
+  recentProjects = [],
+  onOpenRecent,
 }) => {
   const { t } = useTranslation();
 
@@ -230,6 +249,68 @@ export const HeaderContent: React.FC<HeaderProps> = ({
               >
                 {t("menu.file.save")}
               </Menu.Item>
+              <Menu.Item
+                leftSection={
+                  <FontAwesomeIcon
+                    icon={faSave}
+                    style={{ width: 14, height: 14 }}
+                  />
+                }
+                onClick={onSaveAs}
+                rightSection={
+                  <Text size="xs" c="dimmed">
+                    Ctrl+Shift+S
+                  </Text>
+                }
+              >
+                {t("menu.file.saveAs")}
+              </Menu.Item>
+              <Menu.Item
+                leftSection={<IconX style={{ width: 14, height: 14 }} />}
+                onClick={onCloseFile}
+                rightSection={
+                  <Text size="xs" c="dimmed">
+                    Ctrl+W
+                  </Text>
+                }
+              >
+                {t("menu.file.closeFile")}
+              </Menu.Item>
+              <Menu.Divider />
+              {/* Open Recent Submenu */}
+              {recentProjects && recentProjects.length > 0 && (
+                <Menu.Item
+                  leftSection={
+                    <FontAwesomeIcon
+                      icon={faFolderOpen}
+                      style={{ width: 14, height: 14 }}
+                    />
+                  }
+                  // rightSection={<IconChevronRight size={12} />} // Mantine Menu doesn't support nested hover well without trigger
+                >
+                  <Menu trigger="hover" position="right-start">
+                    <Menu.Target>
+                      <Group justify="space-between" w="100%">
+                        <Text size="sm">{t("menu.file.openRecent")}</Text>
+                        <FontAwesomeIcon
+                          icon={faFolderOpen} // Placeholder for right arrow if needed, but Group helps
+                          style={{ width: 10, height: 10, opacity: 0 }}
+                        />
+                      </Group>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                      {recentProjects.map((path) => (
+                        <Menu.Item
+                          key={path}
+                          onClick={() => onOpenRecent && onOpenRecent(path)}
+                        >
+                          {path.split(/[/\\]/).pop()}
+                        </Menu.Item>
+                      ))}
+                    </Menu.Dropdown>
+                  </Menu>
+                </Menu.Item>
+              )}
               <Menu.Divider />
               <Menu.Item
                 leftSection={
@@ -327,10 +408,36 @@ export const HeaderContent: React.FC<HeaderProps> = ({
               </Menu.Item>
               <Menu.Divider />
               <Menu.Item
+                onClick={onSelectAll}
+                rightSection={<Text size="xs">Ctrl+A</Text>}
+              >
+                {t("menu.edit.selectAll")}
+              </Menu.Item>
+              <Menu.Divider />
+              <Menu.Item
                 onClick={onFind}
                 rightSection={<Text size="xs">Ctrl+F</Text>}
               >
                 {t("menu.edit.find")}
+              </Menu.Item>
+              <Menu.Item
+                onClick={onReplace}
+                rightSection={<Text size="xs">Ctrl+H</Text>}
+              >
+                {t("menu.edit.replace")}
+              </Menu.Item>
+              <Menu.Item
+                onClick={onGoToLine}
+                rightSection={<Text size="xs">Ctrl+G</Text>}
+              >
+                {t("menu.edit.goToLine")}
+              </Menu.Item>
+              <Menu.Divider />
+              <Menu.Item
+                onClick={onToggleComment}
+                rightSection={<Text size="xs">Ctrl+/</Text>}
+              >
+                {t("menu.edit.toggleComment")}
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
@@ -408,6 +515,23 @@ export const HeaderContent: React.FC<HeaderProps> = ({
                 {t("menu.view.rightSidebar")}
               </Menu.Item>
               <Menu.Divider />
+              <Menu.Item
+                leftSection={<IconLayoutSidebarFilled size={14} />}
+                onClick={onToggleLeftSidebar}
+                rightSection={
+                  <Text size="xs">{showLeftSidebar ? "✓" : ""}</Text>
+                }
+              >
+                {t("menu.view.leftSidebar")}
+              </Menu.Item>
+              <Menu.Item
+                leftSection={<IconSparkles2 size={14} />}
+                onClick={onToggleAI}
+                rightSection={<Text size="xs">AI</Text>}
+              >
+                {t("menu.view.aiAssistant")}
+              </Menu.Item>
+              <Menu.Divider />
               <Menu.Item onClick={onToggleWordCount}>
                 {t("menu.view.wordCount")}
               </Menu.Item>
@@ -423,6 +547,12 @@ export const HeaderContent: React.FC<HeaderProps> = ({
                 rightSection={<Text size="xs">Ctrl+-</Text>}
               >
                 {t("menu.view.zoomOut")}
+              </Menu.Item>
+              <Menu.Item
+                onClick={onResetZoom}
+                rightSection={<Text size="xs">Ctrl+0</Text>}
+              >
+                {t("menu.view.resetZoom")}
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>

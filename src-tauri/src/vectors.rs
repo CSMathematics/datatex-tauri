@@ -2,8 +2,11 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use std::sync::Mutex;
-use tauri::{Manager, State};
+use std::sync::Arc;
+use tauri::{Emitter, Manager, State};
+use tokio::sync::Mutex;
+
+use crate::ai::{self, ProviderConfig};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VectorItem {
@@ -58,7 +61,8 @@ fn cosine_similarity(v1: &[f32], v2: &[f32]) -> f32 {
 }
 
 // Global State
-pub struct VectorStoreState(pub Mutex<VectorStore>);
+#[derive(Clone)]
+pub struct VectorStoreState(pub Arc<Mutex<VectorStore>>);
 
 // App Data Path helper (placeholder, actual path logic handles mostly in main or passed from frontend)
 pub fn get_vectors_path(app_handle: &tauri::AppHandle) -> PathBuf {
@@ -85,12 +89,12 @@ pub fn load_store(path: &PathBuf) -> Result<VectorStore, String> {
 // --- Commands ---
 
 #[tauri::command]
-pub fn store_embeddings(
+pub async fn store_embeddings(
     items: Vec<VectorItem>,
-    state: State<VectorStoreState>,
+    state: State<'_, VectorStoreState>, // Use State reference for async usually (or owned since State implies Arc internally? No State<'_, T>)
     app_handle: tauri::AppHandle,
 ) -> Result<(), String> {
-    let mut store = state.0.lock().map_err(|_| "Failed to lock mutex")?;
+    let mut store = state.0.lock().await;
     for item in items {
         store.insert(item);
     }
@@ -103,12 +107,91 @@ pub fn store_embeddings(
 }
 
 #[tauri::command]
-pub fn search_similar(
+pub async fn search_similar(
     vector: Vec<f32>,
     top_k: usize,
-    state: State<VectorStoreState>,
+    state: State<'_, VectorStoreState>,
 ) -> Result<Vec<String>, String> {
-    let store = state.0.lock().map_err(|_| "Failed to lock mutex")?;
+    let store = state.0.lock().await;
     let results = store.search(&vector, top_k);
     Ok(results.into_iter().map(|(id, _score)| id).collect())
+}
+
+#[tauri::command]
+pub async fn build_index_cmd(
+    files: Vec<String>,
+    config: ProviderConfig,
+    state: State<'_, VectorStoreState>,
+    app_handle: tauri::AppHandle,
+) -> Result<(), String> {
+    let total = files.len();
+    let mut indexed_count = 0;
+
+    for (index, file_path) in files.iter().enumerate() {
+        // 1. Read file with fallback encoding support (lossy) to fix Greek file crashes
+        if let Ok(bytes) = fs::read(file_path) {
+            let content = String::from_utf8_lossy(&bytes);
+
+            // Simple truncation/chunking for now
+            let truncated = if content.len() > 8000 {
+                &content[0..8000]
+            } else {
+                &content
+            };
+
+            if truncated.trim().is_empty() {
+                continue;
+            }
+
+            // 2. Get Embedding (async await)
+            match ai::get_embedding(truncated, &config)
+                .await
+                .map_err(|e| e.to_string())
+            {
+                Ok(vector) => {
+                    // 3. Store (Scoped lock to allow other reads if needed, though we are blocking mostly)
+                    {
+                        let mut store = state.0.lock().await;
+                        store.insert(VectorItem {
+                            id: file_path.clone(),
+                            vector,
+                            metadata: Some(HashMap::from([(
+                                "path".to_string(),
+                                file_path.clone(),
+                            )])),
+                        });
+                    } // Lock released
+
+                    indexed_count += 1;
+                }
+                Err(e) => {
+                    println!("Failed to embed {}: {}", file_path, e);
+                }
+            }
+        }
+
+        // Emit Progress
+        app_handle
+            .emit(
+                "indexing-progress",
+                serde_json::json!({
+                    "current": index + 1,
+                    "total": total
+                }),
+            )
+            .unwrap_or(());
+    }
+
+    // Save at the end
+    {
+        let store = state.0.lock().await;
+        let path = get_vectors_path(&app_handle);
+        save_store(&store, &path)?;
+    }
+
+    println!(
+        "Indexing finished. Processed {} files out of {}.",
+        indexed_count, total
+    );
+    Ok(())
 }

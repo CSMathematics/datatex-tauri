@@ -517,6 +517,9 @@
       "newFromTemplate": "Novo a partir de Modelo",
       "open": "Abrir",
       "save": "Salvar",
+      "saveAs": "Salvar como",
+      "closeFile": "Fechar arquivo",
+      "openRecent": "Abrir recentes",
       "exportPdf": "Exportar para PDF",
       "exit": "Sair"
     },
@@ -527,7 +530,11 @@
       "cut": "Recortar",
       "copy": "Copiar",
       "paste": "Colar",
-      "find": "Localizar"
+      "selectAll": "Selecionar tudo",
+      "find": "Localizar",
+      "replace": "Substituir",
+      "goToLine": "Ir para linha",
+      "toggleComment": "Alternar comentário"
     },
     "insert": {
       "label": "Inserir",
@@ -537,9 +544,12 @@
       "label": "Exibir",
       "databasePanel": "Painel do Banco de Dados",
       "rightSidebar": "Barra Lateral Direita (PDF)",
+      "leftSidebar": "Alternar barra lateral",
+      "aiAssistant": "Alternar assistente de IA",
       "wordCount": "Contagem de Palavras",
       "zoomIn": "Aumentar Zoom",
-      "zoomOut": "Diminuir Zoom"
+      "zoomOut": "Diminuir Zoom",
+      "resetZoom": "Redefinir zoom"
     },
     "database": {
       "label": "Banco de Dados",

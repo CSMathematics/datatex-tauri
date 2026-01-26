@@ -369,13 +369,68 @@ export default function App() {
     setShowRightSidebar((prev) => !prev);
   }, []);
 
-  const { pdfUrl, syncTexCoords, handleSyncTexForward } = usePdfState({
-    activeTab,
-    isTexFile,
-    pdfRefreshTrigger,
-    setCompileError: (msg) => console.error("PDF Error:", msg),
-    onRequirePanelOpen: () => setShowRightSidebar(true),
-  });
+  const { pdfUrl, syncTexCoords, handleSyncTexForward, handleSyncTexInverse } =
+    usePdfState({
+      activeTab,
+      isTexFile,
+      pdfRefreshTrigger,
+      setCompileError: (msg) => console.error("PDF Error:", msg),
+      onRequirePanelOpen: () => setShowRightSidebar(true),
+    });
+
+  const onSyncTexInverse = useCallback(
+    async (page: number, x: number, y: number) => {
+      const result = await handleSyncTexInverse(page, x, y);
+      if (result) {
+        // Check if file is already open
+        const { file, line } = result;
+
+        // Normalize path separators to forward slash for comparison
+        const normalizedPath = file.replace(/\\/g, "/");
+
+        // Logic to open file if not the active one
+        if (activeTabId !== normalizedPath) {
+          // Check if tab exists
+          const existingTab = tabs.find(
+            (t) =>
+              t.id === normalizedPath ||
+              t.id.replace(/\\/g, "/") === normalizedPath,
+          );
+
+          if (existingTab) {
+            setActiveTab(existingTab.id);
+          } else {
+            // Open new tab
+            try {
+              const { readTextFile } = await import("@tauri-apps/plugin-fs");
+              const content = await readTextFile(result.file); // Use original path from OS
+              openTab({
+                id: result.file,
+                title: result.file.split(/[/\\]/).pop() || "Untitled",
+                type: "editor",
+                content,
+                language: "latex",
+                isDirty: false,
+              });
+            } catch (e) {
+              console.error("Failed to open file from SyncTeX:", e);
+            }
+          }
+        }
+
+        // Jump to line
+        // We need a small delay to allow editor to mount/focus if we just switched tabs
+        setTimeout(() => {
+          if (editorRef.current) {
+            editorRef.current.revealLineInCenter(line);
+            editorRef.current.setPosition({ lineNumber: line, column: 1 });
+            editorRef.current.focus();
+          }
+        }, 100);
+      }
+    },
+    [handleSyncTexInverse, activeTabId, tabs, setActiveTab, openTab],
+  );
 
   const isWizardActive = useMemo(
     () =>
@@ -1496,6 +1551,104 @@ export default function App() {
               onExportDtex={handleExportDtex}
               onExportToTex={handleExportToTex}
               onBatchExport={() => setBatchModalOpen(true)}
+              // New Actions
+              onSaveAs={async () => {
+                if (activeTabId && activeTab) {
+                  try {
+                    const { save } = await import("@tauri-apps/plugin-dialog");
+                    const newPath = await save({
+                      defaultPath: activeTab.title,
+                      filters: [
+                        { name: "LaTeX Document", extensions: ["tex"] },
+                        { name: "All Files", extensions: ["*"] },
+                      ],
+                    });
+
+                    if (newPath) {
+                      // Save content to new path
+                      const content =
+                        editorRef.current?.getValue() ||
+                        activeTab.content ||
+                        "";
+                      const { writeTextFile } =
+                        await import("@tauri-apps/plugin-fs");
+                      await writeTextFile(newPath, content);
+
+                      // Open new tab (or rename current? standard is rename current)
+                      // We will open as new tab and close old one if it was untitled,
+                      // but simpler to just open new tab for now or rename.
+                      // Let's mimic "Save As" by renaming the current tab to the new file
+
+                      // Close current tab and open new one to ensure clean state
+                      // Actually, correct behavior is: current editor now points to new file.
+                      // We can achieve this by closing old tab and opening new one.
+                      // BUT we must be careful about unsaved changes prompt.
+
+                      // For now, let's just open the new file in a new tab
+                      const node: FileSystemNode = {
+                        id: newPath,
+                        name: newPath.split(/[/\\]/).pop() || newPath,
+                        type: "file",
+                        path: newPath,
+                        children: [],
+                      };
+                      handleOpenFileNode(node);
+                      notifications.show({
+                        title: "Saved As",
+                        message: `File saved as ${node.name}`,
+                        color: "green",
+                      });
+                    }
+                  } catch (e) {
+                    console.error("Save As failed", e);
+                  }
+                }
+              }}
+              onCloseFile={() => {
+                if (activeTabId) {
+                  handleCloseTab(activeTabId);
+                }
+              }}
+              recentProjects={recentProjects}
+              onOpenRecent={(path) => {
+                // handleOpenFolder seems to be a void function that triggers dialog?
+                // Let's use reloadProjectFiles directly for recent projects
+                reloadProjectFiles([path]);
+                // Also need to set root path
+                setRootPath(path);
+                addToRecent(path);
+              }}
+              onSelectAll={() =>
+                editorRef.current?.trigger(
+                  null,
+                  "editor.action.selectAll",
+                  null,
+                )
+              }
+              onReplace={() =>
+                editorRef.current?.trigger(
+                  null,
+                  "editor.action.startFindReplaceAction",
+                  null,
+                )
+              }
+              onGoToLine={() =>
+                editorRef.current?.trigger(null, "editor.action.gotoLine", null)
+              }
+              onToggleComment={() =>
+                editorRef.current?.trigger(
+                  null,
+                  "editor.action.commentLine",
+                  null,
+                )
+              }
+              onResetZoom={() =>
+                editorRef.current?.trigger(
+                  null,
+                  "editor.action.fontZoomReset",
+                  null,
+                )
+              }
             />
           </AppShell.Header>
 
@@ -1937,6 +2090,7 @@ export default function App() {
                         pdfRefreshTrigger={pdfRefreshTrigger}
                         activeEditorTab={activeTab}
                         onInsertFragment={handleInsertSnippet}
+                        onSyncTexInverse={onSyncTexInverse}
                         canInsert={(() => {
                           if (!activeTab) return false;
 

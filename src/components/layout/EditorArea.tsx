@@ -40,6 +40,9 @@ import {
   faExchangeAlt,
   faFileCirclePlus,
   faFolderOpen,
+  faAngleLeft,
+  faAngleRight,
+  faChevronDown,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   IconLayoutBottombarCollapseFilled,
@@ -885,34 +888,155 @@ export const EditorArea = React.memo<EditorAreaProps>(
       }
     }, [onOpenFile]);
 
+    // --- Tab Navigation Logic ---
+    const scrollRef = React.useRef<HTMLDivElement>(null);
+
+    const handleSelectPrevious = () => {
+      const currentIndex = files.findIndex((f) => f.id === activeFileId);
+      if (currentIndex > 0) {
+        onFileSelect(files[currentIndex - 1].id);
+        // Ensure the new active tab is visible
+        // Scroll logic could be added here if needed, but for now we just select
+      }
+    };
+
+    const handleSelectNext = () => {
+      const currentIndex = files.findIndex((f) => f.id === activeFileId);
+      if (currentIndex < files.length - 1) {
+        onFileSelect(files[currentIndex + 1].id);
+      }
+    };
+
+    // Auto-scroll to active tab when it changes
+    React.useEffect(() => {
+      if (activeFileId && scrollRef.current) {
+        // Check if we need to scroll to show the active tab
+        // This requires refs to individual tabs which we don't haven't easily accessible here
+        // For now, simpler approach is fine or we can rely on manual scrolling
+      }
+    }, [activeFileId]);
+
     return (
       <Stack gap={0} h="100%" w="100%" style={{ overflow: "hidden" }}>
         {/* Tabs Bar */}
-        <ScrollArea
-          type="hover"
-          scrollbarSize={6}
-          bg="var(--mantine-color-body)"
+        <Box
+          bg="var(--mantine-color-default)"
           style={{
             borderBottom: "1px solid var(--mantine-color-default-border)",
-            whiteSpace: "nowrap",
+            display: "flex",
+            alignItems: "center",
             flexShrink: 0,
           }}
         >
-          <Group gap={1} pt={4} px={4} wrap="nowrap">
-            {files.map((file) => (
-              <TabItem
-                key={file.id}
-                file={file}
-                activeFileId={activeFileId}
-                onSelect={onFileSelect}
-                onClose={onFileClose}
-                onCloseOthers={handleCloseOthers}
-                onCloseRight={handleCloseRight}
-                onCopyPath={handleCopyPath}
-              />
-            ))}
-          </Group>
-        </ScrollArea>
+          {/* Previous Tab */}
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            size="sm"
+            radius={0}
+            style={{
+              borderRight: "1px solid var(--mantine-color-default-border)",
+            }}
+            onClick={handleSelectPrevious}
+            disabled={files.findIndex((f) => f.id === activeFileId) <= 0}
+          >
+            <FontAwesomeIcon
+              icon={faAngleLeft}
+              style={{ width: 14, height: 14 }}
+            />
+          </ActionIcon>
+
+          <ScrollArea
+            viewportRef={scrollRef}
+            type="hover"
+            scrollbarSize={6}
+            style={{ flex: 1, whiteSpace: "nowrap" }}
+            styles={{ viewport: { overflowX: "scroll", overflowY: "hidden" } }}
+          >
+            <Group
+              gap={1}
+              pt={4}
+              px={4}
+              wrap="nowrap"
+              style={{ minWidth: "max-content" }}
+            >
+              {files.map((file) => (
+                <Box key={file.id} style={{ flexShrink: 0 }}>
+                  <TabItem
+                    file={file}
+                    activeFileId={activeFileId}
+                    onSelect={onFileSelect}
+                    onClose={onFileClose}
+                    onCloseOthers={handleCloseOthers}
+                    onCloseRight={handleCloseRight}
+                    onCopyPath={handleCopyPath}
+                  />
+                </Box>
+              ))}
+            </Group>
+          </ScrollArea>
+
+          {/* Next Tab */}
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            size="sm"
+            radius={0}
+            style={{
+              borderLeft: "1px solid var(--mantine-color-default-border)",
+            }}
+            onClick={handleSelectNext}
+            disabled={
+              files.findIndex((f) => f.id === activeFileId) >= files.length - 1
+            }
+          >
+            <FontAwesomeIcon
+              icon={faAngleRight}
+              style={{ width: 14, height: 14 }}
+            />
+          </ActionIcon>
+
+          {/* Tab Dropdown */}
+          <Menu shadow="md" width={250} position="bottom-end">
+            <Menu.Target>
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="sm"
+                radius={0}
+                style={{
+                  borderLeft: "1px solid var(--mantine-color-default-border)",
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={faChevronDown}
+                  style={{ width: 12, height: 12 }}
+                />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Label>Open Tabs</Menu.Label>
+              <ScrollArea.Autosize mah={300}>
+                {files.map((f) => (
+                  <Menu.Item
+                    key={f.id}
+                    leftSection={getFileIcon(f.title, f.type)}
+                    onClick={() => onFileSelect(f.id)}
+                    bg={
+                      f.id === activeFileId
+                        ? "var(--mantine-color-default-hover)"
+                        : undefined
+                    }
+                  >
+                    <Text size="xs" truncate>
+                      {f.title}
+                    </Text>
+                  </Menu.Item>
+                ))}
+              </ScrollArea.Autosize>
+            </Menu.Dropdown>
+          </Menu>
+        </Box>
 
         {/* Toolbar */}
         {activeFile?.type !== "start-page" && (
@@ -1497,7 +1621,7 @@ export const EditorArea = React.memo<EditorAreaProps>(
                     path={activeFile.id}
                     height="100%"
                     defaultLanguage="my-latex"
-                    defaultValue={activeFile.content}
+                    value={activeFile.content}
                     onMount={wrappedEditorMount}
                     onChange={(value) =>
                       onContentChange(activeFile.id, value || "")

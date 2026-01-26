@@ -85,9 +85,9 @@ export const DynamicMetadataEditor: React.FC<DynamicMetadataEditorProps> = ({
             resourceId,
             resourceType,
           );
-          if (existingMetadata) {
-            setMetadata(existingMetadata);
-          }
+          // Reset to existing metadata OR empty object if none exists
+          // This prevents previous file's metadata from persisting
+          setMetadata(existingMetadata || {});
         }
       } catch (err) {
         console.error("Failed to load metadata:", err);

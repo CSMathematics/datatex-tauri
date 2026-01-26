@@ -6,6 +6,8 @@ use tokio::sync::Mutex;
 use uuid::Uuid;
 use walkdir::WalkDir; // For typed metadata queries
 
+mod agent;
+mod ai;
 mod compiler;
 mod database;
 mod git;
@@ -13,6 +15,7 @@ mod history;
 mod lsp;
 mod search;
 mod texlab_downloader;
+mod tools;
 mod vectors;
 mod watcher;
 
@@ -32,10 +35,13 @@ use vectors::VectorStoreState;
 
 // Typed metadata commands now defined below with sqlx (rusqlite commands removed)
 
+use std::sync::Arc;
+// ... imports
+
 // 1. App State
 struct AppState {
-    db_manager: Mutex<Option<DatabaseManager>>,
-    lsp_manager: Mutex<Option<TexlabManager>>,
+    db_manager: Arc<Mutex<Option<DatabaseManager>>>,
+    lsp_manager: Arc<Mutex<Option<TexlabManager>>>,
 }
 
 // 2. Open Project Command
@@ -3864,8 +3870,8 @@ async fn lsp_shutdown(state: State<'_, AppState>) -> Result<(), String> {
 pub fn run() {
     tauri::Builder::default()
         .manage(AppState {
-            db_manager: Mutex::new(None),
-            lsp_manager: Mutex::new(None),
+            db_manager: std::sync::Arc::new(tokio::sync::Mutex::new(None)),
+            lsp_manager: std::sync::Arc::new(tokio::sync::Mutex::new(None)),
         })
         .setup(|app| {
             let proj_dirs = ProjectDirs::from("", "", "datatex");
@@ -3888,7 +3894,13 @@ pub fn run() {
                 eprintln!("Failed to load vector store: {}", e);
                 vectors::VectorStore::new()
             });
-            app.manage(VectorStoreState(std::sync::Mutex::new(vector_store)));
+            app.manage(VectorStoreState(std::sync::Arc::new(
+                tokio::sync::Mutex::new(vector_store),
+            )));
+            // Initialize Agent State
+            app.manage(agent::GlobalAgent(std::sync::Arc::new(
+                tokio::sync::Mutex::new(None),
+            )));
 
             let data_dir_str = data_dir.to_string_lossy().to_string();
             println!("Initializing Global DB at: {}", data_dir_str);
@@ -3931,6 +3943,10 @@ pub fn run() {
             update_cell_cmd,
             vectors::store_embeddings,
             vectors::search_similar,
+            vectors::build_index_cmd, // New Command
+            // Agent Commands
+            agent::start_agent_cmd,
+            agent::stop_agent_cmd,
             // New Commands
             get_collections_cmd,
             create_collection_cmd,

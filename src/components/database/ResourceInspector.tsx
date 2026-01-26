@@ -53,6 +53,7 @@ interface ResourceInspectorProps {
   pdfRefreshTrigger?: number;
   onInsertFragment?: (code: string) => void;
   canInsert?: boolean;
+  onSyncTexInverse?: (page: number, x: number, y: number) => void;
 
   /** Active editor tab (for .dtex file metadata) */
   activeEditorTab?: import("../../stores/useTabsStore").AppTab;
@@ -64,12 +65,19 @@ export const ResourceInspector = ({
   pdfRefreshTrigger,
   onInsertFragment,
   canInsert,
+  onSyncTexInverse,
   activeEditorTab,
 }: ResourceInspectorProps) => {
   const { t } = useTranslation();
   const { allLoadedResources, activeResourceId } = useDatabaseStore();
   const { updateTabMetadata, markMetadataDirty } = useTabsStore();
-  const resource = allLoadedResources.find((r) => r.id === activeResourceId);
+
+  // Prioritize resource matching activeEditorTab, fallback to activeResourceId
+  const resource = allLoadedResources.find(
+    (r) =>
+      (activeEditorTab && r.path === activeEditorTab.id) ||
+      r.id === activeResourceId,
+  );
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
@@ -316,6 +324,7 @@ export const ResourceInspector = ({
                   key={effectivePdfUrl}
                   pdfUrl={effectivePdfUrl}
                   syncTexCoords={syncTexCoords}
+                  onSyncTexInverse={onSyncTexInverse}
                 />
               ) : (
                 <EmptyState

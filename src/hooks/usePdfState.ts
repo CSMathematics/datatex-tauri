@@ -16,6 +16,11 @@ interface UsePdfStateReturn {
     React.SetStateAction<{ page: number; x: number; y: number } | null>
   >;
   handleSyncTexForward: (line: number, column: number) => Promise<void>;
+  handleSyncTexInverse: (
+    page: number,
+    x: number,
+    y: number,
+  ) => Promise<{ file: string; line: number } | null>;
 }
 
 export function usePdfState({
@@ -149,10 +154,56 @@ export function usePdfState({
     [activeTab, isTexFile, setCompileError],
   );
 
+  const handleSyncTexInverse = useCallback(
+    async (
+      page: number,
+      x: number,
+      y: number,
+    ): Promise<{ file: string; line: number } | null> => {
+      if (!activeTab || !activeTab.id || !isTexFile) return null;
+
+      try {
+        const texPath = activeTab.id;
+        const pdfPath = texPath.replace(/\.tex$/i, ".pdf");
+        const lastSlash = texPath.lastIndexOf(
+          texPath.includes("\\") ? "\\" : "/",
+        );
+        const cwd = texPath.substring(0, lastSlash);
+
+        // synctex edit -o page:x:y:file.pdf
+        const args = ["edit", "-o", `${page}:${x}:${y}:${pdfPath}`];
+
+        const result = await invoke<string>("run_synctex_command", {
+          args,
+          cwd,
+        });
+
+        // Output format:
+        // Line:10
+        // File:/path/to/file.tex
+        const lineMatch = result.match(/Line:(\d+)/);
+        const fileMatch = result.match(/File:(.+)/);
+
+        if (lineMatch && fileMatch) {
+          return {
+            line: parseInt(lineMatch[1], 10),
+            file: fileMatch[1].trim(),
+          };
+        }
+        return null;
+      } catch (e) {
+        console.error("SyncTeX Inverse Failed:", e);
+        return null;
+      }
+    },
+    [activeTab, isTexFile],
+  );
+
   return {
     pdfUrl,
     syncTexCoords,
     setSyncTexCoords,
     handleSyncTexForward,
+    handleSyncTexInverse,
   };
 }

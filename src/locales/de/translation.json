@@ -492,6 +492,9 @@
       "newFromTemplate": "Neu aus Vorlage",
       "open": "Öffnen",
       "save": "Speichern",
+      "saveAs": "Speichern unter",
+      "closeFile": "Datei schließen",
+      "openRecent": "Zuletzt geöffnet",
       "exportPdf": "Als PDF exportieren",
       "exit": "Beenden"
     },
@@ -502,7 +505,11 @@
       "cut": "Ausschneiden",
       "copy": "Kopieren",
       "paste": "Einfügen",
-      "find": "Suchen"
+      "selectAll": "Alles auswählen",
+      "find": "Suchen",
+      "replace": "Ersetzen",
+      "goToLine": "Gehe zu Zeile",
+      "toggleComment": "Kommentar umschalten"
     },
     "insert": {
       "label": "Einfügen",
@@ -512,9 +519,12 @@
       "label": "Ansicht",
       "databasePanel": "Datenbank-Panel",
       "rightSidebar": "Rechte Seitenleiste (PDF)",
+      "leftSidebar": "Seitenleiste umschalten",
+      "aiAssistant": "KI-Assistent umschalten",
       "wordCount": "Wortanzahl",
       "zoomIn": "Vergrößern",
-      "zoomOut": "Verkleinern"
+      "zoomOut": "Verkleinern",
+      "resetZoom": "Zoom zurücksetzen"
     },
     "database": {
       "label": "Datenbank",

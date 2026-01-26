@@ -515,6 +515,9 @@
       "newFromTemplate": "从模板新建",
       "open": "打开",
       "save": "保存",
+      "saveAs": "另存为",
+      "closeFile": "关闭文件",
+      "openRecent": "打开最近文件",
       "exportPdf": "导出为 PDF",
       "exit": "退出"
     },
@@ -525,7 +528,11 @@
       "cut": "剪切",
       "copy": "复制",
       "paste": "粘贴",
-      "find": "查找"
+      "selectAll": "全选",
+      "find": "查找",
+      "replace": "替换",
+      "goToLine": "转到行",
+      "toggleComment": "切换注释"
     },
     "insert": {
       "label": "插入",
@@ -535,9 +542,12 @@
       "label": "视图",
       "databasePanel": "数据库面板",
       "rightSidebar": "右侧栏 (PDF)",
+      "leftSidebar": "切换侧边栏",
+      "aiAssistant": "切换 AI 助手",
       "wordCount": "字数统计",
       "zoomIn": "放大",
-      "zoomOut": "缩小"
+      "zoomOut": "缩小",
+      "resetZoom": "重置缩放"
     },
     "database": {
       "label": "数据库",
